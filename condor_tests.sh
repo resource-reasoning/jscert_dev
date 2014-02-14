@@ -1,2 +1,2 @@
 #!/bin/bash
-./runtests.py tests/test262/ch08/8.5/S8.5_A2.2.js
+condor_submit -append "+tests = {\"test1\",\"test2\"}" -append "queue 2" condor_tests.cmd
