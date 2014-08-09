@@ -3396,7 +3396,7 @@ Proof.
   (* prealloc_object_create *)
   discriminate.
   (* prealloc_object_define_prop *)
-  discriminate.
+  skip. (* LATER? - Conrad *)
   (* prealloc_object_define_props *)
   discriminate.
   (* prealloc_object_seal *)

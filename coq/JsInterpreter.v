@@ -419,12 +419,12 @@ Definition run_to_descriptor runs S C v : specres descriptor :=
                   res_spec S4 (descriptor_with_writable Desc (Some b))) (fun S4' Desc =>
                     sub S4' Desc "get" (fun S5 v5 Desc =>
                       ifb (is_callable S5 v5 = false) /\ v5 <> undef then
-                        res_spec S5 (descriptor_with_get Desc (Some v5))
-                      else run_error S5 native_error_type) (fun S5' Desc =>
+                        run_error S5 native_error_type
+                      else res_spec S5 (descriptor_with_get Desc (Some v5))) (fun S5' Desc =>
                         sub S5' Desc "set" (fun S6 v6 Desc =>
                           ifb (is_callable S6 v6 = false) /\ v6 <> undef then
-                            res_spec S6 (descriptor_with_set Desc (Some v6))
-                          else run_error S6 native_error_type) (fun S7 Desc =>
+                            run_error S6 native_error_type
+                          else res_spec S6 (descriptor_with_set Desc (Some v6))) (fun S7 Desc =>
                             ifb descriptor_inconsistent Desc then
                               run_error S7 native_error_type
                             else res_spec S7 Desc))))))
@@ -2376,7 +2376,6 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
     | value_prim _ => run_error S native_error_type
     end
 
-
   | prealloc_object_is_frozen =>
     let v := get_arg 0 args in
     match v with
@@ -2424,6 +2423,20 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
         let S' := object_write S l O1 in
         res_ter S' l)
     | value_prim _ => run_error S native_error_type
+    end
+
+
+  | prealloc_object_define_prop =>
+    let o := get_arg 0 args in
+    let p := get_arg 1 args in
+    let attr := get_arg 2 args in
+    match o with
+    | value_prim _ => run_error S native_error_type
+    | value_object l =>
+      if_string (to_string runs S C p) (fun S1 name =>
+        if_spec(run_to_descriptor runs S1 C attr) (fun S2 desc =>
+          if_bool(object_define_own_prop runs S2 C l name desc true) (fun S3 _ =>
+            res_ter S3 l)))
     end
 
   | prealloc_object_proto_to_string =>
