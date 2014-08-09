@@ -37,6 +37,7 @@ function SetUpLockedPrototype(constructor, fields, methods) {
       Object.defineProperty(prototype, fields[i],
                             {enumerable: false, configurable: false});
     }
+  }
   for (var i = 0; i < methods.length; i += 2) {
     var key = methods[i];
     var f = methods[i + 1];

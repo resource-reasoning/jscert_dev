@@ -1,5 +1,7 @@
 tests defining properties with integer names (expecting toString) seem to fail
 
-{data,accessor}PropertyAttributesAreCorrect seem not to be in scope, or possibly throwing exceptions (required by test262)
+{data,accessor}PropertyAttributesAreCorrect seem not to be in scope (required by test262), however if they were to be parsed that would probably be a bad thing since they use for-in
 
 +0 and -0 evaluate to the same property name
+
+the tests assume that the value of the [[Prototype]] internal property of the global object is Object.prototype, however this is not mandated by the spec, and indeed is not compatible with JSRef
