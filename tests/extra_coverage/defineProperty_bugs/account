@@ -1,0 +1,5 @@
+tests defining properties with integer names (expecting toString) seem to fail
+
+{data,accessor}PropertyAttributesAreCorrect seem not to be in scope, or possibly throwing exceptions (required by test262)
+
++0 and -0 evaluate to the same property name
