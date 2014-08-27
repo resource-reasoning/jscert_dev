@@ -4,6 +4,7 @@ let test = ref false
 let printHeap = ref false
 let skipInit = ref false
 let noParasite = ref false
+let execString = ref ""		     
 
 let string_to_list str = (* Does it already exists somewhere? *)
     let l = ref [] in
@@ -42,6 +43,9 @@ let arguments () =
       "-no-parasite",
       Arg.Unit(fun () -> noParasite := true),
       "do not run interpreter's code without being explicitely asked for.";
+      "-e",
+      Arg.String(fun f -> execString := f),
+      "Run this one-line program instead of opening any files";
     ]
     (fun s -> Format.eprintf "WARNING: Ignored argument %s.@." s)
     usage_msg
@@ -79,7 +83,9 @@ let _ =
   arguments ();
   let exit_if_test _ = if !test then exit 1 in
   try
-    let exp = Translate_syntax.coq_syntax_from_file !file in
+    let exp = if !execString = ""
+	      then Translate_syntax.coq_syntax_from_file !file
+	      else Translate_syntax.coq_syntax_from_string !execString in
     let exp' = if !test then
                 begin
                     let JsSyntax.Coq_prog_intro (str, el) = exp in
