@@ -47,6 +47,7 @@ COQC=$(COQBIN)coqc $(INCLUDES)
 COQDEP=$(COQBIN)coqdep $(INCLUDES)
 OCAMLOPT=ocamlopt
 OCAMLC=ocamlc
+JSOFOCAML=js_of_ocaml
 
 #######################################################
 # MAIN SOURCE FILES
@@ -322,6 +323,9 @@ interp/run_js: ${basicfiles} interp/src/extract/JsInterpreter.cmx interp/src/run
 
 interp/run_js.byte: ${basicbytefiles} interp/src/extract/JsInterpreter.cmo interp/src/run_js.cmo
 	$(OCAMLC) $(PARSER_INC) -o interp/run_js.byte xml-light.cma unix.cma str.cma $^
+
+interp/run_js.js: interp/run_js.byte
+	$(JSOFOCAML) -o interp/run_js.js interp/run_js.byte
 
 interp/run_jsbisect: ${basicfiles} interp/src/extract/JsInterpreterBisect.cmx interp/src/run_jsbisect.cmx
 	ocamlfind $(OCAMLOPT) -package bisect $(PARSER_INC) -o interp/run_jsbisect xml-light.cmxa unix.cmxa str.cmxa bisect.cmxa $^
