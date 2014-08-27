@@ -229,7 +229,7 @@ interp/src/extract/%.ml: coq/JsInterpreterExtraction.vo
 
 interp/src/extract/%.mli: coq/JsInterpreterExtraction.vo
 
-PARSER_INC=-I $(shell ocamlfind query xml-light) -I interp/src -I interp/src/extract
+PARSER_INC=-I $(shell ocamlfind query xml-light) -I $(shell ocamlfind query easy-format) -I $(shell ocamlfind query biniou) -I $(shell ocamlfind query yojson) -I interp/src -I interp/src/extract
 
 interp/src/parser_syntax.cmx: interp/parser/src/parser_syntax.ml
 	$(OCAMLOPT) -c -o $@ $<
@@ -289,10 +289,10 @@ mlfilestransformed = ${mlfilessortedwithparsermoved:.ml=.cmx}
 basicfiles=${shell echo ${mlfilestransformed} | perl -pe 's|interp/src/extract/JsInterpreterTrace.cmx||' | perl -pe 's|interp/src/run_jstrace.cmx||' | perl -pe 's|interp/src/extract/JsInterpreter.cmx||' | perl -pe 's|interp/src/run_js.cmx||' | perl -pe 's|interp/src/extract/JsInterpreterBisect.cmx||' | perl -pe 's|interp/src/run_jsbisect.cmx||'}
 
 interp/run_js: ${basicfiles} interp/src/extract/JsInterpreter.cmx interp/src/run_js.cmx
-	$(OCAMLOPT) $(PARSER_INC) -o interp/run_js xml-light.cmxa unix.cmxa str.cmxa $^
+	$(OCAMLOPT) $(PARSER_INC) -o interp/run_js xml-light.cmxa unix.cmxa str.cmxa easy_format.cmx biniou.cmxa yojson.cmx $^
 
 interp/run_jsbisect: ${basicfiles} interp/src/extract/JsInterpreterBisect.cmx interp/src/run_jsbisect.cmx
-	ocamlfind $(OCAMLOPT) -package bisect $(PARSER_INC) -o interp/run_jsbisect xml-light.cmxa unix.cmxa str.cmxa bisect.cmxa $^
+	ocamlfind $(OCAMLOPT) -package bisect $(PARSER_INC) -o interp/run_jsbisect xml-light.cmxa unix.cmxa str.cmxa bisect.cmxa easy_format.cmx biniou.cmxa yojson.cmx $^
 
 
 #######################################################

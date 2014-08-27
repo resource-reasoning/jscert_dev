@@ -19,4 +19,4 @@ val exp_to_funcbody :
 
 val coq_syntax_from_file : string -> JsSyntax.prog
 val coq_syntax_from_string : string -> JsSyntax.prog
-
+val coq_syntax_from_main : string -> JsSyntax.prog

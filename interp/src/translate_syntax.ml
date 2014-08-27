@@ -237,6 +237,10 @@ and exp_to_funcbody exp strict : JsSyntax.funcbody =
     | JsSyntax.Coq_prog_intro (_, elems) -> JsSyntax.Coq_prog_intro (strict, elems)
   in JsSyntax.Coq_funcbody_intro (body, [])
 
+let coq_syntax_from_main filename =
+  let exp = (Parser_main.exp_from_main filename)() in
+  exp_to_prog exp
+
 let coq_syntax_from_file filename =
   let exp = Parser_main.exp_from_file filename in
   exp_to_prog exp

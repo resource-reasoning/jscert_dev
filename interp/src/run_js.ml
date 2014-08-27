@@ -20,7 +20,10 @@ let string_to_list str = (* Does it already exists somewhere? *)
 let arguments () =
   let usage_msg="Usage: -jsparser <path> -file <path>" in
   Arg.parse
-    [ "-jsparser",
+    [ "-json",
+      Arg.Unit(fun () -> Parser_main.use_json := true),
+      "read json from stdin as program";
+      "-jsparser",
       Arg.String(fun f -> Parser_main.js_to_xml_parser := f),
       "path to js_parser.jar";
       "-file",
@@ -79,7 +82,7 @@ let _ =
   arguments ();
   let exit_if_test _ = if !test then exit 1 in
   try
-    let exp = Translate_syntax.coq_syntax_from_file !file in
+    let exp = Translate_syntax.coq_syntax_from_main !file in
     let exp' = if !test then
                 begin
                     let JsSyntax.Coq_prog_intro (str, el) = exp in
