@@ -22,7 +22,11 @@ let arguments () =
   Arg.parse
     [ "-json",
       Arg.Unit(fun () -> Parser_main.use_json := true),
-      "read json from stdin as program";
+      "use the JSON parser (Esprima), -jsparser argument is ignored";
+      "-from_stdin",
+      Arg.Unit(fun () -> Parser_main.from_stdin := true),
+      "Get a pre-parsed intermediate representation from stdin, 
+       -jsparser and -file arguments are ignored, not recommended for use with XML";
       "-jsparser",
       Arg.String(fun f -> Parser_main.js_to_xml_parser := f),
       "path to js_parser.jar";
@@ -35,7 +39,7 @@ let arguments () =
       "-test_prelude",
       Arg.String(fun f ->
          test_prelude := !test_prelude @ string_to_list f; test := true),
-      "include the given files before runnning the specified file.";
+      "include the given files before runnning the specified file";
       "-print-heap",
       Arg.Unit(fun () -> printHeap := true),
       "print the final state of the heap";
@@ -44,7 +48,7 @@ let arguments () =
       "do not print the initial heap";
       "-no-parasite",
       Arg.Unit(fun () -> noParasite := true),
-      "do not run interpreter's code without being explicitely asked for.";
+      "do not run interpreter's code without being explicitely asked for";
     ]
     (fun s -> Format.eprintf "WARNING: Ignored argument %s.@." s)
     usage_msg

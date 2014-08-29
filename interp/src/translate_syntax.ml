@@ -131,8 +131,8 @@ let rec exp_to_exp exp : JsSyntax.expr =
       | If _
       | ForIn _
       | For _
-      | Switch _ 
-      | Block _ 
+      | Switch _
+      | Block _
       | Script _ -> raise Parser.InvalidArgument
 
 and exp_to_stat exp : JsSyntax.stat =
