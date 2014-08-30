@@ -160,11 +160,11 @@ and exp_to_stat exp : JsSyntax.stat =
       | New _
       | Obj _
       | Array _ 
-      | ConditionalOp _ -> JsSyntax.Coq_stat_expr (exp_to_exp exp)
+      | ConditionalOp _
+      | AnnonymousFun _ -> JsSyntax.Coq_stat_expr (exp_to_exp exp)
 
-      | AnnonymousFun _
       | NamedFun _ -> raise Parser.InvalidArgument
-         (* If a function appears in the middle of a statement, it shall not be interpreted as an expression function, but as a function declaration *)
+         (* If a named function appears in the middle of a statement, it shall not be interpreted as an expression function, but as a function declaration *)
          (* NOTE in spec p.86 *)
          (* ... It is recommended that ECMAScript implementations either disallow this usage of FunctionDeclaration or issue a warning *)
 
