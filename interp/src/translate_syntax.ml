@@ -244,8 +244,8 @@ let coq_syntax_from_main filename =
   let exp = (Parser_main.exp_from_main filename)() in
   exp_to_prog exp
 
-let coq_syntax_from_file filename =
-  let exp = Parser_main.exp_from_file filename in
+let coq_syntax_from_file ?init:(i = false) filename =
+  let exp = Parser_main.exp_from_file ~init:i filename in
   exp_to_prog exp
   
 let coq_syntax_from_string s =

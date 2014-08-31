@@ -245,10 +245,11 @@ parseStatement: true, parseSourceElement: true */
     // 7.6 Identifier Names and Identifiers
 
     function isIdentifierStart(ch) {
+        var can_percent = extra.builtin_init ? (ch === 0x25) : false; //for initialising builtins
         return (ch === 0x24) || (ch === 0x5F) ||  // $ (dollar) and _ (underscore)
             (ch >= 0x41 && ch <= 0x5A) ||         // A..Z
             (ch >= 0x61 && ch <= 0x7A) ||         // a..z
-            (ch === 0x5C) ||                      // \ (backslash)
+            (ch === 0x5C) || can_percent ||       // \ (backslash)
             ((ch >= 0x80) && Regex.NonAsciiIdentifierStart.test(String.fromCharCode(ch)));
     }
 
@@ -3677,6 +3678,7 @@ parseStatement: true, parseSourceElement: true */
 
         extra = {force_strict: false};
         if (typeof options !== 'undefined') {
+            extra.builtin_init = (typeof options.builtin_init === 'boolean') && options.builtin_init;
             extra.force_strict = (typeof options.force_strict === 'boolean') && options.force_strict;
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;

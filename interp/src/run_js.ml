@@ -93,7 +93,7 @@ let _ =
                     let els =
                         List.concat (List.map (fun f ->
                             let JsSyntax.Coq_prog_intro (_, el0) =
-                                Translate_syntax.coq_syntax_from_file f in
+                                Translate_syntax.coq_syntax_from_file ~init:true f in
                             el0) !test_prelude) in
                     JsSyntax.Coq_prog_intro (str, els @ el)
                   end
