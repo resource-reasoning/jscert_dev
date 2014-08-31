@@ -1967,7 +1967,8 @@ parseStatement: true, parseSourceElement: true */
     // Return true if provided expression is LeftHandSideExpression
 
     function isLeftHandSide(expr) {
-        return expr.type === Syntax.Identifier || expr.type === Syntax.MemberExpression;
+        return expr.type === Syntax.Identifier || expr.type === Syntax.MemberExpression 
+                             || expr.type === Syntax.Literal;
     }
 
     // 11.1.4 Array Initialiser
@@ -3535,7 +3536,7 @@ parseStatement: true, parseSourceElement: true */
         skipComment();
         peek();
         startToken = lookahead;
-        strict = false;
+        strict = extra.force_strict;
 
         body = parseSourceElements();
         return delegate.markEnd(delegate.createProgram(body), startToken);
@@ -3674,8 +3675,9 @@ parseStatement: true, parseSourceElement: true */
             lastCommentStart: -1
         };
 
-        extra = {};
+        extra = {force_strict: false};
         if (typeof options !== 'undefined') {
+            extra.force_strict = (typeof options.force_strict === 'boolean') && options.force_strict;
             extra.range = (typeof options.range === 'boolean') && options.range;
             extra.loc = (typeof options.loc === 'boolean') && options.loc;
             extra.attachComment = (typeof options.attachComment === 'boolean') && options.attachComment;
