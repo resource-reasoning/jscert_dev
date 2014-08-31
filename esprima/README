@@ -5,3 +5,4 @@ Esprima was reporting a literal on the LHS of an AssignmentExpression as an earl
 
 EXTENSIONS:
 force_strict argument added to allow correct parsing in strict mode eval
+builtin_init argument added to allow enhanced parsing when initialising builtins using V8
