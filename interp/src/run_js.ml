@@ -21,6 +21,8 @@ let string_to_list str = (* Does it already exists somewhere? *)
 
 let arguments () =
   let usage_msg="Usage: -jsparser <path> -file <path>" in
+  let version_fun=Arg.Unit(fun () -> print_endline Version.version; exit 0) in
+  let version_msg="print the interpreter version and exit" in
   Arg.parse
     [ "-json",
       Arg.Unit(fun () -> Parser_main.use_json := true),
@@ -50,7 +52,9 @@ let arguments () =
       "do not print the initial heap";
       "-no-parasite",
       Arg.Unit(fun () -> noParasite := true),
-      "do not run interpreter's code without being explicitely asked for";
+      "do not run interpreter's code without being explicitly asked for.";
+      "-version", version_fun, version_msg;
+      "--version", version_fun, version_msg;
     ]
     (fun s -> Format.eprintf "WARNING: Ignored argument %s.@." s)
     usage_msg
@@ -215,4 +219,3 @@ let _ =
   | Parser.ParserFailure file ->
     print_string ("\nParsing problem with the file `" ^ file ^ "'.") ;
     exit_if_test ()
-

@@ -241,13 +241,18 @@ interp/src/extract/.patched: interp/src/extract/JsInterpreter.ml.patched
 
 extract_interpreter: interp/src/extract/.patched
 
+# Generate a version number from git
+.PHONY: interp/src/version.ml
+interp/src/version.ml:
+	printf 'let version = "%s%s"' `git rev-parse --short HEAD` `if ! git diff-index --quiet HEAD; then echo -n "-dirty"; fi` > $@
+
 # .ml executables may be placed in a number of locations, tell make where to search for them
 vpath %.ml interp/src interp/top_level
 
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
-interp/%.byte: extract_interpreter %.ml
+interp/%.byte: extract_interpreter %.ml interp/src/version.ml
 	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
-interp/%.native: extract_interpreter %.ml
+interp/%.native: extract_interpreter %.ml interp/src/version.ml
 	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
 interp/%.cmo: %.ml
 	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
