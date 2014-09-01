@@ -98,7 +98,7 @@ FAST_VO=$(FAST_SRC:.v=.vo)
 #######################################################
 # EXTENSIONS
 
-.PHONY: all report depend clean
+.PHONY: all report depend clean interp/src/version.ml
 .SUFFIXES: .v .vo
 
 #######################################################
@@ -292,7 +292,16 @@ interp/src/prheap.cmo: interp/src/prheap.ml interp/src/extract/JsSyntax.cmo inte
 interp/src/print_syntax.cmx: interp/src/print_syntax.ml interp/src/extract/JsSyntax.cmx
 	$(OCAMLOPT) -c -I interp/src -I interp/src/extract -o $@ $<
 
-interp/src/run_js.cmx: interp/src/run_js.ml interp/src/extract/JsInterpreter.cmx
+interp/src/version.ml:
+	printf 'let version = "%s%s"' `git rev-parse --short HEAD` `if ! git diff-index --quiet HEAD; then echo -n "-dirty"; fi` > $@
+
+interp/src/version.cmx: interp/src/version.ml interp/src/version.cmi
+	$(OCAMLOPT) -c -I interp/src -o $@ $<
+
+interp/src/version.cmi: interp/src/version.mli
+	$(OCAMLOPT) -c -I interp/src -o $@ $<
+
+interp/src/run_js.cmx: interp/src/run_js.ml interp/src/version.cmx interp/src/extract/JsInterpreter.cmx
 	$(OCAMLOPT) -c -I interp/src -I interp/src/extract -I $(shell ocamlfind query xml-light) -o $@ $<
 
 interp/src/run_js.cmo: interp/src/run_js.ml interp/src/extract/JsInterpreter.cmo
@@ -303,7 +312,7 @@ interp/src/run_jsbisect.ml: interp/src/run_js.ml
 	perl -pe 's/JsInterpreter\./JsInterpreterBisect\./' $@ > $@.bak
 	mv $@.bak $@
 
-interp/src/run_jsbisect.cmx: interp/src/run_jsbisect.ml interp/src/extract/JsInterpreterBisect.cmx
+interp/src/run_jsbisect.cmx: interp/src/run_jsbisect.ml interp/src/version.cmx interp/src/extract/JsInterpreterBisect.cmx interp/src/extract/JsPreliminary.cmi
 	$(OCAMLOPT) -c -I interp/src -I interp/src/extract -I $(shell ocamlfind query xml-light) -o $@ $<
 
 interp/src/run_jsbisect.cmo: interp/src/run_jsbisect.ml interp/src/extract/JsInterpreterBisect.cmo
