@@ -1239,9 +1239,9 @@ Definition is_syntactic_eval e :=
     pass.  We thus have to change the semantics so that it take this into
     account. *)
 
-Axiom parse : string -> option prog -> Prop.
-Axiom parse_exists : forall s, exists oprog, parse s oprog.
-Axiom parse_pickable : forall s, Pickable (parse s).
+Axiom parse : string -> bool -> option prog -> Prop.
+Axiom parse_exists : forall s b, exists oprog, parse s b oprog.
+Axiom parse_pickable : forall s b, Pickable (parse s b).
 
 
 (**************************************************************)

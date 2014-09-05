@@ -2578,7 +2578,8 @@ Lemma run_eval_correct : forall runs S C (is_direct_call : bool) vs o,
   runs_type_correct runs ->
   run_eval runs S C is_direct_call vs = o ->
   red_expr S C (spec_call_global_eval is_direct_call vs) o.
-Proof.
+Proof. (*LATER: TODO: Fix proof! Conrad*)
+(*
   introv IH HR. unfolds in HR.
   lets (v&H&E): arguments_from_spec_1 vs. rewrites (rm E) in *.
   applys* red_spec_call_global_eval (rm H).
@@ -2586,8 +2587,8 @@ Proof.
    [| run_inv; applys* red_spec_call_global_eval_1_not_string; simpl; congruence].
   destruct p; run_inv;
      try (applys* red_spec_call_global_eval_1_not_string; simpl; congruence).
-  forwards* H: (pick_spec (P:=parse s)). applys parse_exists.
-  destruct (pick (parse s)).
+  forwards* H: (pick_spec (P:=parse s false)). applys parse_exists.
+  destruct (pick (parse s false)).
   applys* red_spec_call_global_eval_1_string_parse (rm H).
   applys* entering_eval_code_correct (rm HR). clear S C o.
   introv HR. run red_spec_call_global_eval_2.
@@ -2598,6 +2599,7 @@ Proof.
        applys* red_spec_call_global_eval_3_normal_value.
     run_inv. applys* red_spec_call_global_eval_3_throw.
   applys* red_spec_call_global_eval_1_string_not_parse.
+*)
 Admitted. (*faster*)
 
 Lemma run_list_expr_correct : forall runs S C es y,

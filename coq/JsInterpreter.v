@@ -1792,7 +1792,7 @@ Definition entering_eval_code runs S C direct bd K : result :=
 Definition run_eval runs S C (is_direct_call : bool) (vs : list value) : result := (* Corresponds to the rule [spec_call_global_eval] of the specification. *)
   match get_arg 0 vs with
   | prim_string s =>
-    match pick (parse s) with
+    match pick (parse s (is_direct_call && execution_ctx_strict C)) with
     | None =>
       run_error S native_error_syntax
     | Some p =>
