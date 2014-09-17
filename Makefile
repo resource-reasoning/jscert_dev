@@ -191,6 +191,10 @@ coq/JsInterpreterExtraction.vo: coq/JsInterpreterExtraction.v
 #######################################################
 # JsRef Interpreter Rules
 
+PARSER_PACKAGES=xml-light,yojson
+JS_OF_OCAML_LOCATION=$(shell ocamlfind query js_of_ocaml)
+
+
 # ; forces rule to be run, generates everything under extract dir
 interp/src/extract/%: coq/JsInterpreterExtraction.vo ;
 
@@ -220,7 +224,9 @@ extract_interpreter: interp/src/extract/.patched
 
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
 interp/%.native interp/%.byte: extract_interpreter interp/src/%.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind -cflags "-w -20" $(@F)
+	cd interp && $(OCAMLBUILD) -use-ocamlfind -pkgs ${PARSER_PACKAGES} \
+	-pp "camlp4o pa_macro.cmo -UTARGETJS" \
+	-cflags "-w -20" $(@F)
 
 .PRECIOUS: interp/%.native
 interp/%: interp/%.native
