@@ -49,7 +49,7 @@ INCLUDES=-I coq -I $(TLC) $(FLOCQ_INC)
 COQC=$(COQBIN)coqc $(INCLUDES)
 COQDEP=$(COQBIN)coqdep $(INCLUDES)
 JSOFOCAML=js_of_ocaml
-OCAMLBUILD=ocamlbuild
+OCAMLBUILD=ocamlbuild -verbose 1
 
 
 #######################################################
@@ -191,10 +191,6 @@ coq/JsInterpreterExtraction.vo: coq/JsInterpreterExtraction.v
 #######################################################
 # JsRef Interpreter Rules
 
-PARSER_PACKAGES=xml-light,yojson
-JS_OF_OCAML_LOCATION=$(shell ocamlfind query js_of_ocaml)
-
-
 # ; forces rule to be run, generates everything under extract dir
 interp/src/extract/%: coq/JsInterpreterExtraction.vo ;
 
@@ -224,8 +220,13 @@ extract_interpreter: interp/src/extract/.patched
 
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
 interp/%.native interp/%.byte: extract_interpreter interp/src/%.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind -pkgs ${PARSER_PACKAGES} \
-	-pp "camlp4o pa_macro.cmo -UTARGETJS" \
+	cd interp && $(OCAMLBUILD) -use-ocamlfind  \
+	-pp "camlp4of -UTARGETJS" \
+	-cflags "-w -20" $(@F)
+
+interp/%_targetjs.byte: extract_interpreter interp/src/%.ml
+	cd interp && $(OCAMLBUILD) -use-ocamlfind  \
+	-pp "camlp4of -DTARGETJS" \
 	-cflags "-w -20" $(@F)
 
 .PRECIOUS: interp/%.native
