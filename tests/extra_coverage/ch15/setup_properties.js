@@ -55,7 +55,7 @@ var ObjectIsSealed = Object.isSealed;
 var ObjectIsFrozen = Object.isFrozen;
 var ArrayProtoSlice = Array.prototype.slice.call;
 var ArrayProtoShift = Array.prototype.shift.call;
-var FunctionProtoApply = Function.prototype.apply;
+var FunctionProtoApply = Function.prototype.apply.call;
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
 
 var InternalArray = function(length) {this.length = length};
@@ -63,23 +63,10 @@ InternalArray.prototype = {push: Array.prototype.push, pop: Array.prototype.pop}
 
 function %_CallFunction() {
   var f = arguments[arguments.length - 1];
-  var has = ObjectGetOwnPropDesc(f, "apply") !== void(0);
-  var f_app;
-  if(has) {
-    f_app = f.apply;
-  }
-  try {
-    delete arguments[arguments.length - 1];
-    f.apply = FunctionProtoApply;
-    var args_array = ArrayProtoSlice(arguments);
-    var this_arg = ArrayProtoShift(args_array);
-    f.apply(arguments[0], args_array);
-  } finally {
-    delete f.apply;
-    if(has) {
-      f.apply = f_app;
-    }
-  }
+  delete arguments[arguments.length - 1];
+  var args_array = ArrayProtoSlice(arguments);
+  var this_arg = ArrayProtoShift(args_array);
+  FunctionProtoApply(f, arguments[0], args_array);
 }
 
 function MakeTypeError(arg1, arg2) {
@@ -271,20 +258,9 @@ IS_NULL_OR_UNDEFINED(x) {
 
 getFunction(name, f, length) {
   var ret_fun = (function() {
-    var has = ObjectGetOwnPropDesc(f, "apply") !== void(0);
-    var f_app;
-    if(has) {
-      f_app = f.apply;
-    }
-    try {
-      f.apply = FunctionProtoApply;
-      f.apply(this, arguments);
-    } finally {
-      delete f.apply;
-      if(has) {
-        f.apply = f_app;
-      }
-    }
+    var args_array = ArrayProtoSlice(arguments);
+    var this_arg = ArrayProtoShift(args_array);
+    FunctionProtoApply(f, this, args_array);
   });
   if(length !== undefined) {
     Object.defineProperty(ret_fun, "length", {value: length, writable: false, enumerable: false, configurable: false});
