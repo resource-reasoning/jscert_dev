@@ -885,6 +885,13 @@ Definition bool_proto_value_of_call S vthis : result :=
     | _ => run_error S native_error_type
     end).
 
+Fixpoint array_args_map_loop runs S C l args ind : result_void :=
+  (* last paragraph of 15.4.2.1 *)
+  match args with
+  | h :: rest => if_not_throw (object_define_own_prop runs S C l (JsNumber.to_string (JsNumber.of_int ind)) (attributes_data_intro_all_true h) throw_false) (fun S' _ => array_args_map_loop runs S' C l rest (ind + 1))
+  | nil => res_void S
+  end.
+
 Definition run_construct_prealloc runs S C B (args : list value) : result :=
   match B with
 
@@ -921,8 +928,24 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
     'let O := object_new prealloc_array_proto "Array" in
     'let p := object_alloc S O in
     let '(l, S') := p in
-    if_not_throw (object_define_own_prop runs S' C l "length" (attributes_data_intro JsNumber.zero true true true) throw_false) (fun S _ =>
+    'let follow := fun S'' length => if_not_throw (object_define_own_prop runs S'' C l "length" (attributes_data_intro (JsNumber.of_int length) true true true) throw_false) (fun S _ =>
       out_ter S l)
+    in
+    'let arg_len := length args in
+    ifb (arg_len = 1) then
+      'let v := get_arg 0 args in
+      match v with
+      | prim_number vlen =>
+          if_spec (to_uint32 runs S' C vlen) (fun S ilen =>
+            ifb ((JsNumber.of_int ilen) = vlen) then
+              follow S ilen
+            else
+              run_error S native_error_range)
+      | _ => if_not_throw (object_define_own_prop runs S' C l "0" (attributes_data_intro_all_true v) throw_false) (fun S _ =>
+      follow S 1)
+      end
+    else 
+      if_void (array_args_map_loop runs S' C l args 0) (fun S => follow S arg_len)
 
   | prealloc_string =>
     result_not_yet_implemented (* LATER:  Waiting for specification *)
