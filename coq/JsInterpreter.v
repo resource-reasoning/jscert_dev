@@ -361,7 +361,23 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
 
   if_some (run_object_method object_define_own_prop_ S l) (fun B =>
     match B with
-    | builtin_define_own_prop_default => default S throw
+    | builtin_define_own_prop_default => default S throw (* MARKERS *)
+    | builtin_define_own_prop_array =>
+      if_spec (runs_type_object_get_own_prop runs S C l "length") (fun S D =>
+        match D with
+        | full_descriptor_some Attr =>
+          (match Attr with
+          | attributes_data_of A =>
+            'let oldLen := attributes_data_value A in
+            (match x with
+            | "length" => result_not_yet_implemented (* Soon. Conrad *)
+            | _ => result_not_yet_implemented (* Soon. Conrad *)
+            end)
+          | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
+          end)
+        | _ =>
+          impossible_with_heap_because S "Array length property descriptor cannot be undefined."
+        end)
     | builtin_define_own_prop_args_obj =>
       if_some (run_object_method object_parameter_map_ S l) (fun lmapo =>
         if_some lmapo (fun lmap =>
@@ -888,7 +904,8 @@ Definition bool_proto_value_of_call S vthis : result :=
 Fixpoint array_args_map_loop runs S C l args ind : result_void :=
   (* last paragraph of 15.4.2.1 *)
   match args with
-  | h :: rest => if_not_throw (object_define_own_prop runs S C l (JsNumber.to_string (JsNumber.of_int ind)) (attributes_data_intro_all_true h) throw_false) (fun S' _ => array_args_map_loop runs S' C l rest (ind + 1))
+  | h :: rest => if_some (pick_option (object_set_property S l (JsNumber.to_string (JsNumber.of_int ind)) (attributes_data_intro_all_true h)))
+                   (fun S' => array_args_map_loop runs S' C l rest (ind + 1))
   | nil => res_void S
   end.
 
@@ -925,11 +942,11 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
       if_number (to_number runs S C v) follow
 
   | prealloc_array =>
-    'let O := object_new prealloc_array_proto "Array" in
+    'let O' := object_new prealloc_array_proto "Array" in
+    'let O := object_for_array O' builtin_define_own_prop_array in
     'let p := object_alloc S O in
     let '(l, S') := p in
-    'let follow := fun S'' length => if_not_throw (object_define_own_prop runs S'' C l "length" (attributes_data_intro (JsNumber.of_int length) true true true) throw_false) (fun S _ =>
-      out_ter S l)
+    'let follow := fun S'' length => if_some (pick_option (object_set_property S'' l "length" (attributes_data_intro (JsNumber.of_int length) true true true))) (fun S => res_ter S l)
     in
     'let arg_len := length args in
     ifb (arg_len = 1) then
@@ -941,11 +958,13 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
               follow S ilen
             else
               run_error S native_error_range)
-      | _ => if_not_throw (object_define_own_prop runs S' C l "0" (attributes_data_intro_all_true v) throw_false) (fun S _ =>
-      follow S 1)
+      | _ => if_some (pick_option (object_set_property S' l "0" (attributes_data_intro_all_true v))) (fun S =>
+        follow S 1)
       end
-    else 
-      if_void (array_args_map_loop runs S' C l args 0) (fun S => follow S arg_len)
+    else
+      if_some (pick_option (object_set_property S' l "length" (attributes_data_intro (JsNumber.of_int arg_len) true true true))) (fun S =>
+        if_void (array_args_map_loop runs S C l args 0) (fun S => res_ter S l))
+
 
   | prealloc_string =>
     result_not_yet_implemented (* LATER:  Waiting for specification *)

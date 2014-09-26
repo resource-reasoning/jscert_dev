@@ -1432,6 +1432,8 @@ Proof.
   destruct x0. (* LTAC ARTHUR:  This [x0] wasn't properly named. *)
     (* default *)
     applys* Def.
+    (* array *)
+    skip. (* LATER? Conrad *)
     (* arguments object *)
     run. forwards~ obpm: run_object_method_correct (rm E).
     run. subst. run~ red_spec_object_define_own_prop_args_obj.

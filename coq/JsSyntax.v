@@ -386,6 +386,7 @@ Inductive builtin_default_value :=
 
 Inductive builtin_define_own_prop :=
   | builtin_define_own_prop_default
+  | builtin_define_own_prop_array
   | builtin_define_own_prop_args_obj.
   (* LATER: string and array *)
 
