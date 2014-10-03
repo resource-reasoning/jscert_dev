@@ -283,7 +283,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
   'let reject := fun S throw =>
     out_error_or_cst S throw native_error_type false in
 
-  'let default := fun S throw =>
+  'let default := fun S x Desc throw =>
       if_spec (runs_type_object_get_own_prop runs S C l x) (fun S1 D =>
         if_some (run_object_method object_extensible_ S1 l) (fun ext =>
              match D, ext with
@@ -361,7 +361,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
 
   if_some (run_object_method object_define_own_prop_ S l) (fun B =>
     match B with
-    | builtin_define_own_prop_default => default S throw (* MARKERS *)
+    | builtin_define_own_prop_default => default S x Desc throw (* MARKERS *)
     | builtin_define_own_prop_array =>
       if_spec (runs_type_object_get_own_prop runs S C l "length") (fun S D =>
         match D with
@@ -371,18 +371,36 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
             'let oldLen := attributes_data_value A in
             (match x with
             | "length" => result_not_yet_implemented (* Soon. Conrad *)
-            | _ => result_not_yet_implemented (* Soon. Conrad *)
+            | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
+                       if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S x =>
+                         ifb ((str = x) /\ ilen <> 2147483647) then
+                           if_spec (to_uint32 runs S C x) (fun S index =>
+                             ifb (index >= oldLen /\ (not (attributes_data_writable A))) then
+                               reject S throw
+                             else
+                               if_bool (default S x Desc false) (fun S b =>
+                                 ifb (not b) then
+                                   reject S throw
+                                 else
+                                   ifb (index >= oldLen) then
+                                     res_spec S (descriptor_with_value Desc (Some (JsNumber.of_int index))) (fun S Desc =>
+                                       default S "length" Desc throw)
+                                   else
+                                     res_ter S true))
+                         else
+                           default S x Desc throw))
             end)
           | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
           end)
         | _ =>
           impossible_with_heap_because S "Array length property descriptor cannot be undefined."
         end)
+
     | builtin_define_own_prop_args_obj =>
       if_some (run_object_method object_parameter_map_ S l) (fun lmapo =>
         if_some lmapo (fun lmap =>
           if_spec (runs_type_object_get_own_prop runs S C lmap x) (fun S D =>
-            if_bool (default S false) (fun S b =>
+            if_bool (default S x Desc false) (fun S b =>
               if b then
                 'let follow := fun S => res_ter S true in
                 match D with
