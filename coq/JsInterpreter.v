@@ -383,7 +383,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
                                    reject S throw
                                  else
                                    ifb (index >= oldLen) then
-                                     res_spec S (descriptor_with_value Desc (Some (JsNumber.of_int index))) (fun S Desc =>
+                                     res_spec S (descriptor_with_value Desc (Some (JsNumber.of_int (index + 1)))) (fun S Desc =>
                                        default S "length" Desc throw)
                                    else
                                      res_ter S true))
