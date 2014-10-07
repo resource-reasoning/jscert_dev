@@ -104,7 +104,7 @@ function MakeTypeError(arg1, arg2) {
   return new TypeError();
 }
 
-function %isObserved() {
+function %IsObserved(arg1) {
   return false;
 }
 
@@ -188,9 +188,25 @@ function mod(n, d) {
   return div;
 }
 
+function abs(x) {
+  if(isNaN(x)) {
+    return NaN;
+  }
+  if(x === 0) {
+    return +0;
+  }
+  if(x === -Infinity) {
+    return +Infinity
+  }
+  if(x < 0) {
+    return -x;
+  }
+  return x;
+}
+
 function TO_UINT32(x) {
   var num = TO_NUMBER(x);
-  if(num === +0 || num === -0 || num === Infinity || num === -Infinity) {
+  if(num === +0 || num === -0 || num === +Infinity || num === -Infinity) {
     return +0;
   }
   var posInt = abs(num) - (abs(num) % 1);
@@ -214,6 +230,10 @@ function TO_INTEGER(x) {
   } else {
     return +(round_num)
   }
+}
+
+function TO_NUMBER(x) {
+  return Number(x);
 }
 
 function IS_NULL_OR_UNDEFINED(x) {
@@ -269,8 +289,9 @@ function %ArrayConcat(arrays) {
 }
 
 function %StringBuilderConcat(elements, length, separator) {
-  var ret = "";
-  for (var i = 0; i < length; i++) {
+  var first = elements[0];
+  var ret = (IS_NULL_OR_UNDEFINED(first)) ? '' : %ToString(first);
+  for (var i = 1; i < length; i++) {
     if(elements[i] !== void(0)) {
       ret = ret + separator + elements[i];
     }
@@ -279,14 +300,24 @@ function %StringBuilderConcat(elements, length, separator) {
 }
 
 function %StringBuilderJoin(elements, length, separator) {
-  var ret = "";
-  for (var i = 0; i < length; i++) {
+  var first = elements[0];
+  var ret = (IS_NULL_OR_UNDEFINED(first)) ? '' : %ToString(first);
+  for (var i = 1; i < length; i++) {
     ret = ret + separator
     if(elements[i] !== void(0)) {
       ret = ret + elements[i];
     }
   }
   return ret;
+}
+
+function %_IsSmi(length) {
+  //TODO: correct?
+  return true;
+}
+
+function %EstimateNumberOfElements(array) {
+  return array.length;
 }
 
 function %FunctionSetLength(f, len) {
@@ -423,7 +454,6 @@ function Join(array, length, separator, convert) {
     // visited arrays.
     if (!%PushIfAbsent(visited_arrays, array)) return '';
   }
-
   // Attempt to convert the elements.
   try {
     if (UseSparseVariant(array, length, is_array, length)) {
@@ -441,10 +471,8 @@ function Join(array, length, separator, convert) {
       if (IS_STRING(e)) return e;
       return convert(e);
     }
-
     // Construct an array for the elements.
     var elements = new InternalArray(length);
-
     // We pull the empty separator check outside the loop for speed!
     if (separator.length == 0) {
       var elements_length = 0;
@@ -480,7 +508,6 @@ function Join(array, length, separator, convert) {
     }
     var result = %_FastAsciiArrayJoin(elements, separator);
     if (!IS_UNDEFINED(result)) return result;
-
     return %StringBuilderJoin(elements, length, separator);
   } finally {
     // Make sure to remove the last element of the visited array no

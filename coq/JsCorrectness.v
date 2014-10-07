@@ -3390,7 +3390,7 @@ Proof.
   (* prealloc_global_parse_int *)
   discriminate.
   (* prealloc_object *)
-  discriminate.
+  skip. (* LATER? - Conrad *)
   (* prealloc_object_get_proto_of *)
   skip. (* LATER *)
   (* prealloc_object_get_own_prop_descriptor *)

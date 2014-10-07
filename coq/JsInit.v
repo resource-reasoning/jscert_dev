@@ -383,7 +383,7 @@ Definition array_proto_push_function_object :=
 Definition object_prealloc_string :=
   let P := Heap.empty in
   let P := write_constant P "prototype" prealloc_string_proto in
-  object_create_prealloc_constructor prealloc_function 1 P.
+  object_create_prealloc_constructor prealloc_string 1 P.
 (* LATER *)
 
 (**************************************************************)

@@ -2324,6 +2324,18 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
       res_ter S0 (neg
         (decide (n = JsNumber.nan \/ n = JsNumber.infinity \/ n = JsNumber.neg_infinity))))
 
+  | prealloc_object =>
+    'let arg_len := length args in
+    ifb (arg_len = 0) then
+      run_construct_prealloc runs S C B args
+    else
+      'let value := get_arg 0 args in
+      match value with
+      | prim_null
+      | prim_undef => run_construct_prealloc runs S C B args
+      | _ => to_object S value
+      end
+
   | prealloc_object_get_proto_of =>
     match get_arg 0 args with
     | value_object l =>
@@ -2577,6 +2589,14 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
         | _::argList => runs_type_call runs S C func thisArg argList
         end
       end
+
+  | prealloc_string =>
+    'let arg_len := length args in
+    ifb (arg_len = 0) then res_ter S ""
+    else       
+      'let value := get_arg 0 args in
+      if_string (to_string runs S C value) (fun S s =>
+        res_ter S s)
 
   | prealloc_string_proto_to_string
   | prealloc_string_proto_value_of =>
