@@ -370,8 +370,8 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
           | attributes_data_of A =>
             'let oldLen := attributes_data_value A in
             (match x with
-            | "length" => result_not_yet_implemented (* Soon. Conrad *)
-            | _ => result_not_yet_implemented (* Soon. Conrad *)
+            | "length" => default S throw (* Soon. Conrad *)
+            | _ => default S throw (* Soon. Conrad *)
             end)
           | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
           end)
@@ -2627,6 +2627,9 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
 
   | prealloc_throw_type_error =>
     run_error S native_error_type
+
+  | prealloc_array =>
+    run_construct_prealloc runs S C B args
 
   | prealloc_array_proto_pop =>
     if_object (to_object S vthis) (fun S l =>
