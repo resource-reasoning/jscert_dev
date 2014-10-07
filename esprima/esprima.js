@@ -2476,6 +2476,9 @@ parseStatement: true, parseSourceElement: true */
 
         token = lookahead;
         prec = binaryPrecedence(token, state.allowIn);
+        if(extra.builtin_init && lookahead.value === '%') { //ugly workaround - Conrad
+          prec = 11;
+        }
         if (prec === 0) {
             return left;
         }

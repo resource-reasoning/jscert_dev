@@ -2286,6 +2286,17 @@ Definition run_prog runs S C p : result :=
 
 (**************************************************************)
 
+Fixpoint apply_arg_loop runs S C argArray ilen argList (rem:nat): specres (list value) :=
+  (* 15.3.4.3_8 loop *)
+  'let index := ilen - rem in
+  match rem with
+  | O => res_spec S (rev argList)
+  | S rem' =>
+    if_string (to_string runs S C (JsNumber.of_int index)) (fun S indexName =>
+      if_value (run_object_get runs S C argArray indexName) (fun S nextArg =>
+        apply_arg_loop runs S C argArray ilen (nextArg :: argList) rem'))
+  end.
+
 Fixpoint push runs S C l args ilen: result :=
   (* Corresponds to the construction [spec_call_array_proto_push_3] of the specification. *)
   'let vlen := JsNumber.of_int ilen
@@ -2529,6 +2540,43 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
 
   | prealloc_function_proto =>
     out_ter S undef
+
+  | prealloc_function_proto_apply =>
+    ifb ~ (is_callable S vthis) then 
+      run_error S native_error_type
+    else
+      match vthis with
+      | value_prim _ =>
+        impossible_with_heap_because S "vthis determined callable but is primitive!"
+      | value_object func =>
+        let thisArg := get_arg 0 args in
+        let argArray := get_arg 1 args in
+        match argArray with
+        | null
+        | undef => runs_type_call runs S C func thisArg nil
+        | value_prim _ => run_error S native_error_type
+        | value_object l => 
+          if_value (run_object_get runs S C l "length") (fun S vlen =>
+            if_spec (to_uint32 runs S C vlen) (fun S ilen =>
+              if_spec (apply_arg_loop runs S C l ilen nil (Z.to_nat ilen)) (fun S argList =>
+                runs_type_call runs S C func thisArg argList)))
+        end
+      end
+
+  | prealloc_function_proto_call =>
+    ifb ~ (is_callable S vthis) then 
+      run_error S native_error_type
+    else
+      match vthis with
+      | value_prim _ =>
+        impossible_with_heap_because S "vthis determined callable but is primitive!"
+      | value_object func =>
+        let thisArg := get_arg 0 args in
+        match args with
+        | nil => runs_type_call runs S C func thisArg nil
+        | _::argList => runs_type_call runs S C func thisArg argList
+        end
+      end
 
   | prealloc_string_proto_to_string
   | prealloc_string_proto_value_of =>

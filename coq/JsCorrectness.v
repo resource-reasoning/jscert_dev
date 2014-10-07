@@ -3445,7 +3445,9 @@ Proof.
   (* prealloc_function_proto_to_string *)
   discriminate.
   (* prealloc_function_proto_apply *)
-  discriminate.
+  skip. (* LATER? Conrad *)
+  (* prealloc_function_proto_call *)
+  skip. (* LATER? Conrad *)
   (* prealloc_function_proto_bind *)
   discriminate.
   (* prealloc_bool *)
