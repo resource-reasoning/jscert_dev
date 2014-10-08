@@ -62,6 +62,7 @@ function SetUpLockedPrototype(constructor, fields, methods) {
   prototype.prototype = null;
 }
 
+var DEBUG_IS_ACTIVE = false;
 var READ_ONLY = 1;
 var DONT_ENUM = 2;
 var DONT_DELETE = 4;
@@ -78,10 +79,10 @@ var ArgsToArray = function(args_obj) {
   return ret;
 };
 
-var FunctionProtoApply = Function.prototype.apply.call;
+//var FunctionProtoApply = Function.prototype.call.bind(Function.prototype.apply);
 
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
-var InternalArray = function(length) {this.length = length};
+var InternalArray = function(length) {this.length = length || 0};
 var InternalPackedArray = function(length) {this.length = length};
 InternalArray.prototype = {push: Array.prototype.push, pop: Array.prototype.pop};
 InternalPackedArray.prototype = {push: Array.prototype.push, pop: Array.prototype.pop};
@@ -96,8 +97,11 @@ function %_CallFunction() {
   var i = 1;
   while(i < arguments.length - 1) {
     args_array[i - 1] = arguments[i];
+    i++;
   }
-  FunctionProtoApply(f, this_v, args_array);
+//  FunctionProtoApply(f, this_v, args_array);
+
+  return Function.prototype.apply.call(f, this_v, args_array);
 }
 
 function MakeTypeError(arg1, arg2) {
@@ -144,6 +148,10 @@ function %ToString(x) {
   return String(x);
 }
 
+function ToString(x) {
+  return String(x);
+}
+
 function CHECK_OBJECT_COERCIBLE(arg1, arg2) {
   return;
 }
@@ -177,6 +185,10 @@ function IS_BOOLEAN(x) {
 
 function IS_ARRAY(x) { // TODO: BROKEN????
   return x instanceof $Array;
+}
+
+function %IsSloppyModeFunction(arg1) {
+  return false;
 }
 
 function mod(n, d) {
@@ -214,6 +226,10 @@ function TO_UINT32(x) {
     posInt = -(round_num);
   }
   return mod(posInt, 4294967296);
+}
+
+function ToUint32(x) {
+  return TO_UINT32(x);
 }
 
 function TO_INTEGER(x) {
@@ -266,7 +282,7 @@ function %ArrayConcat(arrays) {
   var A = new $Array();
   var n = 0;
   var E;
-  var count = 0;
+  var count = 0;    
   while(count < arrays.length) {
     E = arrays[count];
     count++;
@@ -311,6 +327,14 @@ function %StringBuilderJoin(elements, length, separator) {
   return ret;
 }
 
+function %GetPrototype(arg1) {
+  return {};
+}
+
+function %RemoveArrayHoles(arg1, arg2) {
+  return -1;
+}
+
 function %_IsSmi(length) {
   //TODO: correct?
   return true;
@@ -318,6 +342,28 @@ function %_IsSmi(length) {
 
 function %EstimateNumberOfElements(array) {
   return array.length;
+}
+
+function %GetArrayKeys(array, len) {
+  return len;
+}
+
+function %SmiLexicographicCompare(x, y) {
+  x = ToString(x);
+  y = ToString(y);
+  if (x == y) {
+    return 0;
+  } else {
+    return x < y ? -1 : 1;
+  }
+}
+
+function IS_SPEC_FUNCTION(f) {
+  return typeof(f) == "function";
+}
+
+function %GetDefaultReceiver(f) {
+  return void(0);
 }
 
 function %FunctionSetLength(f, len) {
@@ -574,6 +620,7 @@ function SmartMove(array, start_i, del_count, len, num_additional_args) {
   // Move data to new array.
   var new_array = new InternalArray(len - del_count + num_additional_args);
   var indices = %GetArrayKeys(array, len);
+  var new_array = new InternalArray(len - del_count + num_additional_args);
   if (IS_NUMBER(indices)) {
     var limit = indices;
     for (var i = 0; i < start_i && i < limit; ++i) {
@@ -743,12 +790,12 @@ function ArrayPop() {
 
 function ObservedArrayPush() {
   var n = TO_UINT32(this.length);
-  var m = %_ArgumentsLength();
+  var m = arguments.length;
 
   try {
     BeginPerformSplice(this);
     for (var i = 0; i < m; i++) {
-      this[i+n] = %_Arguments(i);
+      this[i+n] = arguments[i];
     }
     var new_length = n + m;
     this.length = new_length;
@@ -770,10 +817,10 @@ function ArrayPush() {
 
   var array = TO_OBJECT_INLINE(this);
   var n = TO_UINT32(array.length);
-  var m = %_ArgumentsLength();
+  var m = arguments.length;
 
   for (var i = 0; i < m; i++) {
-    array[i+n] = %_Arguments(i);
+    array[i+n] = arguments[i];
   }
 
   var new_length = n + m;
@@ -789,11 +836,11 @@ function ArrayConcatJS(arg1) {  // length == 1
   CHECK_OBJECT_COERCIBLE(this, "Array.prototype.concat");
 
   var array = ToObject(this);
-  var arg_count = %_ArgumentsLength();
+  var arg_count = arguments.length;
   var arrays = new InternalArray(1 + arg_count);
   arrays[0] = array;
   for (var i = 0; i < arg_count; i++) {
-    arrays[i + 1] = %_Arguments(i);
+    arrays[i + 1] = arguments[i];
   }
 
   return %ArrayConcat(arrays);
@@ -912,13 +959,13 @@ function ArrayShift() {
 
 function ObservedArrayUnshift() {
   var len = TO_UINT32(this.length);
-  var num_arguments = %_ArgumentsLength();
+  var num_arguments = arguments.length;
 
   try {
     BeginPerformSplice(this);
     SimpleMove(this, 0, 0, len, num_arguments);
     for (var i = 0; i < num_arguments; i++) {
-      this[i] = %_Arguments(i);
+      this[i] = arguments[i];
     }
     var new_length = len + num_arguments;
     this.length = new_length;
@@ -938,7 +985,7 @@ function ArrayUnshift(arg1) {  // length == 1
 
   var array = TO_OBJECT_INLINE(this);
   var len = TO_UINT32(array.length);
-  var num_arguments = %_ArgumentsLength();
+  var num_arguments = arguments.length;
   var is_sealed = ObjectIsSealed(array);
 
   if (IS_ARRAY(array) && !is_sealed && len > 0) {
@@ -948,7 +995,7 @@ function ArrayUnshift(arg1) {  // length == 1
   }
 
   for (var i = 0; i < num_arguments; i++) {
-    array[i] = %_Arguments(i);
+    array[i] = arguments[i];
   }
 
   var new_length = len + num_arguments;
@@ -1031,7 +1078,7 @@ function ComputeSpliceDeleteCount(delete_count, num_arguments, len, start_i) {
 
 
 function ObservedArraySplice(start, delete_count) {
-  var num_arguments = %_ArgumentsLength();
+  var num_arguments = arguments.length;
   var len = TO_UINT32(this.length);
   var start_i = ComputeSpliceStartIndex(TO_INTEGER(start), len);
   var del_count = ComputeSpliceDeleteCount(delete_count, num_arguments, len,
@@ -1050,9 +1097,9 @@ function ObservedArraySplice(start, delete_count) {
     // place of the deleted elements.
     var i = start_i;
     var arguments_index = 2;
-    var arguments_length = %_ArgumentsLength();
+    var arguments_length = arguments.length;
     while (arguments_index < arguments_length) {
-      this[i++] = %_Arguments(arguments_index++);
+      this[i++] = arguments[arguments_index++];
     }
     this.length = len - del_count + num_elements_to_add;
 
@@ -1077,7 +1124,7 @@ function ArraySplice(start, delete_count) {
   if (%IsObserved(this))
     return ObservedArraySplice.apply(this, arguments);
 
-  var num_arguments = %_ArgumentsLength();
+  var num_arguments = arguments.length;
   var array = TO_OBJECT_INLINE(this);
   var len = TO_UINT32(array.length);
   var start_i = ComputeSpliceStartIndex(TO_INTEGER(start), len);
@@ -1113,9 +1160,9 @@ function ArraySplice(start, delete_count) {
   // place of the deleted elements.
   var i = start_i;
   var arguments_index = 2;
-  var arguments_length = %_ArgumentsLength();
+  var arguments_length = arguments.length;
   while (arguments_index < arguments_length) {
-    array[i++] = %_Arguments(arguments_index++);
+    array[i++] = arguments[arguments_index++];
   }
   array.length = len - del_count + num_elements_to_add;
 
@@ -1374,7 +1421,7 @@ function ArraySort(comparefn) {
 
   var length = TO_UINT32(this.length);
   if (length < 2) return this;
-
+  
   var is_array = IS_ARRAY(this);
   var max_prototype_element;
   if (!is_array) {
@@ -1415,6 +1462,7 @@ function ArraySort(comparefn) {
 // preserving the semantics, since the calls to the receiver function can add
 // or delete elements from the array.
 function ArrayFilter(f, receiver) {
+
   CHECK_OBJECT_COERCIBLE(this, "Array.prototype.filter");
 
   // Pull out the length so that modifications to the length in the
@@ -1466,7 +1514,6 @@ function ArrayForEach(f, receiver) {
   } else if (!IS_SPEC_OBJECT(receiver) && %IsSloppyModeFunction(f)) {
     receiver = ToObject(receiver);
   }
-
   var stepping = DEBUG_IS_ACTIVE && %DebugCallbackSupportsStepping(f);
   for (var i = 0; i < length; i++) {
     if (i in array) {
@@ -1635,7 +1682,7 @@ function ArrayLastIndexOf(element, index) {
 
   var length = TO_UINT32(this.length);
   if (length == 0) return -1;
-  if (%_ArgumentsLength() < 2) {
+  if (arguments.length < 2) {
     index = length - 1;
   } else {
     index = TO_INTEGER(index);
@@ -1696,7 +1743,7 @@ function ArrayReduce(callback, current) {
   }
 
   var i = 0;
-  find_initial: if (%_ArgumentsLength() < 2) {
+  find_initial: if (arguments.length < 2) {
     for (; i < length; i++) {
       current = array[i];
       if (!IS_UNDEFINED(current) || i in array) {
@@ -1733,7 +1780,7 @@ function ArrayReduceRight(callback, current) {
   }
 
   var i = length - 1;
-  find_initial: if (%_ArgumentsLength() < 2) {
+  find_initial: if (arguments.length < 2) {
     for (; i >= 0; i--) {
       current = array[i];
       if (!IS_UNDEFINED(current) || i in array) {
