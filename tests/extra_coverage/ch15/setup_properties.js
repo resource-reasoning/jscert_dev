@@ -382,7 +382,7 @@ function %CheckIsBootstrapping() {
 function SetUpArray() {
   return;
 }
-
+(function(){
 //********************************************************************
 //**ARRAY.JS
 // Copyright 2012 the V8 project authors. All rights reserved.
@@ -1892,4 +1892,5 @@ function SetUpArray() {
 SetUpArray();
 //**/ARRAY.JS
 //********************************************************************
+})();
 })();
