@@ -120,7 +120,12 @@ tags: $(JS_SRC)
         coq extract_interpreter interpreter \
         local clean clean_interp clean_all nofast \
         run_tests run_tests_spidermonkey run_tests_lambdaS5 \
-        run_tests_nodejs
+        run_tests_nodejs install_depend
+
+#######################################################
+# EXTERNAL OCAML DEPENDENCIES
+install_depend:
+	opam install -y coq xml-light ocamlfind
 
 #######################################################
 # EXTERNAL LIBRARIES: TLC and Flocq
@@ -144,7 +149,8 @@ flocq: $(FLOCQ_VO)
 %.v.d: %.v
 	$(COQDEP) $< > $@
 
-%.vo:
+# If this rule fails for some reason, try `make clean_all && make`
+%.vo: %.v
 	$(COQC) -dont-load-proofs $<
 
 #######################################################
@@ -321,7 +327,7 @@ local:
 #######################################################
 
 
-ifeq ($(filter init clean%,$(MAKECMDGOALS)),)
+ifeq ($(filter init clean% install_depend,$(MAKECMDGOALS)),)
 -include $(JS_SRC:.v=.v.d)
 -include $(TLC_SRC:.v=.v.d)
 -include $(FLOCQ_SRC:.v=.v.d)
