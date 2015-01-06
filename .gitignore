@@ -30,3 +30,4 @@ trace.log
 /interp/run_js.byte
 /interp/run_js.js
 
+*_targetjs.js

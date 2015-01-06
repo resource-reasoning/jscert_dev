@@ -220,13 +220,7 @@ extract_interpreter: interp/src/extract/.patched
 
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
 interp/%.native interp/%.byte: extract_interpreter interp/src/%.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind  \
-	-pp "camlp4of -UTARGETJS" \
-	-cflags "-w -20" $(@F)
-
-interp/%_targetjs.byte: extract_interpreter interp/src/%.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind  \
-	-pp "camlp4of -DTARGETJS" \
+	cd interp && $(OCAMLBUILD) -use-ocamlfind \
 	-cflags "-w -20" $(@F)
 
 .PRECIOUS: interp/%.native
@@ -236,19 +230,20 @@ interp/%: interp/%.native
 interpreter: interp/run_js
 
 #######################################################
-# Interpreter run helpers
+# TargetJS interpreter variant
+interp/src/%_targetjs.ml: interp/src/%.ml
+	cp $< $@
 
-run_tests: interpreter
-	./runtests.py --no_parasite
+interp/%_targetjs.byte: extract_interpreter interp/src/%_targetjs.ml
+	cd interp && $(OCAMLBUILD) -use-ocamlfind  \
+	-pp "camlp4of -DTARGETJS" \
+	-cflags "-w -20" $(@F)
 
-run_tests_spidermonkey:
-	./runtests.py --spidermonkey --interp_path $(SPIDERMONKEY)
+interp/%_targetjs.js: interp/%_targetjs.byte
+	$(JSOFOCAML) -o $@ $<
 
-run_tests_lambdaS5:
-	./runtests.py --lambdaS5 --interp_path $(LAMBDAS5)
-
-run_tests_nodejs:
-	./runtests.py --nodejs --interp_path $(NODEJS)
+.PHONY: targetjs
+targetjs: interp/run_js_targetjs.js
 
 #######################################################
 # JSRef Bisect Mode
@@ -259,22 +254,8 @@ interp/src/extract/JsInterpreterBisect.ml: interp/src/extract/JsInterpreter.ml e
 interp/src/run_jsbisect.ml: interp/src/run_js.ml
 	perl -pe 's/JsInterpreter\./JsInterpreterBisect\./' $< > $@
 
-
-# interp/run_js: ${basicfiles} interp/src/extract/JsInterpreter.cmx interp/src/run_js.cmx
-# 	$(OCAMLOPT) $(PARSER_INC) -o interp/run_js xml-light.cmxa unix.cmxa str.cmxa $^
-
-# interp/run_js.byte: ${basicbytefiles} interp/src/extract/JsInterpreter.cmo interp/src/run_js.cmo
-# 	$(OCAMLC) $(PARSER_INC) -o interp/run_js.byte xml-light.cma unix.cma str.cma $^
-
-# interp/run_js.js: interp/run_js.byte
-# 	$(JSOFOCAML) -o interp/run_js.js interp/run_js.byte
-
-# interp/run_jsbisect: ${basicfiles} interp/src/extract/JsInterpreterBisect.cmx interp/src/run_jsbisect.cmx
-# 	ocamlfind $(OCAMLOPT) -package bisect $(PARSER_INC) -o interp/run_jsbisect xml-light.cmxa unix.cmxa str.cmxa bisect.cmxa $^
-
 interp/run_jsbisect.native: interp/src/run_jsbisect.ml \
                             interp/src/extract/JsInterpreterBisect.ml
-
 
 # interp/run_jsbisect is an implicit rule
 
@@ -293,6 +274,21 @@ interp/src/run_jstrace.ml: interp/src/run_js.ml
 interp/run_jstrace.native: interp/src/run_jstrace.ml interp/src/extract/JsInterpreterTrace.ml interp/tracer/annotml/ppx_lines.native
 
 # interp/run_jstrace is an implicit rule
+
+#######################################################
+# Interpreter run helpers
+
+run_tests: interpreter
+	./runtests.py --no_parasite
+
+run_tests_spidermonkey:
+	./runtests.py --spidermonkey --interp_path $(SPIDERMONKEY)
+
+run_tests_lambdaS5:
+	./runtests.py --lambdaS5 --interp_path $(LAMBDAS5)
+
+run_tests_nodejs:
+	./runtests.py --nodejs --interp_path $(NODEJS)
 
 #######################################################
 # CLEAN
