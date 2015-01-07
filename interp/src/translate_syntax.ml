@@ -71,6 +71,9 @@ let exp_to_literal exp : JsSyntax.literal =
 
 let rec exp_to_exp exp : JsSyntax.expr =
   let f = exp_to_exp in 
+  let string_to_coq_op e = match e with 
+    | None -> None
+    | Some e -> Some (string_to_coq e) in
   match exp.exp_stx with
       (* Literals *)
       | Num _
@@ -91,8 +94,8 @@ let rec exp_to_exp exp : JsSyntax.expr =
       | Comma (e1, e2) -> JsSyntax.Coq_expr_binary_op (f e1, JsSyntax.Coq_binary_op_coma, f e2)
       | Call (e1, e2s) -> JsSyntax.Coq_expr_call (f e1, map (fun e2 -> f e2) e2s)
       | New (e1, e2s) -> JsSyntax.Coq_expr_new (f e1, map (fun e2 -> f e2) e2s)
-      | AnnonymousFun (s, vs, e) -> JsSyntax.Coq_expr_function (None, (map string_to_coq vs), exp_to_funcbody e s)
-      | NamedFun (s, n, vs, e) -> JsSyntax.Coq_expr_function (Some (string_to_coq n), (map string_to_coq vs), exp_to_funcbody e s)
+      | FunctionExp (s, n, vs, e) -> JsSyntax.Coq_expr_function ((string_to_coq_op n), (map string_to_coq vs), exp_to_funcbody e s)
+      | Function (s, n, vs, e) -> JsSyntax.Coq_expr_function ((string_to_coq_op n), (map string_to_coq vs), exp_to_funcbody e s)
       | Obj xs -> JsSyntax.Coq_expr_object (map (fun (pn,p,e) -> 
         (match pn with 
           | PropnameId id -> JsSyntax.Coq_propname_identifier (string_to_coq id)
@@ -103,12 +106,14 @@ let rec exp_to_exp exp : JsSyntax.expr =
           | PropbodyVal -> JsSyntax.Coq_propbody_val (f e)
           | PropbodyGet -> 
             begin match e.exp_stx with 
-              | AnnonymousFun (s, vs, e) -> JsSyntax.Coq_propbody_get (exp_to_funcbody e s) 
+              | FunctionExp (s, None, vs, e) -> JsSyntax.Coq_propbody_get (exp_to_funcbody e s)
+              | Function (s, None, vs, e) -> JsSyntax.Coq_propbody_get (exp_to_funcbody e s) 
               | _ -> raise Parser.InvalidArgument
             end
           | PropbodySet ->
             begin match e.exp_stx with
-              | AnnonymousFun (s, vs, e) -> JsSyntax.Coq_propbody_set (map string_to_coq vs, exp_to_funcbody e s) 
+              | FunctionExp (s, None, vs, e) -> JsSyntax.Coq_propbody_set (map string_to_coq vs, exp_to_funcbody e s) 
+              | Function (s, None, vs, e) -> JsSyntax.Coq_propbody_set (map string_to_coq vs, exp_to_funcbody e s) 
               | _ -> raise Parser.InvalidArgument
             end) 
         ) xs)
@@ -161,10 +166,10 @@ and exp_to_stat exp : JsSyntax.stat =
       | Obj _
       | Array _ 
       | ConditionalOp _
-      | AnnonymousFun _ -> JsSyntax.Coq_stat_expr (exp_to_exp exp)
+      | FunctionExp _ -> JsSyntax.Coq_stat_expr (exp_to_exp exp)
 
-      | NamedFun _ -> raise Parser.InvalidArgument
-         (* If a named function appears in the middle of a statement, it shall not be interpreted as an expression function, but as a function declaration *)
+      | Function _ -> raise Parser.InvalidArgument
+         (* If a function appears in the middle of a statement, it shall not be interpreted as an expression function, but as a function declaration *)
          (* NOTE in spec p.86 *)
          (* ... It is recommended that ECMAScript implementations either disallow this usage of FunctionDeclaration or issue a warning *)
 
@@ -231,7 +236,8 @@ and exp_to_prog exp : JsSyntax.prog =
 and exp_to_elem exp : JsSyntax.element = 
     let tos = string_to_coq in
     match exp.exp_stx with
-      | NamedFun (s, name, args, body) -> JsSyntax.Coq_element_func_decl (tos name, map tos args, exp_to_funcbody body s)
+      | FunctionExp (s, (Some name), args, body) -> JsSyntax.Coq_element_func_decl (tos name, map tos args, exp_to_funcbody body s)
+      | Function (s, (Some name), args, body) -> JsSyntax.Coq_element_func_decl (tos name, map tos args, exp_to_funcbody body s)
       | _ -> JsSyntax.Coq_element_stat (exp_to_stat exp)
 
 and exp_to_funcbody exp strict : JsSyntax.funcbody =
