@@ -238,6 +238,72 @@ Definition object_proto_is_prototype_of runs S l0 l : result :=
       impossible_with_heap_because S "[run_object_method] returned a primitive in [object_proto_is_prototype_of_body]."
     end).
 
+(**************************************************************)
+(** Conversions *)
+
+Definition object_default_value runs S C l (prefo : option preftype) : result :=
+  if_some (run_object_method object_default_value_ S l) (fun B =>
+    match B with
+
+    | builtin_default_value_default =>
+      let gpref := unsome_default preftype_number prefo in
+      let lpref := other_preftypes gpref in
+      'let sub := fun S' x (K:state->result) =>
+        (if_value (run_object_get runs S' C l x) (fun S1 vfo =>
+          if_some (run_callable S1 vfo) (fun co =>
+            match co with
+            | Some B =>
+              if_object (out_ter S1 vfo) (fun S2 lfunc =>
+                if_value (runs_type_call runs S2 C lfunc l nil) (fun S3 v =>
+                  match v return result with
+                  | value_prim w => out_ter S3 w
+                  | value_object l => K S3
+                  end))
+            | None => K S1
+            end))) in
+      'let gmeth := method_of_preftype gpref in
+      sub S gmeth (fun S' =>
+        let lmeth := method_of_preftype lpref in
+        sub S' lmeth (fun S'' => run_error S'' native_error_type))
+
+    end).
+
+Definition to_primitive runs S C v (prefo : option preftype) : result :=
+  match v with
+  | value_prim w => out_ter S w
+  | value_object l =>
+    if_prim (object_default_value runs S C l prefo) res_ter
+  end.
+
+Definition to_number runs S C v : result :=
+  match v with
+  | value_prim w =>
+    out_ter S (convert_prim_to_number w)
+  | value_object l =>
+    if_prim (to_primitive runs S C l (Some preftype_number)) (fun S1 w =>
+      res_ter S1 (convert_prim_to_number w))
+  end.
+
+Definition to_integer runs S C v : result :=
+  if_number (to_number runs S C v) (fun S1 n =>
+    res_ter S1 (convert_number_to_integer n)).
+
+Definition to_int32 runs S C v : specres int :=
+  if_number (to_number runs S C v) (fun S' n =>
+    res_spec S' (JsNumber.to_int32 n)).
+
+Definition to_uint32 runs S C v : specres int :=
+  if_number (to_number runs S C v) (fun S' n =>
+    res_spec S' (JsNumber.to_uint32 n)).
+
+Definition to_string runs S C v : result :=
+  match v with
+  | value_prim w =>
+    out_ter S (convert_prim_to_string w)
+  | value_object l =>
+    if_prim (to_primitive runs S C l (Some preftype_string)) (fun S1 w =>
+      res_ter S1 (convert_prim_to_string w))
+  end.
 
 (**************************************************************)
 (** Object Set *)
@@ -283,7 +349,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
   'let reject := fun S throw =>
     out_error_or_cst S throw native_error_type false in
 
-  'let default := fun S throw =>
+  'let default := fun S x Desc throw =>
       if_spec (runs_type_object_get_own_prop runs S C l x) (fun S1 D =>
         if_some (run_object_method object_extensible_ S1 l) (fun ext =>
              match D, ext with
@@ -361,7 +427,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
 
   if_some (run_object_method object_define_own_prop_ S l) (fun B =>
     match B with
-    | builtin_define_own_prop_default => default S throw (* MARKERS *)
+    | builtin_define_own_prop_default => default S x Desc throw (* MARKERS *)
     | builtin_define_own_prop_array =>
       if_spec (runs_type_object_get_own_prop runs S C l "length") (fun S D =>
         match D with
@@ -370,19 +436,37 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
           | attributes_data_of A =>
             'let oldLen := attributes_data_value A in
             (match x with
-            | "length" => default S throw (* Soon. Conrad *)
-            | _ => default S throw (* Soon. Conrad *)
+            | "length" => result_not_yet_implemented (* Soon. Conrad *)
+            | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
+                       if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S x =>
+                         ifb ((str = x) /\ ilen <> 2147483647) then
+                           if_spec (to_uint32 runs S C x) (fun S index =>
+                             ifb (index >= oldLen /\ (not (attributes_data_writable A))) then
+                               reject S throw
+                             else
+                               if_bool (default S x Desc false) (fun S b =>
+                                 ifb (not b) then
+                                   reject S throw
+                                 else
+                                   ifb (index >= oldLen) then
+                                     res_spec S (descriptor_with_value Desc (Some (JsNumber.of_int (index + 1)))) (fun S Desc =>
+                                       default S "length" Desc throw)
+                                   else
+                                     res_ter S true))
+                         else
+                           default S x Desc throw))
             end)
           | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
           end)
         | _ =>
           impossible_with_heap_because S "Array length property descriptor cannot be undefined."
         end)
+
     | builtin_define_own_prop_args_obj =>
       if_some (run_object_method object_parameter_map_ S l) (fun lmapo =>
         if_some lmapo (fun lmap =>
           if_spec (runs_type_object_get_own_prop runs S C lmap x) (fun S D =>
-            if_bool (default S false) (fun S b =>
+            if_bool (default S x Desc false) (fun S b =>
               if b then
                 'let follow := fun S => res_ter S true in
                 match D with
@@ -809,74 +893,6 @@ Definition env_record_initialize_immutable_binding S L x v : result_void :=
           impossible_with_heap_because S "Non suitable binding in [env_record_initialize_immutable_binding].")
     | env_record_object _ _ => impossible_with_heap_because S "[env_record_initialize_immutable_binding] received an environnment record object."
     end).
-
-
-(**************************************************************)
-(** Conversions *)
-
-Definition object_default_value runs S C l (prefo : option preftype) : result :=
-  if_some (run_object_method object_default_value_ S l) (fun B =>
-    match B with
-
-    | builtin_default_value_default =>
-      let gpref := unsome_default preftype_number prefo in
-      let lpref := other_preftypes gpref in
-      'let sub := fun S' x (K:state->result) =>
-        (if_value (run_object_get runs S' C l x) (fun S1 vfo =>
-          if_some (run_callable S1 vfo) (fun co =>
-            match co with
-            | Some B =>
-              if_object (out_ter S1 vfo) (fun S2 lfunc =>
-                if_value (runs_type_call runs S2 C lfunc l nil) (fun S3 v =>
-                  match v return result with
-                  | value_prim w => out_ter S3 w
-                  | value_object l => K S3
-                  end))
-            | None => K S1
-            end))) in
-      'let gmeth := method_of_preftype gpref in
-      sub S gmeth (fun S' =>
-        let lmeth := method_of_preftype lpref in
-        sub S' lmeth (fun S'' => run_error S'' native_error_type))
-
-    end).
-
-Definition to_primitive runs S C v (prefo : option preftype) : result :=
-  match v with
-  | value_prim w => out_ter S w
-  | value_object l =>
-    if_prim (object_default_value runs S C l prefo) res_ter
-  end.
-
-Definition to_number runs S C v : result :=
-  match v with
-  | value_prim w =>
-    out_ter S (convert_prim_to_number w)
-  | value_object l =>
-    if_prim (to_primitive runs S C l (Some preftype_number)) (fun S1 w =>
-      res_ter S1 (convert_prim_to_number w))
-  end.
-
-Definition to_integer runs S C v : result :=
-  if_number (to_number runs S C v) (fun S1 n =>
-    res_ter S1 (convert_number_to_integer n)).
-
-Definition to_int32 runs S C v : specres int :=
-  if_number (to_number runs S C v) (fun S' n =>
-    res_spec S' (JsNumber.to_int32 n)).
-
-Definition to_uint32 runs S C v : specres int :=
-  if_number (to_number runs S C v) (fun S' n =>
-    res_spec S' (JsNumber.to_uint32 n)).
-
-Definition to_string runs S C v : result :=
-  match v with
-  | value_prim w =>
-    out_ter S (convert_prim_to_string w)
-  | value_object l =>
-    if_prim (to_primitive runs S C l (Some preftype_string)) (fun S1 w =>
-      res_ter S1 (convert_prim_to_string w))
-  end.
 
 
 (**************************************************************)
