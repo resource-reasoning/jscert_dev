@@ -435,26 +435,31 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
           (match Attr with
           | attributes_data_of A =>
             'let oldLen := attributes_data_value A in
-            (match x with
-            | "length" => result_not_yet_implemented (* Soon. Conrad *)
-            | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
-                       if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S x =>
-                         ifb ((str = x) /\ ilen <> 2147483647) then
-                           if_spec (to_uint32 runs S C x) (fun S index =>
-                             ifb (index >= oldLen /\ (not (attributes_data_writable A))) then
-                               reject S throw
-                             else
-                               if_bool (default S x Desc false) (fun S b =>
-                                 ifb (not b) then
-                                   reject S throw
-                                 else
-                                   ifb (index >= oldLen) then
-                                     res_spec S (descriptor_with_value Desc (Some (JsNumber.of_int (index + 1)))) (fun S Desc =>
-                                       default S "length" Desc throw)
+            (match oldLen with
+            | value_object l => impossible_with_heap_because S "Spec asserts length of array is number."
+            | value_prim w =>
+              'let oldLen := JsNumber.to_uint32 (convert_prim_to_number w) in
+              (match x with
+              | "length" => result_not_yet_implemented (* Soon. Conrad *)
+              | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
+                         if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S x =>
+                           ifb ((str = x) /\ ilen <> (nat_of_N 2147483647)) then
+                             if_spec (to_uint32 runs S C x) (fun S index =>
+                               ifb (oldLen <= index /\ (not (attributes_data_writable A))) then
+                                 reject S throw
+                               else
+                                 if_bool (default S x Desc false) (fun S b =>
+                                   ifb (not b) then
+                                     reject S throw
                                    else
-                                     res_ter S true))
-                         else
-                           default S x Desc throw))
+                                     ifb (oldLen <= index) then
+                                       let Desc := (descriptor_with_value Desc (Some (value_prim (JsNumber.of_int (index + 1))))) in
+                                       default S "length" Desc false
+                                     else
+                                       res_ter S true))
+                           else
+                             default S x Desc throw))
+              end)
             end)
           | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
           end)

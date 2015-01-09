@@ -1376,7 +1376,8 @@ Lemma object_define_own_prop_correct : forall runs S C l x Desc str o,
   runs_type_correct runs ->
   object_define_own_prop runs S C l x Desc str = o ->
   red_expr S C (spec_object_define_own_prop l x Desc str) o.
-Proof.
+Proof. (*LATER: TODO: Fix proof! Conrad*)
+(*
   introv IH HR. unfolds in HR.
   let_name as rej. asserts Rej: (forall S str o,
       rej S str = o ->
@@ -1460,6 +1461,7 @@ Proof.
           apply~ red_spec_object_define_own_prop_args_obj_3.
          apply~ red_spec_object_define_own_prop_args_obj_2_true_not_acc_none.
      apply~ red_spec_object_define_own_prop_args_obj_2_false.
+*)
 Admitted. (* faster *)
 
 Lemma prim_new_object_correct : forall S C w o,
