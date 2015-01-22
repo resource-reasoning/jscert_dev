@@ -118,14 +118,18 @@ tags: $(JS_SRC)
 
 .PHONY: all default debug report init tlc flocq lib \
         coq extract_interpreter interpreter \
-        local clean clean_interp clean_all nofast \
-        run_tests run_tests_spidermonkey run_tests_lambdaS5 \
-        run_tests_nodejs install_depend
+        local nofast
 
 #######################################################
 # EXTERNAL OCAML DEPENDENCIES
+.PHONY: install_depend install_optional_depend
 install_depend:
-	opam install -y coq xml-light ocamlfind
+	# Install coq if required
+	if ! which $(COQBIN)coqc; then opam install -y coq; fi
+	opam install -y xml-light ocamlfind yojson
+
+install_optional_depend: install_depend
+	opam install -y js_of_ocaml bisect
 
 #######################################################
 # EXTERNAL LIBRARIES: TLC and Flocq
@@ -283,6 +287,7 @@ interp/run_jstrace.native: interp/src/run_jstrace.ml interp/src/extract/JsInterp
 
 #######################################################
 # Interpreter run helpers
+.PHONY: run_tests run_tests_spidermonkey run_tests_lambdaS5 run_tests_nodejs
 
 run_tests: interpreter
 	./runtests.py --no_parasite
@@ -298,6 +303,7 @@ run_tests_nodejs:
 
 #######################################################
 # CLEAN
+.PHONY: clean clean_interp clean_all
 
 clean_interp:
 	-rm -f coq/JsInterpreterExtraction.vo
@@ -327,7 +333,7 @@ local:
 #######################################################
 
 
-ifeq ($(filter init clean% install_depend,$(MAKECMDGOALS)),)
+ifeq ($(filter init clean% install% all,$(MAKECMDGOALS)),)
 -include $(JS_SRC:.v=.v.d)
 -include $(TLC_SRC:.v=.v.d)
 -include $(FLOCQ_SRC:.v=.v.d)
