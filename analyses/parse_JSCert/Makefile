@@ -1,0 +1,5 @@
+
+all:
+	ocamlbuild test.native
+
+
