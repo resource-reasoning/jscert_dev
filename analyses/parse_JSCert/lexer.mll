@@ -46,6 +46,9 @@ rule token = parse
   | "\"" ([^'"']* as s) "\"" ("%string")?       { STRING s }
   | ['0'-'9']+ as s ("%int" | "%Z")?            { INT (int_of_string s) }
 
+  | "Type"                                      { TYPE }
+  | "Prop"                                      { PROP }
+
   | "("                                         { LPAR }
   | ")"                                         { RPAR }
   | "{"                                         { LBRACK }
@@ -60,11 +63,11 @@ rule token = parse
   | ","                                         { COMMA }
 
   | "Require"                                   { REQUIRE }
-  | "Export"                                    { EXPORT }
-  | "Import"                                    { IMPORT }
+  | ("Export" | "Import")                       { IMEXPORT }
 
   | "Implicit" (blank+) "Type"                  { IMPLICITTYPE }
 
+  | "Definition"                                { DEFINITION }
   | "Inductive"                                 { INDUCTIVE }
   | "with"                                      { WITH }
 
