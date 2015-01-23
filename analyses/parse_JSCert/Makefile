@@ -1,5 +1,5 @@
 
 all:
-	ocamlbuild test.native
+	ocamlbuild main.native
 
 

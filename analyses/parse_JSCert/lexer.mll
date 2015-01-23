@@ -58,10 +58,14 @@ rule token = parse
   | ("->"|"→")                                  { ARROW }
   | "=>"                                        { FUNARROW }
 
+  | "let"                                       { LET }
+  | "in"                                        { IN }
+
   | "forall"                                    { FORALL }
   | "fun"                                       { FUN }
   | ","                                         { COMMA }
 
+  | "Open Scope"                                { OPENSCOPE }
   | "Require"                                   { REQUIRE }
   | ("Export" | "Import")                       { IMEXPORT }
 
@@ -71,6 +75,7 @@ rule token = parse
   | "Inductive"                                 { INDUCTIVE }
   | "with"                                      { WITH }
 
+  | ident as m "." ident as x                   { MODULEIDENT (m, x) }
   | ident as s                                  { IDENT s }
 
   | eof                                         { EOF }
