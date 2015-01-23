@@ -1,17 +1,28 @@
 
 type ctype =
+    | Prop
     | Basic_type of string
     | Prod_type of ctype * ctype
     | Fun_type of ctype * ctype
+    | App_type of ctype * ctype
 
-type binop = Add | Sub | Mult | And | Or | Band | Bor | Inf | Infeq | Lcons | Lapp | Llast | Eq
+type binop =
+      Add | Sub | Mult
+    | And | Or
+    | Band | Bor
+    | Inf | Infeq | Sup | Supeq
+    | Lcons | Lapp | Llast
+    | Eq | Neq
 type unop = Not
 
 type expr =
-    | Ident of string
-    | App of bool (* Disable implicit type, like @fun *) * expr * (string * expr) list (* Internal arguments, like (T:=value) *) * expr
+    | Ident of bool (* Disable implicit type, like @f *) * string option (* Modules *) * string
+    | App of expr * (string option (* Internal arguments, like (T:=value) *)) * expr
     | Binop of binop * expr * expr
     | Unop of unop * expr
+    | Couple of expr * expr
+    | String of string
+    | Int of int
 
 type def = {
     def_name : string ;
@@ -21,21 +32,22 @@ type def = {
 
 type rule = {
     rule_name : string ;
-    rule_params : string list ;
-    rule_preconditions : expr list ;
-    rule_conclusion : expr
+    rule_params : (string * ctype option) list ;
+    rule_localdefs : (string * expr) list (* local let-bindings *) ;
+    rule_statement_list : expr list
 }
 
 type red = {
     red_name : string ;
-    red_args : ctype list (* Without the final Prop *) ;
+    red_params : (string * ctype option * bool) list ;
+    red_type : ctype ;
     rules : rule list
 }
 
-type file = {
-    imports : string list (* Every file imported from the file. *) ;
-    implicit_types : (string * ctype) list (* Every implicit type declared *) ;
-    definitions : def list (* Every definition of the file *) ;
-    reductions : red list (* Every reduction defined in the file (maybe be mutually recursive) *)
-}
+type file_item =
+    | File_import of string (* A file imported from the file. *)
+    | File_scope of string (* A scope openned. *)
+    | File_implicit_type of (string * ctype) (* An implicit type declared *)
+    | File_definition of def (* Every definition of the file *)
+    | File_reductions of red list (* Mutually recursive reductions defined in the file. *)
 
