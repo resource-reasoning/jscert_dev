@@ -13,7 +13,7 @@
 %token TYPE PROP
 %token LPAR RPAR LBRACK RBRACK
 %token COLONEQ ARROW FUNARROW
-%token LET IN
+%token LET IN MATCH END
 %token FORALL FUN COMMA
 %token OPENSCOPE
 %token REQUIRE IMEXPORT
@@ -122,15 +122,23 @@ statement_list:
     ;
 
 expr:
-    | ident                                             { let (a, l, x) = $1 in Ident (a, l, x) }
-    | LPAR expr RPAR                                    { $2 }
-    | LPAR expr COMMA expr RPAR                         { Couple ($2, $4) }
-    | expr LPAR IDENT COLONEQ expr RPAR %prec prec_app  { App ($1, Some $3, $5) }
-    | expr expr %prec prec_app                          { App ($1, None, $2) }
-    | expr binop expr                                   { Binop ($2, $1, $3) }
-    | unop expr                                         { Unop ($1, $2) }
-    | STRING                                            { String $1 }
-    | INT                                               { Int $1 }
+    | ident                                                 { let (a, l, x) = $1 in Ident (a, l, x) }
+    | LPAR expr RPAR                                        { $2 }
+    | LPAR expr COMMA expr RPAR                             { Couple ($2, $4) }
+    | expr LPAR IDENT COLONEQ expr RPAR %prec prec_app      { App ($1, Some $3, $5) }
+    | expr expr %prec prec_app                              { App ($1, None, $2) }
+    | expr binop expr                                       { Binop ($2, $1, $3) }
+    | unop expr                                             { Unop ($1, $2) }
+    | STRING                                                { String $1 }
+    | INT                                                   { Int $1 }
+    | LPAR FORALL arglist COMMA expr RPAR                   { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
+    | MATCH expr WITH pattern_list END                      { Match ($2, $4) }
+    | MATCH expr WITH expr FUNARROW expr pattern_list END   { Match ($2, ($4, $6) :: $7) }
+    ;
+
+pattern_list:
+      /* empty */                           { [] }
+    | PIPE expr FUNARROW expr pattern_list  { ($2, $4) :: $5 }
     ;
 
 ident:

@@ -44,7 +44,7 @@ rule token = parse
   | "||"                                        { BOR }
 
   | "\"" ([^'"']* as s) "\"" ("%string")?       { STRING s }
-  | ['0'-'9']+ as s ("%int" | "%Z")?            { INT (int_of_string s) }
+  | ['0'-'9']+ as s ("%int" | "%Z" | blank+ ":" blank+ "int")?  { INT (int_of_string s) }
 
   | "Type"                                      { TYPE }
   | "Prop"                                      { PROP }
@@ -60,6 +60,8 @@ rule token = parse
 
   | "let"                                       { LET }
   | "in"                                        { IN }
+  | "match"                                     { MATCH }
+  | "end"                                       { END }
 
   | "forall"                                    { FORALL }
   | "fun"                                       { FUN }

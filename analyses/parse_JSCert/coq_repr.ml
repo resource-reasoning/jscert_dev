@@ -23,6 +23,8 @@ type expr =
     | Couple of expr * expr
     | String of string
     | Int of int
+    | Forall of (string * ctype option) list * expr
+    | Match of expr (* matched expression *) * (expr (* pattern *) * expr (* result *)) list
 
 type def = {
     def_name : string ;
