@@ -6,6 +6,10 @@ let skipInit = ref false
 let noParasite = ref false
 let execString = ref ""
 
+let use_json = ref false
+let verbose = ref false
+let parser_path = ref ""
+
 let string_to_list str = (* Does it already exists somewhere? *)
     let l = ref [] in
     let current = ref "" in
@@ -19,16 +23,19 @@ let string_to_list str = (* Does it already exists somewhere? *)
     !current :: List.rev !l
 
 let arguments () =
-  let usage_msg="Usage: -jsparser <path> -file <path>" in
+  let usage_msg="Usage: [-json] -jsparser <path> -file <path>" in
   Arg.parse
-    [ "-jsparser",
-      Arg.String(fun f -> Parser_main.js_to_xml_parser := f),
-      "path to js_parser.jar";
+    [ "-json",
+      Arg.Set use_json,
+      "Use Spidermonkey JSON AST-based (i.e: Esprima) parser (default)";
+      "-jsparser",
+      Arg.Set_string parser_path,
+      "Specify path to parser executable/jar";
       "-file",
       Arg.String(fun f -> file := f),
       "file to run";
       "-verbose",
-      Arg.Unit(fun () -> Parser_main.verbose := true),
+      Arg.Set verbose,
       "print the parsed program";
       "-test_prelude",
       Arg.String(fun f ->
@@ -78,9 +85,15 @@ let pr_test state =
      if not !test then
        print_endline "No variable [__$ERROR__] is defined at global scope.\n"
 
+let select_parser () =
+  if !use_json then
+    Parser_main.use_parser_json ~path:!parser_path
+  else
+    Parser_main.use_parser_xml ~path:!parser_path ~verbose:!verbose
 
 let _ =
   arguments ();
+  select_parser ();
   let exit_if_test _ = if !test then exit 1 in
   try
     let exp = if !execString = ""
