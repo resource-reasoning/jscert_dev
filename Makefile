@@ -117,7 +117,6 @@ tags: $(JS_SRC)
 	./gentags.sh
 
 .PHONY: all default debug report init tlc flocq lib \
-        coq extract_interpreter interpreter \
         local nofast
 
 #######################################################
@@ -129,7 +128,7 @@ install_depend:
 	opam install -y xml-light ocamlfind yojson
 
 install_optional_depend: install_depend
-	opam install -y js_of_ocaml bisect
+	opam install -y js_of_ocaml bisect lwt
 
 #######################################################
 # EXTERNAL LIBRARIES: TLC and Flocq
@@ -186,6 +185,7 @@ nofast: $(FAST_VO:.vo=_full.vo)
 
 #######################################################
 # JSCert Specific Rules
+.PHONY: coq
 
 coq: $(JS_VO)
 
@@ -200,6 +200,7 @@ coq/JsInterpreterExtraction.vo: coq/JsInterpreterExtraction.v
 
 #######################################################
 # JsRef Interpreter Rules
+.PHONY: extract_interpreter interpreter
 
 # ; forces rule to be run, generates everything under extract dir
 interp/src/extract/%: coq/JsInterpreterExtraction.vo ;
@@ -228,16 +229,18 @@ interp/src/extract/.patched: interp/src/extract/JsInterpreter.ml.patched
 
 extract_interpreter: interp/src/extract/.patched
 
+# .ml executables may be placed in a number of locations, tell make where to search for them
+vpath %.ml interp/src interp/top_level
+
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
-interp/%.native interp/%.byte: extract_interpreter interp/src/%.ml
-	cd interp && $(OCAMLBUILD) -use-ocamlfind \
-	-cflags "-w -20" $(@F)
+interp/%.native interp/%.byte: extract_interpreter %.ml
+	cd interp && $(OCAMLBUILD) -use-ocamlfind -cflags "-w -20" $(@F)
 
 .PRECIOUS: interp/%.native
 interp/%: interp/%.native
 	ln -fs $(<F) $@
 
-interpreter: interp/run_js
+interpreter: interp/run_js interp/top
 
 #######################################################
 # TargetJS interpreter variant
@@ -264,8 +267,7 @@ interp/src/extract/JsInterpreterBisect.ml: interp/src/extract/JsInterpreter.ml e
 interp/src/run_jsbisect.ml: interp/src/run_js.ml
 	perl -pe 's/JsInterpreter\./JsInterpreterBisect\./' $< > $@
 
-interp/run_jsbisect.native: interp/src/run_jsbisect.ml \
-                            interp/src/extract/JsInterpreterBisect.ml
+interp/run_jsbisect.native: interp/src/extract/JsInterpreterBisect.ml
 
 # interp/run_jsbisect is an implicit rule
 
@@ -281,7 +283,7 @@ interp/src/extract/JsInterpreterTrace.ml: interp/src/extract/JsInterpreter.ml ex
 interp/src/run_jstrace.ml: interp/src/run_js.ml
 	perl -pe 's/JsInterpreter\./JsInterpreterTrace\./' $< > $@
 
-interp/run_jstrace.native: interp/src/run_jstrace.ml interp/src/extract/JsInterpreterTrace.ml interp/tracer/annotml/ppx_lines.native
+interp/run_jstrace.native: interp/src/extract/JsInterpreterTrace.ml interp/tracer/annotml/ppx_lines.native
 
 # interp/run_jstrace is an implicit rule
 
@@ -308,9 +310,10 @@ run_tests_nodejs:
 clean_interp:
 	-rm -f coq/JsInterpreterExtraction.vo
 	-rm -rf interp/src/extract
-	-rm -f interp/run_js interp/run_jsbisect interp/src/run_jsbisect.ml
-	cd interp && $(OCAMLBUILD) -quiet -clean
+	-rm -f interp/run_js interp/top
+	-rm -f interp/run_jsbisect interp/src/run_jsbisect.ml
 	-rm -f interp/run_jstrace interp/src/run_jstrace.ml
+	cd interp && $(OCAMLBUILD) -quiet -clean
 	$(MAKE) -C interp/tracer/annotml clean
 
 clean: clean_interp
@@ -333,7 +336,7 @@ local:
 #######################################################
 
 
-ifeq ($(filter init clean% install% all,$(MAKECMDGOALS)),)
+ifeq ($(filter init clean% install%,$(MAKECMDGOALS)),)
 -include $(JS_SRC:.v=.v.d)
 -include $(TLC_SRC:.v=.v.d)
 -include $(FLOCQ_SRC:.v=.v.d)
