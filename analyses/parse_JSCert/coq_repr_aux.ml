@@ -35,6 +35,11 @@ let rec variable_used_type x = function
     | App_type (t1, t2) ->
         variable_used_type x t1 || variable_used_type x t2
 
+let rec get_pred = function
+    | Ident (_, None, x) -> Some x
+    | App (e, _, _) -> get_pred e
+    | _ -> None
+
 
 let rec string_of_type = function
     | Prop ->
@@ -42,9 +47,9 @@ let rec string_of_type = function
     | Basic_type s ->
         s
     | Prod_type (t1, t2) ->
-        Utils.par (string_of_type t1 ^ " -> " ^ string_of_type t2)
-    | Fun_type (t1, t2) ->
         Utils.par (string_of_type t1 ^ " * " ^ string_of_type t2)
+    | Fun_type (t1, t2) ->
+        Utils.par (string_of_type t1 ^ " -> " ^ string_of_type t2)
     | App_type (t1, t2) ->
         Utils.par (string_of_type t1 ^ " " ^ string_of_type t2)
 
