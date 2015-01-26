@@ -53,3 +53,24 @@ type file_item =
     | File_definition of def (* Every definition of the file *)
     | File_reductions of red list (* Mutually recursive reductions defined in the file. *)
 
+
+(** Some intermediate forms. **)
+
+type red_pred = {
+    red_pred_name : string ;
+    red_pred_types : (ctype * bool (* It is an input *)) list
+}
+
+let make_red_pred name l = {
+    red_pred_name = name ;
+    red_pred_types = l
+}
+
+type rule1 = {
+    rule1_name : string ;
+    rule1_params : (string * ctype * bool (* It is an input *)) list ;
+    rule1_conditions : expr list ;
+    rule1_premisses : expr list ;
+    rule1_conclusion : expr
+}
+

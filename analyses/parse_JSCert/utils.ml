@@ -2,6 +2,57 @@
 let count f =
     List.fold_left (fun i x -> if f x then i + 1 else i) 0
 
+let select_map f =
+    List.fold_left (fun l x ->
+        match f x with
+        | Some r -> r :: l
+        | None -> l) []
+
+let find_option f l =
+    try Some (List.find f l)
+    with Not_found -> None
+
+let assoc_option a l =
+    try Some (List.assoc a l)
+    with Not_found -> None
+
+let rec cut_last = function
+    | [] -> raise Not_found
+    | [a] -> ([], a)
+    | a :: l ->
+        let (l, b) = cut_last l in
+        (a :: l, b)
+
+let rec separate test = function
+    | [] -> ([], [])
+    | a :: l ->
+        let (t, f) = separate test l in
+        if test a
+        then (a :: t, f)
+        else (t, a :: f)
+
+
+(** Some string manipulations **)
+
+let string_of_char_list cl =
+    let s = String.create (List.length cl) in
+    let rec set_str n = function
+        | [] -> ()
+        | c :: tl -> s.[n] <- c; set_str (n+1) tl
+    in set_str 0 cl; s
+
+let char_list_of_string s =
+    let rec acc_ch acc n =
+        if n < 0 then acc else acc_ch ((String.get s n)::acc) (n-1)
+    in
+    acc_ch [] ((String.length s) - 1)
+
+let normalise_var_name x =
+    let rem_char =
+        ['0' ; '1' ; '2' ; '3' ; '4' ; '5' ; '6' ; '7' ; '8' ; '9' ; '\''] in
+    string_of_char_list (List.filter (fun c -> not (List.mem c rem_char))
+        (char_list_of_string x))
+
 
 open Pervasives
 
