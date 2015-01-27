@@ -65,6 +65,7 @@ rule token = parse
   | "in"                                        { IN }
   | "match"                                     { MATCH }
   | "end"                                       { END }
+  | "_"                                         { WILDCARD }
 
   | "forall"                                    { FORALL }
   | "fun"                                       { FUN }
