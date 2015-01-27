@@ -22,7 +22,7 @@
 %token TYPE PROP
 %token LPAR RPAR LBRACK RBRACK
 %token COLONEQ ARROW FUNARROW
-%token LET IN MATCH END
+%token LET IN MATCH END WILDCARD
 %token FORALL FUN COMMA
 %token OPENSCOPE
 %token COERCION COERCIONARROW
@@ -42,6 +42,8 @@
 %left     ADD SUB
 %left     STAR
 %left     prec_app
+%left     DOT
+%nonassoc IDENT
 
 %start main lex_list
 %type <string list> lex_list
@@ -68,16 +70,17 @@ main:
           let lt = List.map (fun s -> File_implicit_type (s, t)) $2 in
           lt @ $6
       }
-    | DEFINITION IDENT arglist maybetype COLONEQ expr DOT main
+    | DEFINITION IDENT arglist maybetype COLONEQ lets expr DOT main
       {
           let d = {
               def_name = $2 ;
               arguments = $3 ;
               def_type = $4 ;
-              body = $6 ;
+              def_lets = $6 ;
+              body = $7 ;
               is_coercion = false
           } in
-          File_definition d :: $8
+          File_definition d :: $9
       }
     | HYPOTHESIS IDENT arglist COLON ctype DOT main
       {
@@ -102,6 +105,7 @@ main:
               def_name = $2 ;
               arguments = $3 ;
               def_type = $4 ;
+              def_lets = [] ;
               body = $6 ;
               is_coercion = true
           } in
@@ -205,6 +209,15 @@ rulesnopipe:
               rule_statement_list = $7
           } :: $8
       }
+    | IDENT COLON FORALL identlist COLON ctype COMMA lets statement_list rulespipe
+      {
+          let t = $6 in {
+              rule_name = $1 ;
+              rule_params = List.map (fun x -> (x, Some t)) $4 ;
+              rule_localdefs = $8 ;
+              rule_statement_list = $9
+          } :: $10
+      }
     | IDENT COLON statement_list rulespipe
       {
           {
@@ -236,18 +249,34 @@ statement_list:
     ;
 
 expr:
+    | expr_app_list %prec prec_app
+      {
+          match List.rev $1 with
+          | (e, None) :: l ->
+            List.fold_left (fun e1 (e2, internal) -> App (e1, internal, e2)) e l
+          | _ -> prerr_endline "This should not happen!" ; exit 0
+      }
+    | expr binop expr                                       { Binop ($2, $1, $3) }
+    | unop expr                                             { Unop ($1, $2) }
+    ;
+
+expr_app_list:
+    | simple_expr                                   { [ $1, None ] }
+    | expr_app_list simple_expr                     { ($2, None) :: $1 }
+    | expr_app_list LPAR IDENT COLONEQ expr RPAR    { ($5, Some $3) :: $1 }
+    ;
+
+simple_expr:
     | ident                                                 { let (a, l, x) = $1 in Ident (a, l, x) }
     | LPAR expr RPAR                                        { $2 }
     | LPAR expr COMMA expr RPAR                             { Couple ($2, $4) }
-    | expr LPAR IDENT COLONEQ expr RPAR %prec prec_app      { App ($1, Some $3, $5) }
-    | expr expr %prec prec_app                              { App ($1, None, $2) }
-    | expr binop expr                                       { Binop ($2, $1, $3) }
-    | unop expr                                             { Unop ($1, $2) }
     | STRING                                                { String $1 }
     | INT                                                   { Int $1 }
     | LPAR FORALL arglist COMMA expr RPAR                   { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
+    | LPAR ctype ARROW ctype RPAR                           { Expr_type (Fun_type ($2, $4)) }
     | MATCH expr WITH pattern_list END                      { Match ($2, $4) }
     | MATCH expr WITH expr FUNARROW expr pattern_list END   { Match ($2, ($4, $6) :: $7) }
+    | WILDCARD                                              { Wildcard }
     ;
 
 pattern_list:
@@ -355,6 +384,7 @@ token:
     | IN                        { "in" }
     | MATCH                     { "match" }
     | END                       { "end" }
+    | WILDCARD                  { "_" }
 
     | FORALL                    { "forall" }
     | FUN                       { "fun" }

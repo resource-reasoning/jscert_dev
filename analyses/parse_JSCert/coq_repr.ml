@@ -16,6 +16,7 @@ type binop =
 type unop = Not
 
 type expr =
+    | Wildcard
     | Ident of bool (* Disable implicit type, like @f *) * string option (* Modules *) * string
     | App of expr * (string option (* Internal arguments, like (T:=value) *)) * expr
     | Binop of binop * expr * expr
@@ -24,12 +25,14 @@ type expr =
     | String of string
     | Int of int
     | Forall of (string * ctype option) list * expr
+    | Expr_type of ctype
     | Match of expr (* matched expression *) * (expr (* pattern *) * expr (* result *)) list
 
 type def = {
     def_name : string ;
     arguments : (string * ctype option * bool (* This boolean states that it is marked implicit, like {T} *)) list ;
     def_type : ctype option ;
+    def_lets : (string * expr) list ;
     body : expr ;
     is_coercion : bool
 }
