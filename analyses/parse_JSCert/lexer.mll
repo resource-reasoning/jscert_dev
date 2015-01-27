@@ -17,11 +17,14 @@ rule token = parse
   | blank+                                      { token lexbuf }
   | "(*"                                        { comment lexbuf ; token lexbuf }
   | "Set Implicit Arguments."                   { token lexbuf }
+  | "Implicit Arguments" [^ '.']* '.'           { token lexbuf }
+  | ("Lemma" | "Theorem" | "Corollary")         { proof lexbuf ; token lexbuf }
 
   | "."                                         { DOT }
   | ":"                                         { COLON }
   | "|"                                         { PIPE }
   | "@"                                         { AT }
+  | ";"                                         { SEMICOLON }
 
   | "*"                                         { STAR }
   | "+"                                         { ADD }
@@ -71,9 +74,16 @@ rule token = parse
   | "Require"                                   { REQUIRE }
   | ("Export" | "Import")                       { IMEXPORT }
 
+  | "Coercion"                                  { COERCION }
+  | ">->"                                       { COERCIONARROW }
+
   | "Implicit" (blank+) "Type"                  { IMPLICITTYPE }
 
   | "Definition"                                { DEFINITION }
+  | "Record"                                    { RECORD }
+  | "Module"                                    { MODULE }
+  | "Notation"                                  { NOTATION }
+  | ("Hypothesis" | "Parameter")                { HYPOTHESIS }
   | "Inductive"                                 { INDUCTIVE }
   | "with"                                      { WITH }
 
@@ -88,4 +98,9 @@ and comment = shortest
   | _* "(*"        { comment lexbuf ; comment lexbuf }
   | _* "*)"        { () }
   | _* eof         { failwith ("Unfinished comment" ^ add_pos lexbuf ^ ".") }
+
+and proof = shortest
+  | _* "Qed."       { () }
+  | _* "Admitted."  { () }
+  | _* eof          { failwith ("Unfinished proof" ^ add_pos lexbuf ^ ".") }
 

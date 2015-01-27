@@ -26,8 +26,8 @@ let rec variable_used x = function
 let rec variable_used_type x = function
     | Prop ->
         false
-    | Basic_type y ->
-        x = y
+    | Basic_type (m, y) ->
+        m = None && x = y
     | Prod_type (t1, t2) ->
         variable_used_type x t1 || variable_used_type x t2
     | Fun_type (t1, t2) ->
@@ -44,8 +44,8 @@ let rec get_pred = function
 let rec string_of_type = function
     | Prop ->
         "Prop"
-    | Basic_type s ->
-        s
+    | Basic_type (None, s) -> s
+    | Basic_type (Some m, s) -> m ^ "." ^ s
     | Prod_type (t1, t2) ->
         Utils.par (string_of_type t1 ^ " * " ^ string_of_type t2)
     | Fun_type (t1, t2) ->

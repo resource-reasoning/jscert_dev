@@ -1,7 +1,7 @@
 
 type ctype =
     | Prop
-    | Basic_type of string
+    | Basic_type of string option (* Modules *) * string
     | Prod_type of ctype * ctype
     | Fun_type of ctype * ctype
     | App_type of ctype * ctype
@@ -29,7 +29,9 @@ type expr =
 type def = {
     def_name : string ;
     arguments : (string * ctype option * bool (* This boolean states that it is marked implicit, like {T} *)) list ;
-    body : expr
+    def_type : ctype option ;
+    body : expr ;
+    is_coercion : bool
 }
 
 type rule = {
@@ -42,15 +44,35 @@ type rule = {
 type red = {
     red_name : string ;
     red_params : (string * ctype option * bool) list ;
-    red_type : ctype ;
+    red_type : ctype option ;
     rules : rule list
+}
+
+type hypothesis = {
+    hyp_name : string ;
+    hyp_arguments : (string * ctype option * bool (* This boolean states that it is marked implicit, like {T} *)) list ;
+    hyp_type : ctype
+}
+
+type coercion = {
+    coercion_from : ctype ;
+    coercion_to : ctype
+}
+
+type record = {
+    record_name : string (* The name of the defined type. *) ;
+    record_make : string option (* An eventual constructor. *) ;
+    record_inner : (string * ctype) list (* The definitions. *)
 }
 
 type file_item =
     | File_import of string (* A file imported from the file. *)
     | File_scope of string (* A scope openned. *)
     | File_implicit_type of (string * ctype) (* An implicit type declared *)
-    | File_definition of def (* Every definition of the file *)
+    | File_hypothesis of hypothesis (* An hypothesis of the file *)
+    | File_definition of def (* A definition of the file *)
+    | File_coercion of coercion (* A coercion defined in the file *)
+    | File_record of record (* A record defined in the file *)
     | File_reductions of red list (* Mutually recursive reductions defined in the file. *)
 
 

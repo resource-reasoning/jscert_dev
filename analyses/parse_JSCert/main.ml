@@ -3,30 +3,16 @@ open Coq_repr
 open Coq_repr_aux
 open Utils
 
-(* FIXME: Is that a good idea?
-let rec is_syntactic (* States weither a type can be part of the syntax. *) =
-    let all_syntact_terms = [
-        "list" ;
-        "bool" ;
-        "int" ;
-        "number" ;
-        ] in function
-    | Prop -> false
-    | Basic_type str -> List.mem str all_syntact_terms
-    | Prod_type _ -> false
-    | Fun_type _ -> false
-    | App_type (t1, t2) -> is_syntactic t1 && is_syntactic t2
-
-let is_semantic (* States weither a type can be part of the semantics. *) = function
-    _ -> false
-*)
-
 
 let _ =
     (*****************************************)
     print_endline "Reading rules." ;
-    let lexbuf = Lexing.from_channel (open_in "../../coq/JsPrettyRules.v") in
-    let jsprettyrulesfile = Parser.main Lexer.token lexbuf in
+    let parse_file file =
+        print_endline ("Reading file " ^ file ^ ".") ;
+        let lexbuf = Lexing.from_channel (open_in file) in
+        Parser.main Lexer.token lexbuf in
+    let jssyntax = parse_file "../../coq/JsSyntax.v" in
+    let jsprettyrulesfile = parse_file "../../coq/JsPrettyRules.v" in
     (*****************************************)
     print_endline "Basic checks on rules." ;
     let all_reds : red list =
@@ -81,14 +67,20 @@ let _ =
             | Some l -> {
                 red_pred_name = r.red_name ;
                 red_pred_types =
+                    let rt =
+                        match r.red_type with
+                        | Some t -> t
+                        | None ->
+                            prerr_endline ("The reduction " ^ r.red_name ^ " has no declared type. Aborting.") ;
+                            exit 0 in
                     let ts =
                         let rec aux = function
                             | Fun_type (t, Prop) -> [t]
                             | Fun_type (t1, t2) -> t1 :: aux t2
                             | t ->
-                                prerr_endline ("I don't understand the subtype " ^ string_of_type t ^ " of " ^ string_of_type r.red_type ^ " of the reduction " ^ r.red_name ^ ". Aborting.") ;
+                                prerr_endline ("I don't understand the subtype " ^ string_of_type t ^ " of " ^ string_of_type rt ^ " of the reduction " ^ r.red_name ^ ". Aborting.") ;
                                 exit 0
-                        in aux r.red_type
+                        in aux rt
                     in try List.map2 (fun t i -> (t, i)) ts l
                     with Invalid_argument _ -> (
                         prerr_endline ("Predicate " ^ r.red_name ^ " doesn't match its status in inputoutput (see main.ml, " ^ string_of_int (List.length ts) ^ " versus " ^ string_of_int (List.length l) ^ "). Aborting.") ;
@@ -115,7 +107,7 @@ let _ =
                         | Some t -> (x, t)
                         | None ->
                             prerr_endline ("Warning: Unable to detect the type of " ^ x ^ " in Rule " ^ r.rule_name ^ ".") ;
-                            (x, Basic_type "_" (* Hack! *))) r.rule_params in
+                            (x, Basic_type (None, "_" (* Hack! *)))) r.rule_params in
             {
                 rule1_name = r.rule_name ;
                 rule1_params =
