@@ -1,10 +1,19 @@
 %{
     open Coq_repr
+
+    let parse_error s =
+        prerr_endline ("Parsing error: " ^ s)
+
+    let unrecognized_items l =
+        prerr_endline ("Parsing error at character " ^ (string_of_int (symbol_start ()))) ;
+        prerr_endline "Here follows what I got from the lexer:" ;
+        prerr_endline ("[ " ^ String.concat "; " l ^ " ]") ;
+        exit 0
 %}
 
 %token <string> IDENT
 %token <string * string> MODULEIDENT
-%token DOT COLON PIPE AT
+%token DOT COLON PIPE AT SEMICOLON
 %token STAR ADD SUB EQ NEQ
 %token NOT AND OR BAND BOR INF INFEQ SUP SUPEQ
 %token LISTCONS LISTAPP LISTLAST
@@ -16,11 +25,14 @@
 %token LET IN MATCH END
 %token FORALL FUN COMMA
 %token OPENSCOPE
+%token COERCION COERCIONARROW
 %token REQUIRE IMEXPORT
 %token IMPLICITTYPE
-%token DEFINITION INDUCTIVE WITH
+%token DEFINITION RECORD MODULE NOTATION HYPOTHESIS INDUCTIVE WITH
 %token EOF
 
+%nonassoc prec_error
+%left     SEMICOLON
 %left     PIPE
 %right    ARROW
 %left     AND OR
@@ -38,9 +50,9 @@
 %%
 
 main:
-      /* empty */
+    | EOF
       { [] }
-    | REQUIRE IMEXPORT identlist DOT main
+    | REQUIRE maybeexport identlist DOT main
       {
           List.map (fun f -> File_import f) $3
           @ $5
@@ -56,20 +68,85 @@ main:
           let lt = List.map (fun s -> File_implicit_type (s, t)) $2 in
           lt @ $6
       }
-    | DEFINITION IDENT arglist COLONEQ expr DOT main
+    | DEFINITION IDENT arglist maybetype COLONEQ expr DOT main
       {
           let d = {
               def_name = $2 ;
               arguments = $3 ;
-              body = $5
+              def_type = $4 ;
+              body = $6 ;
+              is_coercion = false
           } in
-          File_definition d :: $7
+          File_definition d :: $8
+      }
+    | HYPOTHESIS IDENT arglist COLON ctype DOT main
+      {
+          let h = {
+              hyp_name = $2 ;
+              hyp_arguments = $3 ;
+              hyp_type = $5
+          } in
+          File_hypothesis h :: $7
+      }
+    | COERCION IDENT COLON ctype COERCIONARROW ctype DOT main
+      {
+          let c = {
+              coercion_from = $4 ;
+              coercion_to = $6
+          } in
+          File_coercion c :: $8
+      }
+    | COERCION IDENT arglist maybetype COLONEQ expr DOT main
+      {
+          let d = {
+              def_name = $2 ;
+              arguments = $3 ;
+              def_type = $4 ;
+              body = $6 ;
+              is_coercion = true
+          } in
+          File_definition d :: $8
+      }
+    | MODULE IDENT COLONEQ expr DOT main
+      { $6 }
+    | NOTATION expr COLONEQ expr DOT main
+      { $6 }
+    | RECORD IDENT COLONEQ maybeident LBRACK record RBRACK DOT main
+      {
+          let r = {
+              record_name = $2 ;
+              record_make = $4 ;
+              record_inner = $6
+          } in
+          File_record r :: $9
       }
     | INDUCTIVE red_list DOT main
       {
           File_reductions $2
           :: $4
       }
+    | lex_list %prec prec_error     { unrecognized_items $1 }
+    ;
+
+maybetype:
+      /* empty */       { None }
+    | COLON ctype       { Some $2 }
+    ;
+
+maybeident:
+      /* empty */   { None }
+    | IDENT         { Some $1 }
+    ;
+
+record:
+      /* empty */                           { [] }
+    | IDENT COLON ctype                     { [$1, $3] }
+    | IDENT COLON ctype SEMICOLON record    { ($1, $3) :: $5 }
+    ;
+
+maybeexport:
+      /* empty */   { }
+    | IMEXPORT      { }
     ;
 
 maybe_red_list:
@@ -78,36 +155,73 @@ maybe_red_list:
     ;
 
 red_list:
-    | IDENT COLON ctype COLONEQ rules maybe_red_list
+    | IDENT arglist COLON ctype COLONEQ rules maybe_red_list
         {
             {
                 red_name = $1 ;
-                red_params = [] ;
-                red_type = $3 ;
-                rules = $5
-            } :: $6
+                red_params = $2 ;
+                red_type = Some $4 ;
+                rules = $6
+            } :: $7
         }
-    | IDENT COLON FORALL arglist COMMA ctype COLONEQ rules maybe_red_list
+    | IDENT arglist COLON FORALL arglist COMMA ctype COLONEQ rules maybe_red_list
         {
             {
                 red_name = $1 ;
-                red_params = $4 ;
-                red_type = $6 ;
-                rules = $8
-            } :: $9
+                red_params = $2 @ $5 ;
+                red_type = Some $7 ;
+                rules = $9
+            } :: $10
+        }
+    | IDENT arglist COLONEQ rules maybe_red_list
+        {
+            {
+                red_name = $1 ;
+                red_params = $2 ;
+                red_type = None ;
+                rules = $4
+            } :: $5
         }
     ;
 
 rules:
+    | rulesnopipe       { $1 }
+    | rulespipe         { $1 }
+    ;
+
+rulespipe:
       /* empty */   { [] }
-    | PIPE IDENT COLON FORALL arglist COMMA lets statement_list rules
+    | PIPE rulesnopipe  { $2 }
+    ;
+
+rulesnopipe:
+      /* empty */   { [] }
+    | IDENT COLON FORALL arglist COMMA lets statement_list rulespipe
       {
           {
-              rule_name = $2 ;
-              rule_params = List.map (fun (x, t, _) -> (x, t)) $5 ;
-              rule_localdefs = $7 ;
-              rule_statement_list = $8
-          } :: $9
+              rule_name = $1 ;
+              rule_params = List.map (fun (x, t, _) -> (x, t)) $4 ;
+              rule_localdefs = $6 ;
+              rule_statement_list = $7
+          } :: $8
+      }
+    | IDENT COLON statement_list rulespipe
+      {
+          {
+              rule_name = $1 ;
+              rule_params = [] ;
+              rule_localdefs = [] ;
+              rule_statement_list = $3
+          } :: $4
+      }
+    | IDENT rulespipe
+      {
+          {
+              rule_name = $1 ;
+              rule_params = [] ;
+              rule_localdefs = [] ;
+              rule_statement_list = []
+          } :: $2
       }
     ;
 
@@ -182,7 +296,8 @@ ctype:
     | LPAR ctype RPAR               { $2 }
     | PROP                          { Prop }
     | TYPE                          { Prop }
-    | IDENT                         { Basic_type $1 }
+    | IDENT                         { Basic_type (None, $1) }
+    | MODULEIDENT                   { let (m, x) = $1 in Basic_type (Some m, x) }
     | ctype STAR ctype              { Prod_type ($1, $3) }
     | ctype ARROW ctype             { Fun_type ($1, $3) }
     | ctype ctype %prec prec_app    { App_type ($1, $2) }
@@ -199,6 +314,7 @@ token:
     | COLON                     { ":" }
     | PIPE                      { "|" }
     | AT                        { "@" }
+    | SEMICOLON                 { ";" }
 
     | STAR                      { "*" }
     | ADD                       { "+" }
@@ -235,16 +351,29 @@ token:
     | ARROW                     { "->" }
     | FUNARROW                  { "=>" }
 
+    | LET                       { "let" }
+    | IN                        { "in" }
+    | MATCH                     { "match" }
+    | END                       { "end" }
+
     | FORALL                    { "forall" }
     | FUN                       { "fun" }
     | COMMA                     { "," }
 
+    | OPENSCOPE                 { "Open Scope" }
     | REQUIRE                   { "Require" }
     | IMEXPORT                  { "Export" }
+
+    | COERCION                  { "Coercion" }
+    | COERCIONARROW             { ">->" }
 
     | IMPLICITTYPE              { "Implicit Type" }
 
     | DEFINITION                { "Definition" }
+    | RECORD                    { "Record" }
+    | MODULE                    { "Module" }
+    | NOTATION                  { "Notation" }
+    | HYPOTHESIS                { "Hypothesis" }
     | INDUCTIVE                 { "Inductive" }
     | WITH                      { "with" }
 
