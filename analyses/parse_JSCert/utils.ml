@@ -64,10 +64,14 @@ let output_endline f s =
     output_string f s ;
     output_string f "\n"
 
+let separate_coq f =
+    output_endline f ("\n(" ^ String.make 42 '*' ^ ")\n")
+
 let open_out_coq name =
     let f = open_out name in
     output_endline f "(* This file has been generated automatically by some OCaml scripts. *)" ;
     output_endline f "(* Please do not edit it, or your changes will probably be erased later. *)" ;
+    separate_coq f ;
     flush f ;
     f
 
