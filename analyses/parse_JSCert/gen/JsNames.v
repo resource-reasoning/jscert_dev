@@ -1,11 +1,20 @@
 (* This file has been generated automatically by some OCaml scripts. *)
 (* Please do not edit it, or your changes will probably be erased later. *)
+
+(******************************************)
+
 Require Import JsCommon.
 Require Import JsCommonAux.
 Require Import JsPrettyInterm.
 Require Import JsPrettyIntermAux.
 Require Import JsSyntaxInfos.
 Require Import JsInit.
+
+(******************************************)
+
+
+(******************************************)
+
 Implicit Type b : bool.
 Implicit Type n : number.
 Implicit Type k : int.
@@ -51,4 +60,7 @@ Implicit Type cstr : construct.
 Implicit Type xs : (list prop_name).
 Implicit Type sb : switchbody.
 Implicit Type sc : switchclause.
+
+(******************************************)
+
 Inductive js_names :=
