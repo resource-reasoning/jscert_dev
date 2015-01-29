@@ -23,7 +23,8 @@
 %token LPAR RPAR LBRACK RBRACK
 %token COLONEQ ARROW FUNARROW
 %token LET IN MATCH END WILDCARD
-%token FORALL FUN COMMA
+%token IF THEN ELSE
+%token FORALL EXISTS FUN COMMA
 %token OPENSCOPE
 %token COERCION COERCIONARROW
 %token REQUIRE IMEXPORT
@@ -35,6 +36,7 @@
 %left     SEMICOLON
 %left     PIPE
 %right    ARROW
+%left     IF THEN ELSE
 %left     AND OR
 %nonassoc NOT
 %nonassoc EQ NEQ
@@ -256,6 +258,7 @@ expr:
             List.fold_left (fun e1 (e2, internal) -> App (e1, internal, e2)) e l
           | _ -> prerr_endline "This should not happen!" ; exit 0
       }
+    | IF expr THEN expr ELSE expr                           { Ifthenelse ($2, $4, $6) }
     | expr binop expr                                       { Binop ($2, $1, $3) }
     | unop expr                                             { Unop ($1, $2) }
     ;
@@ -273,6 +276,7 @@ simple_expr:
     | STRING                                                { String $1 }
     | INT                                                   { Int $1 }
     | LPAR FORALL arglist COMMA expr RPAR                   { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
+    | LPAR EXISTS arglist COMMA expr RPAR                   { Exists (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
     | LPAR ctype ARROW ctype RPAR                           { Expr_type (Fun_type ($2, $4)) }
     | MATCH expr WITH pattern_list END                      { Match ($2, $4) }
     | MATCH expr WITH expr FUNARROW expr pattern_list END   { Match ($2, ($4, $6) :: $7) }

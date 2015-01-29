@@ -67,7 +67,12 @@ rule token = parse
   | "end"                                       { END }
   | "_"                                         { WILDCARD }
 
+  | ("If" | "if" | "ifb")                       { IF }
+  | "then"                                      { THEN }
+  | "else"                                      { ELSE }
+
   | "forall"                                    { FORALL }
+  | "exists"                                    { EXISTS }
   | "fun"                                       { FUN }
   | ","                                         { COMMA }
 

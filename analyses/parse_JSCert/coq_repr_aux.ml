@@ -33,12 +33,16 @@ let rec variable_used x = function
         false
     | Forall (l, e) ->
         not (List.exists (fun (y, _) -> x = y) l) && variable_used x e
+    | Exists (l, e) ->
+        not (List.exists (fun (y, _) -> x = y) l) && variable_used x e
     | Expr_type t ->
         variable_used_type x t
     | Match (e, l) ->
         variable_used x e
             || List.exists (fun (p, e) ->
                     not (variable_used x p) && variable_used x e) l
+    | Ifthenelse (e1, e2, e3) ->
+        variable_used x e1 || variable_used x e2 || variable_used x e3
 
 let rec get_pred = function
     | Ident (_, None, x) -> Some x
@@ -93,10 +97,16 @@ let rec string_of_expr = function
         par (b ^ " " ^ string_of_expr e)
     | Couple (e1, e2) ->
         par (string_of_expr e1 ^ ", " ^ string_of_expr e2)
-    | String s -> "\"" ^ s ^ "\"%string"
-    | Int i -> string_of_int i ^ "%int"
+    | String s -> par ("(\"" ^ s ^ "\")%string")
+    | Int i -> par (par (string_of_int i) ^ "%Z")
     | Forall (l, e) ->
         "forall " ^ String.concat " "
+            (List.map (function
+                | (x, None) -> x
+                | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
+        ", " ^ string_of_expr e
+    | Exists (l, e) ->
+        "exists " ^ String.concat " "
             (List.map (function
                 | (x, None) -> x
                 | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
@@ -105,8 +115,27 @@ let rec string_of_expr = function
         string_of_type t
     | Match (e, l) ->
         "NYI"
+    | Ifthenelse (e1, e2, e3) ->
+        par ("ifb " ^ string_of_expr e1 ^ " then " ^ string_of_expr e2 ^ " else " ^ string_of_expr e3)
 
 let output_rule1 f preds rules =
+    let print_start_pred start p =
+        let forall_params =
+            if p.red_forall_params = [] then ""
+            else (
+                "forall " ^ String.concat " " (List.map (function
+                    | (x, Some t, false) ->
+                        par (x ^ " : " ^ string_of_type t)
+                    | (x, Some t, true) ->
+                        "{" ^ x ^ " : " ^ string_of_type t ^ "}"
+                    | (x, None, true) ->
+                        "{" ^ x ^ "}"
+                    | (x, None, false) -> x) p.red_forall_params) ^ ", "
+            ) in
+        output_endline f (start ^ p.red_pred_name ^ " : " ^ forall_params ^
+            String.concat " -> " (List.map (fun (t, i) ->
+                string_of_type t ^ if i then " (* input *)" else "") p.red_pred_types) ^
+            " -> Prop :=") in
     let rec aux preds current_pred = function
         | [] ->
             output_endline f "  .\n"
@@ -124,10 +153,7 @@ let output_rule1 f preds rules =
                             prerr_endline ("Unknown predicate " ^ conclusion ^ " in Rule " ^ r.rule1_name ^ ". Aborting.") ;
                             exit 0
                         | p :: l ->
-                            output_endline f ("\n\nwith " ^ p.red_pred_name ^ " : " ^
-                                String.concat " -> " (List.map (fun (t, i) ->
-                                    string_of_type t ^ if i then " (* input *)" else "") p.red_pred_types) ^
-                                " -> Prop :=") ;
+                            print_start_pred "\n\nwith " p ;
                             (l, fun p' -> p.red_pred_name = p')
             in
             output_endline f ("\n  | " ^ r.rule1_name ^ " :");
@@ -146,10 +172,7 @@ let output_rule1 f preds rules =
         prerr_endline "No reduction defined! Aborting." ;
         exit 0
     | p :: preds ->
-        output_endline f ("Inductive " ^ p.red_pred_name ^ " : " ^
-            String.concat " -> " (List.map (fun (t, i) ->
-                string_of_type t ^ if i then " (* input *)" else "") p.red_pred_types) ^
-            " -> Prop :=") ;
+        print_start_pred "Inductive " p ;
         aux preds (fun p' -> p.red_pred_name = p') rules
 
 
