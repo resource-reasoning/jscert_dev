@@ -76,6 +76,7 @@ let _ =
                 exit 0
             | Some l -> {
                 red_pred_name = r.red_name ;
+                red_forall_params = r.red_params ; (* In practise, this is just for red_spec and its “forall {T},”. *)
                 red_pred_types =
                     let rt =
                         match r.red_type with

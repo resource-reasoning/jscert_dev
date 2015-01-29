@@ -146,9 +146,15 @@ let rec type_expr local var_type = function
     | String _ -> Some (Basic_type (None, "string"))
     | Int _ -> Some (Basic_type (None, "int"))
     | Forall _ -> Some Prop
+    | Exists _ -> Some Prop
     | Expr_type _ -> Some Prop
     | Wildcard -> None
     | Match _ -> None (* This is just a script, it hasn't to be complete :-) *)
+    | Ifthenelse (e1, e2, e3) ->
+        (match type_expr local var_type e2, type_expr local var_type e3 with
+        | Some t, _ -> learn_type local e3 t ; Some t
+        | _, Some t -> learn_type local e2 t ; Some t
+        | _ -> None)
 
 let add_argument_types var_type resulttype =
     List.fold_left (fun rt (x, top, i) ->
