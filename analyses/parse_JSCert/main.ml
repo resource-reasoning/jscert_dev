@@ -61,14 +61,14 @@ let _ =
     List.iter (Typing.fetchcoerciondefs var_type) jsprettyrulesfile ;
     (*****************************************)
     print_endline "Normalising the rules." ;
+    let inputoutput = [
+        "red_javascript", [true; false] ;
+        "red_prog", [true; true; true; false] ;
+        "red_stat", [true; true; true; false] ;
+        "red_expr", [true; true; true; false] ;
+        "red_spec", [(*true;*) true; true; true; false] ;
+    ] in
     let all_preds : red_pred list =
-        let inputoutput = [
-            "red_javascript", [true; false] ;
-            "red_prog", [true; true; true; false] ;
-            "red_stat", [true; true; true; false] ;
-            "red_expr", [true; true; true; false] ;
-            "red_spec", [(*true;*) true; true; true; false] ;
-        ] in
         List.map (fun r ->
             match assoc_option r.red_name inputoutput with
             | None ->
@@ -99,7 +99,7 @@ let _ =
             }) all_reds
     in
     let is_pred p = List.exists (fun r -> p = r.red_pred_name) all_preds in
-    let all_rule1 =
+    let all_rule1 : rule1 list =
         List.map (fun r ->
             let local = r.rule_params in
             Typing.reset_loc_types () ;
@@ -109,31 +109,53 @@ let _ =
                 match get_pred e with
                 | None -> false
                 | Some p -> is_pred p) prems in
-            let p = get_pred conclusion in
-            let inputs = [] (* TODO *) in
-            let types_params =
-                List.map (function
-                    | (x, Some t) -> (x, t)
-                    | (x, None) ->
-                        match var_type x with
-                        | Some t -> (x, t)
-                        | None ->
-                            match Typing.get_loc_type x with
-                            | Some t -> (x, t)
-                            | None ->
-                                prerr_endline ("Warning: Unable to detect the type of " ^ x ^ " in Rule " ^ r.rule_name ^ ".") ;
-                                (x, Basic_type (None, "_" (* Hack! *)))) r.rule_params in
-            {
-                rule1_name = r.rule_name ;
-                rule1_params =
-                    List.map (fun (x, t) -> (x, t, List.mem x inputs)) types_params ;
-                rule1_conditions = conditions ;
-                rule1_premisses = premisses ;
-                rule1_conclusion = conclusion
-            }) all_rules in
+            match get_pred conclusion with
+            | None ->
+                prerr_endline ("Unable to parse the conclusion of Rule " ^ r.rule_name ^ ". Aborting.") ;
+                exit 0
+            | Some p ->
+                match assoc_option p inputoutput with
+                | None ->
+                    prerr_endline ("Predicate " ^ p ^ " of the conclusion of Rule " ^ r.rule_name ^ " not found in inputoutput (see main.ml). Aborting.") ;
+                    exit 0
+                | Some input_spec ->
+                    let rec get_inputs = function
+                        | [true], e -> [e]
+                        | [false], _ -> []
+                        | true :: input_spec, App (e, None, arg) ->
+                            arg :: get_inputs (input_spec, e)
+                        | false :: input_spec, App (e, None, arg) ->
+                            get_inputs (input_spec, e)
+                        | _ ->
+                            prerr_endline ("Rule " ^ r.rule_name ^ " doesn't match its status in inputoutput (see main.ml). Aborting.") ;
+                            exit 0 in
+                    let inputs : expr list =
+                        List.rev (get_inputs (List.rev input_spec, conclusion)) in
+                    let types_params =
+                        List.map (function
+                            | (x, Some t) -> (x, t)
+                            | (x, None) ->
+                                match var_type x with
+                                | Some t -> (x, t)
+                                | None ->
+                                    match Typing.get_loc_type x with
+                                    | Some t -> (x, t)
+                                    | None ->
+                                        prerr_endline ("Warning: Unable to detect the type of " ^ x ^ " in Rule " ^ r.rule_name ^ ".") ;
+                                        (x, Basic_type (None, "_" (* Hack! *)))) r.rule_params in
+                    {
+                        rule1_name = r.rule_name ;
+                        rule1_params =
+                            List.map (fun (x, t) -> (x, t, List.exists (variable_used x) inputs)) types_params ;
+                        rule1_conditions = conditions ;
+                        rule1_premisses = premisses ;
+                        rule1_conclusion = conclusion
+                    }) all_rules in
     (*****************************************)
     print_endline "Extracting the reductions." ;
+    let rule1f = coq_file "gen/JsRules1.v" in (* Just to test if it has been well generated. *)
+    output_rule1 rule1f all_preds all_rule1 ;
+    separate_coq rule1f ;
     let namesf = coq_file "gen/JsNames.v" in
-    output_endline namesf "Inductive js_names :=" ;
     ()
 

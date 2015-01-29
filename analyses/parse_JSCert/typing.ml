@@ -67,9 +67,12 @@ let add_def_type local mx t =
     | _ -> add ()
 
 let rec learn_type local e t =
+    let identifer_to_avoid =
+        ["nil"] in
     match e, t with
     | Ident (_, m, x), _ ->
-        add_def_type local (m, x) t
+        if not (List.mem x identifer_to_avoid) then
+            add_def_type local (m, x) t
     | Couple (e1, e2), Prod_type (t1, t2) ->
         learn_type local e1 t1 ;
         learn_type local e2 t2

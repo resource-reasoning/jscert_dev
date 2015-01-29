@@ -63,4 +63,3 @@ Implicit Type sc : switchclause.
 
 (******************************************)
 
-Inductive js_names :=

@@ -106,3 +106,50 @@ let rec string_of_expr = function
     | Match (e, l) ->
         "NYI"
 
+let output_rule1 f preds rules =
+    let rec aux preds current_pred = function
+        | [] ->
+            output_endline f "  .\n"
+        | r :: rules ->
+            let (preds, current_pred) =
+                match get_pred r.rule1_conclusion with
+                | None ->
+                    prerr_endline "Should not happen. Aborting." ;
+                    exit 0
+                | Some conclusion ->
+                    if current_pred conclusion
+                    then (preds, current_pred)
+                    else match preds with
+                        | [] ->
+                            prerr_endline ("Unknown predicate " ^ conclusion ^ " in Rule " ^ r.rule1_name ^ ". Aborting.") ;
+                            exit 0
+                        | p :: l ->
+                            output_endline f ("\n\nwith " ^ p.red_pred_name ^ " : " ^
+                                String.concat " -> " (List.map (fun (t, i) ->
+                                    string_of_type t ^ if i then " (* input *)" else "") p.red_pred_types) ^
+                                " -> Prop :=") ;
+                            (l, fun p' -> p.red_pred_name = p')
+            in
+            output_endline f ("\n  | " ^ r.rule1_name ^ " :");
+            output_endline f ("    forall " ^
+                String.concat " " (List.map (fun (x, t, i) ->
+                    par (x ^ " : " ^ string_of_type t ^
+                    if i then " (* input *)" else "")) r.rule1_params) ^ ",") ;
+            List.iter (fun e -> output_endline f ("      " ^ string_of_expr e ^ " ->")) r.rule1_conditions ;
+            output_endline f ("      (* " ^ String.make 42 '=' ^ " *)") ;
+            List.iter (fun e -> output_endline f ("      " ^ string_of_expr e ^ " ->")) r.rule1_premisses ;
+            output_endline f ("      (* " ^ String.make 42 '-' ^ " *)") ;
+            output_endline f ("      " ^ string_of_expr r.rule1_conclusion) ;
+            aux preds current_pred rules
+    in match preds with
+    | [] ->
+        prerr_endline "No reduction defined! Aborting." ;
+        exit 0
+    | p :: preds ->
+        output_endline f ("Inductive " ^ p.red_pred_name ^ " : " ^
+            String.concat " -> " (List.map (fun (t, i) ->
+                string_of_type t ^ if i then " (* input *)" else "") p.red_pred_types) ^
+            " -> Prop :=") ;
+        aux preds (fun p' -> p.red_pred_name = p') rules
+
+
