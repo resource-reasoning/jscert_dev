@@ -6,7 +6,8 @@ open Utils
 let coercions : (ctype *(* >-> *) ctype) list ref =
     ref [
         Basic_type (None, "bool"), Prop ;
-        Basic_type (None, "nat"), Basic_type (None, "int")
+        Basic_type (None, "nat"), Basic_type (None, "int") ;
+        Basic_type (None, "object_loc"), Basic_type (None, "value")
     ]
 
 let rec coercable t1 t2 =
@@ -79,7 +80,7 @@ let add_def_type location local mx t =
 
 let rec learn_type location local e t =
     let identifer_to_avoid =
-        [ "nil" ] in
+        [ "nil" ; "binds" ; "indom" ; "empty" ; "write" ] in
     match e, t with
     | Ident (_, m, x), _ ->
         if not (List.mem x identifer_to_avoid) then
@@ -109,8 +110,9 @@ let rec type_expr location local var_type = function
                     | None -> None)
                 | _ -> None)
     | App (e1, _, e2) ->
+        let t1 = type_expr location local var_type e1 in
         ignore (type_expr location local var_type e2) ;
-        (match type_expr location local var_type e1 with
+        (match t1 with
         | Some (Fun_type (t1, t2)) ->
             learn_type location local e2 t1 ;
             Some t2
@@ -141,6 +143,16 @@ let rec type_expr location local var_type = function
             learn_type location local e2 tl ;
             Some tl
         | _, Some (App_type (Basic_type (None, "list"), t) as tl) ->
+            learn_type location local e1 t ;
+            Some tl
+        | _ -> None)
+    | Binop (Scons, e1, e2) ->
+        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        | Some t, _ ->
+            let tl = App_type (Basic_type (None, "stream"), t) in
+            learn_type location local e2 tl ;
+            Some tl
+        | _, Some (App_type (Basic_type (None, "stream"), t) as tl) ->
             learn_type location local e1 t ;
             Some tl
         | _ -> None)
@@ -181,6 +193,27 @@ let rec type_expr location local var_type = function
         | Some t, _ -> learn_type location local e3 t ; Some t
         | _, Some t -> learn_type location local e2 t ; Some t
         | _ -> None)
+    | Expr_record l ->
+        (match l with
+        | [] -> None
+        | (x, _) :: _ ->
+            match type_expr location local var_type (Ident (false, None, x)) with
+            | Some (Fun_type (t1, t2)) -> Some t2
+            | _ -> None)
+    | Function (l, e) ->
+        let rec aux local = function
+        | [] -> type_expr location local var_type e
+        | (x, Some t) :: l ->
+            (match aux ((x, Some t) :: local) l with
+            | None -> None
+            | Some t' -> Some (Fun_type (t, t')))
+        | (x, None) :: l ->
+            match var_type x with
+            | None -> None
+            | Some t -> aux local ((x, Some t) :: l)
+        in aux local l
+    | Cast (e, t) ->
+        learn_type location local e t ; Some t
 
 let add_argument_types var_type resulttype =
     List.fold_left (fun rt (x, top, i) ->
@@ -245,7 +278,7 @@ let fetchcoerciondefs var_type = function
         (match convert_to_type d.body with (* Maybe it's just a shortcut for a type. *)
         | Some t ->
             let t0 = Basic_type (None, d.def_name) in
-            if d.arguments = [] && d.def_type = None && d.def_lets = [] then (
+            if d.arguments = [] && d.def_type = None then (
                 add_coercion t0 t ;
                 add_coercion t t0)
         | None -> ())

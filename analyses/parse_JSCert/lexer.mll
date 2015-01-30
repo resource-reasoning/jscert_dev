@@ -39,6 +39,7 @@ rule token = parse
   | "::"                                        { LISTCONS }
   | "++"                                        { LISTAPP }
   | "&"                                         { LISTLAST }
+  | ":::"                                       { STREAMCONS }
 
   | ("~"|"¬")                                   { NOT }
   | ("/\\"|"∧")                                 { AND }
@@ -86,11 +87,11 @@ rule token = parse
 
   | "Implicit" (blank+) "Type"                  { IMPLICITTYPE }
 
-  | "Definition"                                { DEFINITION }
+  | ("Definition" | "Fixpoint")                 { DEFINITION }
   | "Record"                                    { RECORD }
   | "Module"                                    { MODULE }
   | "Notation"                                  { NOTATION }
-  | ("Hypothesis" | "Parameter")                { HYPOTHESIS }
+  | ("Hypothesis" | "Parameter" | "Axiom")      { HYPOTHESIS }
   | "Inductive"                                 { INDUCTIVE }
   | "with"                                      { WITH }
 

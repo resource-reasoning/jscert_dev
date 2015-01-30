@@ -11,7 +11,7 @@ type binop =
     | And | Or
     | Band | Bor
     | Inf | Infeq | Sup | Supeq
-    | Lcons | Lapp | Llast
+    | Lcons | Lapp | Llast | Scons
     | Eq | Neq
 type unop = Not
 
@@ -28,14 +28,16 @@ type expr =
     | Forall of (string * ctype option) list * expr
     | Exists of (string * ctype option) list * expr
     | Expr_type of ctype
-    | Match of expr (* matched expression *) * (expr (* pattern *) * expr (* result *)) list
+    | Match of expr list (* matched expressions *) * (expr list (* patterns *) * expr (* result *)) list
     | Ifthenelse of expr * expr * expr
+    | Expr_record of (string * expr) list
+    | Function of (string * ctype option) list * expr
+    | Cast of expr * ctype
 
 type def = {
     def_name : string ;
     arguments : (string * ctype option * bool (* This boolean states that it is marked implicit, like {T} *)) list ;
     def_type : ctype option ;
-    def_lets : (string * expr) list ;
     body : expr ;
     is_coercion : bool
 }
