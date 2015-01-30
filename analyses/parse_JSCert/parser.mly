@@ -18,7 +18,7 @@
 %token NOT AND OR BAND BOR INF INFEQ SUP SUPEQ
 %token LISTCONS LISTAPP LISTLAST
 %token <string> STRING
-%token <int> INT
+%token <int> INT NAT
 %token TYPE PROP
 %token LPAR RPAR LBRACK RBRACK
 %token COLONEQ ARROW FUNARROW
@@ -38,12 +38,15 @@
 %right    ARROW
 %left     IF THEN ELSE
 %left     AND OR
-%nonassoc NOT
-%nonassoc EQ NEQ
+%nonassoc NOT prec_unop
+%nonassoc EQ NEQ INF INFEQ SUP SUPEQ
+%left     BAND BOR
 %right    LISTCONS LISTAPP LISTLAST
 %left     ADD SUB
 %left     STAR
 %left     prec_app
+%nonassoc RBRACK LBRACK LPAR RPAR
+%nonassoc AT
 %left     DOT
 %nonassoc IDENT
 
@@ -131,7 +134,7 @@ main:
           File_reductions $2
           :: $4
       }
-    | lex_list %prec prec_error     { unrecognized_items $1 }
+    /* | lex_list %prec prec_error     { unrecognized_items $1 } */
     ;
 
 maybetype:
@@ -259,8 +262,23 @@ expr:
           | _ -> prerr_endline "This should not happen!" ; exit 0
       }
     | IF expr THEN expr ELSE expr                           { Ifthenelse ($2, $4, $6) }
-    | expr binop expr                                       { Binop ($2, $1, $3) }
-    | unop expr                                             { Unop ($1, $2) }
+    | expr ADD expr                                         { Binop (Add, $1, $3) }
+    | expr SUB expr                                         { Binop (Sub, $1, $3) }
+    | expr STAR expr                                        { Binop (Mult, $1, $3) }
+    | expr AND expr                                         { Binop (And, $1, $3) }
+    | expr OR expr                                          { Binop (Or, $1, $3) }
+    | expr BAND expr                                        { Binop (Band, $1, $3) }
+    | expr BOR expr                                         { Binop (Bor, $1, $3) }
+    | expr INF expr                                         { Binop (Inf, $1, $3) }
+    | expr INFEQ expr                                       { Binop (Infeq, $1, $3) }
+    | expr SUP expr                                         { Binop (Sup, $1, $3) }
+    | expr SUPEQ expr                                       { Binop (Supeq, $1, $3) }
+    | expr LISTCONS expr                                    { Binop (Lcons, $1, $3) }
+    | expr LISTAPP expr                                     { Binop (Lapp, $1, $3) }
+    | expr LISTLAST expr                                    { Binop (Llast, $1, $3) }
+    | expr EQ expr                                          { Binop (Eq, $1, $3) }
+    | expr NEQ expr                                         { Binop (Neq, $1, $3) }
+    | NOT expr %prec prec_unop                              { Unop (Not, $2) }
     ;
 
 expr_app_list:
@@ -275,6 +293,7 @@ simple_expr:
     | LPAR expr COMMA expr RPAR                             { Couple ($2, $4) }
     | STRING                                                { String $1 }
     | INT                                                   { Int $1 }
+    | NAT                                                   { Nat $1 }
     | LPAR FORALL arglist COMMA expr RPAR                   { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
     | LPAR EXISTS arglist COMMA expr RPAR                   { Exists (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
     | LPAR ctype ARROW ctype RPAR                           { Expr_type (Fun_type ($2, $4)) }
@@ -292,29 +311,6 @@ ident:
     | IDENT             { (false, None, $1) }
     | MODULEIDENT       { let (m, x) = $1 in (false, Some m, x) }
     | AT ident          { let (_, l, x) = $2 in (true, l, x) }
-    ;
-
-binop:
-    | ADD       { Add }
-    | SUB       { Sub }
-    | STAR      { Mult }
-    | AND       { And }
-    | OR        { Or }
-    | BAND      { Band }
-    | BOR       { Bor }
-    | INF       { Inf }
-    | INFEQ     { Infeq }
-    | SUP       { Sup }
-    | SUPEQ     { Supeq }
-    | LISTCONS  { Lcons }
-    | LISTAPP   { Lapp }
-    | LISTLAST  { Llast }
-    | EQ        { Eq }
-    | NEQ       { Neq }
-    ;
-
-unop:
-    | NOT   { Not }
     ;
 
 arglist:
@@ -370,7 +366,8 @@ token:
     | BOR                       { "||" }
 
     | STRING                    { "\"" ^ $1 ^ "\"%string" }
-    | INT                       { "(" ^ string_of_int $1 ^ ")%Z" }
+    | INT                       { "(" ^ string_of_int $1 ^ " : int)" }
+    | NAT                       { "(" ^ string_of_int $1 ^ ")" }
 
     | TYPE                      { "Type" }
     | PROP                      { "Prop" }
@@ -390,7 +387,12 @@ token:
     | END                       { "end" }
     | WILDCARD                  { "_" }
 
+    | IF                        { "if" }
+    | THEN                      { "then" }
+    | ELSE                      { "else" }
+
     | FORALL                    { "forall" }
+    | EXISTS                    { "exists" }
     | FUN                       { "fun" }
     | COMMA                     { "," }
 

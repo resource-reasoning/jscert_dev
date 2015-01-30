@@ -23,14 +23,6 @@ let rec cut_last = function
         let (l, b) = cut_last l in
         (a :: l, b)
 
-let rec separate test = function
-    | [] -> ([], [])
-    | a :: l ->
-        let (t, f) = separate test l in
-        if test a
-        then (a :: t, f)
-        else (t, a :: f)
-
 
 (** Some string manipulations **)
 
@@ -49,7 +41,7 @@ let char_list_of_string s =
 
 let normalise_var_name x =
     let rem_char =
-        ['0' ; '1' ; '2' ; '3' ; '4' ; '5' ; '6' ; '7' ; '8' ; '9' ; '\''] in
+        ['0' ; '1' ; '2' ; '3' ; '4' ; '5' ; '6' ; '7' ; '8' ; '9' ; '\'' ; '_'] in
     string_of_char_list (List.filter (fun c -> not (List.mem c rem_char))
         (char_list_of_string x))
 

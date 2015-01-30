@@ -47,7 +47,8 @@ rule token = parse
   | "||"                                        { BOR }
 
   | "\"" ([^'"']* as s) "\"" ("%string")?       { STRING s }
-  | ['0'-'9']+ as s ("%int" | "%Z" | blank+ ":" blank+ "int")?  { INT (int_of_string s) }
+  | ['0'-'9']+ as s (blank+ ":" blank+ "int")   { INT (int_of_string s) }
+  | ['0'-'9']+ as s                             { NAT (int_of_string s) }
 
   | "Type"                                      { TYPE }
   | "Prop"                                      { PROP }
@@ -93,7 +94,7 @@ rule token = parse
   | "Inductive"                                 { INDUCTIVE }
   | "with"                                      { WITH }
 
-  | ident as m "." ident as x                   { MODULEIDENT (m, x) }
+  | (ident as m) "." (ident as x)               { MODULEIDENT (m, x) }
   | ident as s                                  { IDENT s }
 
   | eof                                         { EOF }

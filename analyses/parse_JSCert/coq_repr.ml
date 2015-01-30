@@ -24,6 +24,7 @@ type expr =
     | Couple of expr * expr
     | String of string
     | Int of int
+    | Nat of int
     | Forall of (string * ctype option) list * expr
     | Exists of (string * ctype option) list * expr
     | Expr_type of ctype
@@ -98,6 +99,7 @@ let make_red_pred name l = {
 type rule1 = {
     rule1_name : string ;
     rule1_params : (string * ctype * bool (* It is an input *)) list ;
+    rule1_localdefs : (string * expr) list (* local let-bindings *) ;
     rule1_conditions : expr list ;
     rule1_premisses : expr list ;
     rule1_conclusion : expr
