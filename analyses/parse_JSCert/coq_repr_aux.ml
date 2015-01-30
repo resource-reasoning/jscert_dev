@@ -29,7 +29,7 @@ let rec variable_used x = function
         variable_used x e1 || variable_used x e2
     | String s ->
         false
-    | Int i ->
+    | Int i | Nat i ->
         false
     | Forall (l, e) ->
         not (List.exists (fun (y, _) -> x = y) l) && variable_used x e
@@ -47,6 +47,19 @@ let rec variable_used x = function
 let rec get_pred = function
     | Ident (_, None, x) -> Some x
     | App (e, _, _) -> get_pred e
+    | _ -> None
+
+let rec convert_to_type = function (* In Coq, we never know what is meant to be a type and what is meant to be a term. *)
+    | Ident (false, m, x) -> Some (Basic_type (m, x))
+    | App (e1, None, e2) ->
+        (match convert_to_type e1, convert_to_type e2 with
+        | Some t1, Some t2 -> Some (App_type (t1, t2))
+        | _ -> None)
+    | Binop (Mult, e1, e2) ->
+        (match convert_to_type e1, convert_to_type e2 with
+        | Some t1, Some t2 -> Some (Prod_type (t1, t2))
+        | _ -> None)
+    | Expr_type t -> Some t
     | _ -> None
 
 
@@ -67,11 +80,12 @@ let rec string_of_expr = function
     | Ident (i, m, x) ->
         (if i then "@" else "") ^
         (match m with Some m -> m ^ "." | None -> "") ^ x
-    | App (e1, internal, e2) ->
-        par (string_of_expr e1 ^
-            match internal with
-            | Some x -> " (" ^ x ^ " := " ^ string_of_expr e2 ^ ")"
-            | None -> " " ^ string_of_expr e2)
+    | App (e1, internal, e2) as e ->
+        let rec string_expr_app = function
+            | App (e1, Some x, e2) -> string_expr_app e1 ^ " (" ^ x ^ " := " ^ string_of_expr e2 ^ ")"
+            | App (e1, None, e2) -> string_expr_app e1 ^ " " ^ string_of_expr e2
+            | e -> string_of_expr e in
+        par (string_expr_app e)
     | Binop (op, e1, e2) ->
         let b = match op with
             | Add -> "+"
@@ -98,7 +112,8 @@ let rec string_of_expr = function
     | Couple (e1, e2) ->
         par (string_of_expr e1 ^ ", " ^ string_of_expr e2)
     | String s -> par ("(\"" ^ s ^ "\")%string")
-    | Int i -> par (par (string_of_int i) ^ "%Z")
+    | Int i -> par (string_of_int i ^ " : int")
+    | Nat i -> string_of_int i
     | Forall (l, e) ->
         "forall " ^ String.concat " "
             (List.map (function
@@ -114,7 +129,9 @@ let rec string_of_expr = function
     | Expr_type t ->
         string_of_type t
     | Match (e, l) ->
-        "NYI"
+        "match " ^ string_of_expr e ^ " with " ^
+        String.concat " | " (List.map (fun (pattern, e) ->
+            string_of_expr pattern ^ " => " ^ string_of_expr e) l) ^ " end"
     | Ifthenelse (e1, e2, e3) ->
         par ("ifb " ^ string_of_expr e1 ^ " then " ^ string_of_expr e2 ^ " else " ^ string_of_expr e3)
 
@@ -157,15 +174,16 @@ let output_rule1 f preds rules =
                             (l, fun p' -> p.red_pred_name = p')
             in
             output_endline f ("\n  | " ^ r.rule1_name ^ " :");
-            output_endline f ("    forall " ^
+            output_endline f ("      forall " ^
                 String.concat " " (List.map (fun (x, t, i) ->
                     par (x ^ " : " ^ string_of_type t ^
                     if i then " (* input *)" else "")) r.rule1_params) ^ ",") ;
-            List.iter (fun e -> output_endline f ("      " ^ string_of_expr e ^ " ->")) r.rule1_conditions ;
-            output_endline f ("      (* " ^ String.make 42 '=' ^ " *)") ;
-            List.iter (fun e -> output_endline f ("      " ^ string_of_expr e ^ " ->")) r.rule1_premisses ;
-            output_endline f ("      (* " ^ String.make 42 '-' ^ " *)") ;
-            output_endline f ("      " ^ string_of_expr r.rule1_conclusion) ;
+            List.iter (fun (x, e) -> output_endline f ("        let " ^ x ^ " := " ^ string_of_expr e ^ " in")) r.rule1_localdefs ;
+            List.iter (fun e -> output_endline f ("        " ^ string_of_expr e ^ " ->")) r.rule1_conditions ;
+            output_endline f ("        (* " ^ String.make 42 '=' ^ " *)") ;
+            List.iter (fun e -> output_endline f ("        " ^ string_of_expr e ^ " ->")) r.rule1_premisses ;
+            output_endline f ("        (* " ^ String.make 42 '-' ^ " *)") ;
+            output_endline f ("        " ^ string_of_expr r.rule1_conclusion) ;
             aux preds current_pred rules
     in match preds with
     | [] ->

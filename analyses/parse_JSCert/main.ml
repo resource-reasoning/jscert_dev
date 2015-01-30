@@ -102,11 +102,12 @@ let _ =
     let is_pred p = List.exists (fun r -> p = r.red_pred_name) all_preds in
     let all_rule1 : rule1 list =
         List.map (fun r ->
-            let local = r.rule_params in
+            let local = r.rule_params @ List.map (fun (x, _) -> (x, None)) r.rule_localdefs in
             Typing.reset_loc_types () ;
-            List.iter (fun e -> ignore (Typing.type_expr local var_type e)) r.rule_statement_list ;
+            List.iter (fun (x, e) -> ignore (Typing.type_expr (" in the local defintions of Rule " ^ r.rule_name) local var_type e)) r.rule_localdefs ;
+            List.iter (fun e -> ignore (Typing.type_expr (" in the premisses of Rule " ^ r.rule_name) local var_type e)) r.rule_statement_list ;
             let (prems, conclusion) = cut_last r.rule_statement_list in
-            let (premisses, conditions) = separate (fun e ->
+            let (premisses, conditions) = List.partition (fun e ->
                 match get_pred e with
                 | None -> false
                 | Some p -> is_pred p) prems in
@@ -133,6 +134,10 @@ let _ =
                     let inputs : expr list =
                         List.rev (get_inputs (List.rev input_spec, conclusion)) in
                     let types_params =
+                        let unable x =
+                            prerr_endline ("Warning: Unable to detect the type of " ^ x ^ " in Rule " ^ r.rule_name ^ ".") ;
+                            (x, Basic_type (None, "_" (* Hack! *)))
+                        in
                         List.map (function
                             | (x, Some t) -> (x, t)
                             | (x, None) ->
@@ -141,13 +146,19 @@ let _ =
                                 | None ->
                                     match Typing.get_loc_type x with
                                     | Some t -> (x, t)
-                                    | None ->
-                                        prerr_endline ("Warning: Unable to detect the type of " ^ x ^ " in Rule " ^ r.rule_name ^ ".") ;
-                                        (x, Basic_type (None, "_" (* Hack! *)))) r.rule_params in
+                                    | None -> (* A last chance try... *)
+                                        match List.rev (char_list_of_string (normalise_var_name x)) with
+                                        | 's' :: l -> (
+                                            let x' = string_of_char_list (List.rev l) in
+                                            match var_type x' with
+                                            | Some t -> (x, App_type (Basic_type (None, "list"), t))
+                                            | None -> unable x)
+                                        | _ -> unable x) r.rule_params in
                     {
                         rule1_name = r.rule_name ;
                         rule1_params =
                             List.map (fun (x, t) -> (x, t, List.exists (variable_used x) inputs)) types_params ;
+                        rule1_localdefs = r.rule_localdefs ;
                         rule1_conditions = conditions ;
                         rule1_premisses = premisses ;
                         rule1_conclusion = conclusion
