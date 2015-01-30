@@ -1,5 +1,6 @@
 %{
     open Coq_repr
+    open Coq_repr_aux
 
     let parse_error s =
         prerr_endline ("Parsing error: " ^ s)
@@ -16,7 +17,7 @@
 %token DOT COLON PIPE AT SEMICOLON
 %token STAR ADD SUB EQ NEQ
 %token NOT AND OR BAND BOR INF INFEQ SUP SUPEQ
-%token LISTCONS LISTAPP LISTLAST
+%token LISTCONS LISTAPP LISTLAST STREAMCONS
 %token <string> STRING
 %token <int> INT NAT
 %token TYPE PROP
@@ -41,7 +42,7 @@
 %nonassoc NOT prec_unop
 %nonassoc EQ NEQ INF INFEQ SUP SUPEQ
 %left     BAND BOR
-%right    LISTCONS LISTAPP LISTLAST
+%right    LISTCONS LISTAPP LISTLAST STREAMCONS
 %left     ADD SUB
 %left     STAR
 %left     prec_app
@@ -75,17 +76,9 @@ main:
           let lt = List.map (fun s -> File_implicit_type (s, t)) $2 in
           lt @ $6
       }
-    | DEFINITION IDENT arglist maybetype COLONEQ lets expr DOT main
+    | DEFINITION def_list DOT main
       {
-          let d = {
-              def_name = $2 ;
-              arguments = $3 ;
-              def_type = $4 ;
-              def_lets = $6 ;
-              body = $7 ;
-              is_coercion = false
-          } in
-          File_definition d :: $9
+          $2 @ $4
       }
     | HYPOTHESIS IDENT arglist COLON ctype DOT main
       {
@@ -95,6 +88,18 @@ main:
               hyp_type = $5
           } in
           File_hypothesis h :: $7
+      }
+    | HYPOTHESIS IDENT arglist COLON FORALL arglist COMMA expr DOT main
+      {
+          let h = {
+              hyp_name = $2 ;
+              hyp_arguments = $3 @ $6 ;
+              hyp_type =
+                  match convert_to_type $8 with
+                  | Some t -> t
+                  | None -> Basic_type (None, "_" (* Hack! *))
+          } in
+          File_hypothesis h :: $10
       }
     | COERCION IDENT COLON ctype COERCIONARROW ctype DOT main
       {
@@ -110,7 +115,6 @@ main:
               def_name = $2 ;
               arguments = $3 ;
               def_type = $4 ;
-              def_lets = [] ;
               body = $6 ;
               is_coercion = true
           } in
@@ -156,6 +160,25 @@ record:
 maybeexport:
       /* empty */   { }
     | IMEXPORT      { }
+    ;
+
+maybe_def_list:
+      /* empty */   { [] }
+    | WITH def_list { $2 }
+    ;
+
+def_list:
+    | IDENT arglist maybetype COLONEQ expr maybe_def_list
+      {
+          let d = {
+              def_name = $1 ;
+              arguments = $2 ;
+              def_type = $3 ;
+              body = $5 ;
+              is_coercion = false
+          } in
+          File_definition d :: $6
+      }
     ;
 
 maybe_red_list:
@@ -261,6 +284,8 @@ expr:
             List.fold_left (fun e1 (e2, internal) -> App (e1, internal, e2)) e l
           | _ -> prerr_endline "This should not happen!" ; exit 0
       }
+    | LET expr COLONEQ expr IN expr                         { Match ([$4], [[$2], $6]) }
+    | EXISTS arglist COMMA expr                             { Exists (List.map (fun (x, t, _) -> (x, t)) $2, $4) }
     | IF expr THEN expr ELSE expr                           { Ifthenelse ($2, $4, $6) }
     | expr ADD expr                                         { Binop (Add, $1, $3) }
     | expr SUB expr                                         { Binop (Sub, $1, $3) }
@@ -276,6 +301,7 @@ expr:
     | expr LISTCONS expr                                    { Binop (Lcons, $1, $3) }
     | expr LISTAPP expr                                     { Binop (Lapp, $1, $3) }
     | expr LISTLAST expr                                    { Binop (Llast, $1, $3) }
+    | expr STREAMCONS expr                                  { Binop (Scons, $1, $3) }
     | expr EQ expr                                          { Binop (Eq, $1, $3) }
     | expr NEQ expr                                         { Binop (Neq, $1, $3) }
     | NOT expr %prec prec_unop                              { Unop (Not, $2) }
@@ -288,23 +314,36 @@ expr_app_list:
     ;
 
 simple_expr:
-    | ident                                                 { let (a, l, x) = $1 in Ident (a, l, x) }
-    | LPAR expr RPAR                                        { $2 }
-    | LPAR expr COMMA expr RPAR                             { Couple ($2, $4) }
-    | STRING                                                { String $1 }
-    | INT                                                   { Int $1 }
-    | NAT                                                   { Nat $1 }
-    | LPAR FORALL arglist COMMA expr RPAR                   { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
-    | LPAR EXISTS arglist COMMA expr RPAR                   { Exists (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
-    | LPAR ctype ARROW ctype RPAR                           { Expr_type (Fun_type ($2, $4)) }
-    | MATCH expr WITH pattern_list END                      { Match ($2, $4) }
-    | MATCH expr WITH expr FUNARROW expr pattern_list END   { Match ($2, ($4, $6) :: $7) }
-    | WILDCARD                                              { Wildcard }
+    | ident                                                         { let (a, l, x) = $1 in Ident (a, l, x) }
+    | LPAR expr RPAR                                                { $2 }
+    | LPAR expr COLON ctype RPAR                                    { Cast ($2, $4) }
+    | LPAR expr COMMA expr RPAR                                     { Couple ($2, $4) }
+    | STRING                                                        { String $1 }
+    | INT                                                           { Int $1 }
+    | NAT                                                           { Nat $1 }
+    | LPAR ctype ARROW ctype RPAR                                   { Expr_type (Fun_type ($2, $4)) }
+    | LPAR FORALL arglist COMMA expr RPAR                           { Forall (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
+    | MATCH expr_list WITH pattern_list END                         { Match ($2, $4) }
+    | MATCH expr_list WITH expr_list FUNARROW expr pattern_list END { Match ($2, ($4, $6) :: $7) }
+    | WILDCARD                                                      { Wildcard }
+    | LBRACK PIPE record_def PIPE RBRACK                            { Expr_record $3 }
+    | LPAR FUN arglist FUNARROW expr RPAR                           { Function (List.map (fun (x, t, _) -> (x, t)) $3, $5) }
+    ;
+
+expr_list:
+    | expr                  { [$1] }
+    | expr COMMA expr_list  { $1 :: $3 }
+    ;
+
+record_def:
+      /* empty */                               { [] }
+    | IDENT COLONEQ expr                        { [$1, $3] }
+    | IDENT COLONEQ expr SEMICOLON record_def   { ($1, $3) :: $5 }
     ;
 
 pattern_list:
-      /* empty */                           { [] }
-    | PIPE expr FUNARROW expr pattern_list  { ($2, $4) :: $5 }
+      /* empty */                                   { [] }
+    | PIPE expr_list FUNARROW expr pattern_list     { ($2, $4) :: $5 }
     ;
 
 ident:
@@ -358,6 +397,7 @@ token:
     | LISTCONS                  { "::" }
     | LISTAPP                   { "++" }
     | LISTLAST                  { "&" }
+    | STREAMCONS                { ":::" }
 
     | NOT                       { "~" }
     | AND                       { "/\\" }

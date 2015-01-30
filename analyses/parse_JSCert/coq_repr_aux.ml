@@ -37,12 +37,18 @@ let rec variable_used x = function
         not (List.exists (fun (y, _) -> x = y) l) && variable_used x e
     | Expr_type t ->
         variable_used_type x t
-    | Match (e, l) ->
-        variable_used x e
-            || List.exists (fun (p, e) ->
-                    not (variable_used x p) && variable_used x e) l
+    | Match (es, l) ->
+        List.exists (variable_used x) es
+            || List.exists (fun (ps, e) ->
+                    not (List.exists (variable_used x) ps) && variable_used x e) l
     | Ifthenelse (e1, e2, e3) ->
         variable_used x e1 || variable_used x e2 || variable_used x e3
+    | Expr_record l ->
+        List.exists (fun (_, e) -> variable_used x e) l
+    | Function (l, e) ->
+        not (List.exists (fun (y, _) -> x = y) l) && variable_used x e
+    | Cast (e, t) ->
+        variable_used x e || variable_used_type x t
 
 let rec get_pred = function
     | Ident (_, None, x) -> Some x
@@ -102,6 +108,7 @@ let rec string_of_expr = function
             | Lcons -> "::"
             | Lapp -> "++"
             | Llast -> "&"
+            | Scons -> ":::"
             | Eq -> "="
             | Neq -> "<>" in
         par (string_of_expr e1 ^ " " ^ b ^ " " ^ string_of_expr e2)
@@ -115,25 +122,36 @@ let rec string_of_expr = function
     | Int i -> par (string_of_int i ^ " : int")
     | Nat i -> string_of_int i
     | Forall (l, e) ->
-        "forall " ^ String.concat " "
+        par ("forall " ^ String.concat " "
             (List.map (function
                 | (x, None) -> x
                 | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
-        ", " ^ string_of_expr e
+        ", " ^ string_of_expr e)
     | Exists (l, e) ->
-        "exists " ^ String.concat " "
+        par ("exists " ^ String.concat " "
             (List.map (function
                 | (x, None) -> x
                 | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
-        ", " ^ string_of_expr e
+        ", " ^ string_of_expr e)
     | Expr_type t ->
         string_of_type t
-    | Match (e, l) ->
-        "match " ^ string_of_expr e ^ " with " ^
-        String.concat " | " (List.map (fun (pattern, e) ->
-            string_of_expr pattern ^ " => " ^ string_of_expr e) l) ^ " end"
+    | Match (es, l) ->
+        "match " ^ String.concat ", " (List.map string_of_expr es) ^ " with " ^
+        String.concat " | " (List.map (fun (patterns, e) ->
+            String.concat ", " (List.map string_of_expr patterns) ^ " => " ^ string_of_expr e) l) ^ " end"
     | Ifthenelse (e1, e2, e3) ->
         par ("ifb " ^ string_of_expr e1 ^ " then " ^ string_of_expr e2 ^ " else " ^ string_of_expr e3)
+    | Expr_record l ->
+        "{| " ^ String.concat " ; " (List.map (fun (x, e) ->
+            x ^ " := " ^ string_of_expr e) l) ^ " |}"
+    | Function (l, e) ->
+        par ("fun " ^ String.concat " "
+            (List.map (function
+                | (x, None) -> x
+                | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
+        "=> " ^ string_of_expr e)
+    | Cast (e, t) ->
+        par (string_of_expr e ^ " : " ^ string_of_type t)
 
 let output_rule1 f preds rules =
     let print_start_pred start p =

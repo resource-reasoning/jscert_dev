@@ -12,6 +12,8 @@ let _ =
         let lexbuf = Lexing.from_channel (open_in file) in
         Parser.main Lexer.token lexbuf in
     let jssyntaxfile = parse_file "../../coq/JsSyntax.v" in
+    let jscommonfile = parse_file "../../coq/JsCommon.v" in
+    let jspreliminaryfile = parse_file "../../coq/JsPreliminary.v" in
     let jsprettyintermfile = parse_file "../../coq/JsPrettyInterm.v" in
     let jsprettyrulesfile = parse_file "../../coq/JsPrettyRules.v" in
     (*****************************************)
@@ -58,6 +60,8 @@ let _ =
     let var_type x = assoc_option (normalise_var_name x) implicit_types in
     List.iter (Typing.fetchcoerciondefs var_type) jssyntaxfile ;
     List.iter (Typing.fetchcoerciondefs var_type) jsprettyintermfile ;
+    List.iter (Typing.fetchcoerciondefs var_type) jscommonfile ;
+    List.iter (Typing.fetchcoerciondefs var_type) jspreliminaryfile ;
     List.iter (Typing.fetchcoerciondefs var_type) jsprettyrulesfile ;
     (*****************************************)
     print_endline "Normalising the rules." ;

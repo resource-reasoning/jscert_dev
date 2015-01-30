@@ -1091,7 +1091,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (expr_object_1 l nil) (out_ter S l))
 
   | red_expr_object_1_cons :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (x : prop_name) (l : object_loc (* input *)) (pn : _ (* input *)) (pb : propbody (* input *)) (pds : propdefs (* input *)) (o : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (x : prop_name) (l : object_loc (* input *)) (pn : propname (* input *)) (pb : propbody (* input *)) (pds : propdefs (* input *)) (o : out),
         (x = (string_of_propname pn)) ->
         (* ========================================== *)
         (red_expr S C (expr_object_2 l x pb pds) o) ->
@@ -1272,7 +1272,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_expr_call_3 :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (o : out) (rv : resvalue (* input *)) (v : value (* input *)) (is_eval_direct : bool (* input *)) (vs : (list value) (* input *)),
-        (((type_of v) <> type_object) \/ exists l, ((v = (value_object l)) /\ (~ (is_callable S l)))) ->
+        (((type_of v) <> type_object) \/ (exists l, ((v = (value_object l)) /\ (~ (is_callable S l))))) ->
         (* ========================================== *)
         (red_expr S C (spec_error native_error_type) o) ->
         (* ------------------------------------------ *)
@@ -1393,7 +1393,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S0 C (expr_prepost_2 op rv (ret S v)) o)
 
   | red_expr_prepost_3 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)) (op : unary_op (* input *)) (number_op : _) (is_pre : _) (v : value) (n1 : number (* input *)) (n2 : number) (o1 : out) (o : out),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)) (op : unary_op (* input *)) (number_op : (number -> number)) (is_pre : bool) (v : value) (n1 : number (* input *)) (n2 : number) (o1 : out) (o : out),
         (prepost_op op number_op is_pre) ->
         (n2 = (number_op n1)) ->
         (v = (prim_number (ifb is_pre then n2 else n1))) ->
@@ -1672,7 +1672,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S0 C (expr_puremath_op_1 F (ret S ((value_prim n1), (value_prim n2)))) (out_ter S n))
 
   | red_expr_shift_op :
-      forall (b_unsigned : _) (S : state (* input *)) (C : execution_ctx (* input *)) (op : binary_op (* input *)) (F : (int -> (int -> int))) (ext : (value -> ext_spec)) (v1 : value (* input *)) (v2 : value (* input *)) (y1 : (specret int)) (o : out),
+      forall (b_unsigned : bool) (S : state (* input *)) (C : execution_ctx (* input *)) (op : binary_op (* input *)) (F : (int -> (int -> int))) (ext : (value -> ext_spec)) (v1 : value (* input *)) (v2 : value (* input *)) (y1 : (specret int)) (o : out),
         (shift_op op b_unsigned F) ->
         (ext = (ifb b_unsigned then spec_to_uint32 else spec_to_int32)) ->
         (* ========================================== *)
@@ -2864,7 +2864,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_env_record_set_mutable_binding L x v str) o)
 
   | red_spec_env_record_set_mutable_binding_1_decl_mutable :
-      forall (v_old : _) (mu : _) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
+      forall (v_old : _) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
         (decl_env_record_binds Ed x mu v_old) ->
         (mutability_is_mutable mu) ->
         (* ========================================== *)
@@ -3094,7 +3094,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_entering_func_code_1 lf args bd lthis strictness_false K) o)
 
   | red_spec_entering_func_code_3 :
-      forall (lex' : _) (S' : state) (C' : execution_ctx) (o1 : out) (S : state (* input *)) (C : execution_ctx (* input *)) (lf : object_loc (* input *)) (args : (list value) (* input *)) (str : strictness_flag (* input *)) (bd : funcbody (* input *)) (vthis : value (* input *)) (lex : _) (K : ext_expr (* input *)) (o : out),
+      forall (lex' : lexical_env) (S' : state) (C' : execution_ctx) (o1 : out) (S : state (* input *)) (C : execution_ctx (* input *)) (lf : object_loc (* input *)) (args : (list value) (* input *)) (str : strictness_flag (* input *)) (bd : funcbody (* input *)) (vthis : value (* input *)) (lex : _) (K : ext_expr (* input *)) (o : out),
         (object_method object_scope_ S lf (Some lex)) ->
         ((lex', S') = (lexical_env_alloc_decl S lex)) ->
         (C' = (execution_ctx_intro_same lex' vthis str)) ->
@@ -5072,7 +5072,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_call_array_proto_pop_3_nonempty_1 l lenuint32) o)
 
   | red_spec_call_array_proto_pop_3_nonempty_2 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : value (* input *)) (velem : value) (o : out) (o1 : out),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : prop_name (* input *)) (velem : value) (o : out) (o1 : out),
         (* ========================================== *)
         (red_expr S C (spec_object_get l vindx) o1) ->
         (red_expr S C (spec_call_array_proto_pop_3_nonempty_3 l vindx o1) o) ->
@@ -5080,7 +5080,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S0 C (spec_call_array_proto_pop_3_nonempty_2 l (out_ter S vindx)) o)
 
   | red_spec_call_array_proto_pop_3_nonempty_3 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : value (* input *)) (velem : value (* input *)) (o : out) (o1 : out),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : prop_name (* input *)) (velem : value (* input *)) (o : out) (o1 : out),
         (* ========================================== *)
         (red_expr S C (spec_object_delete l vindx throw_true) o1) ->
         (red_expr S C (spec_call_array_proto_pop_3_nonempty_4 l vindx velem o1) o) ->
@@ -5155,7 +5155,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_call_array_proto_push_4_nonempty_1 l vs lenuint32 v) o)
 
   | red_spec_call_array_proto_push_4_nonempty_2 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : res (* input *)) (v : value (* input *)) (vs : (list value) (* input *)) (lenuint32 : int (* input *)) (o : out) (o1 : out),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (vindx : prop_name (* input *)) (v : value (* input *)) (vs : (list value) (* input *)) (lenuint32 : int (* input *)) (o : out) (o1 : out),
         (* ========================================== *)
         (red_expr S C (spec_object_put l vindx v throw_true) o1) ->
         (red_expr S C (spec_call_array_proto_push_4_nonempty_3 l vs lenuint32 v o1) o) ->
@@ -5279,7 +5279,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_bool_proto_value_of_1_not_bool :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o : out),
-        forall b, (~ (value_viewable_as (("Boolean")%string) S v b)) ->
+        (forall b, (~ (value_viewable_as (("Boolean")%string) S v b))) ->
         (* ========================================== *)
         (red_expr S C (spec_error native_error_type) o) ->
         (* ------------------------------------------ *)
@@ -5342,7 +5342,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_number_proto_value_of_1_not_number :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o : out),
-        forall n, (~ (value_viewable_as (("Number")%string) S v n)) ->
+        (forall n, (~ (value_viewable_as (("Number")%string) S v n))) ->
         (* ========================================== *)
         (red_expr S C (spec_error native_error_type) o) ->
         (* ------------------------------------------ *)
@@ -5476,7 +5476,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S0 C (spec_call_error_proto_to_string_2 l (out_ter S v)) o)
 
   | red_spec_call_error_proto_to_string_3 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (sname : res (* input *)) (o1 : out) (o : out),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (sname : string (* input *)) (o1 : out) (o : out),
         (* ========================================== *)
         (red_expr S C (spec_object_get l (("message")%string)) o1) ->
         (red_expr S C (spec_call_error_proto_to_string_4 l sname o1) o) ->
