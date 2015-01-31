@@ -344,6 +344,27 @@ Definition object_can_put runs S C l x : result :=
           end)
       end).
 
+Fixpoint object_define_own_prop_array_loop runs S C l newLen oldOff newLenDesc (newWritable : bool) default throw : result :=
+  match oldOff with
+  | S oldOff' =>
+    'let oldLen := newLen + oldOff' in
+    if_string (to_string runs S C oldLen) (fun S slen =>
+      if_bool (runs_type_object_delete runs S C l slen false) (fun S deleteSucceeded =>
+        ifb (not deleteSucceeded) then
+          'let newLenDesc := descriptor_with_value newLenDesc (Some (value_prim (prim_number (JsNumber.of_int (oldLen + 1))))) in
+          'let newLenDesc := (ifb (not newWritable) then
+                               descriptor_with_writable newLenDesc (Some false)
+                             else
+                               newLenDesc) in
+          if_bool (default S "length" newLenDesc false) (fun S _ =>
+            out_error_or_cst S throw native_error_type false)
+        else
+          object_define_own_prop_array_loop runs S C l newLen oldOff' newLenDesc newWritable default throw))
+  | O => ifb (not newWritable) then
+           default S "length" (descriptor_intro None (Some false) None None None None) false
+         else
+           res_ter S true
+  end.
 
 Definition object_define_own_prop runs S C l x Desc throw : result :=
   'let reject := fun S throw =>
@@ -439,11 +460,40 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
             | value_object l => impossible_with_heap_because S "Spec asserts length of array is number."
             | value_prim w =>
               'let oldLen := JsNumber.to_uint32 (convert_prim_to_number w) in
+              'let descValueOpt := (descriptor_value Desc) in
               (match x with
-              | "length" => result_not_yet_implemented (* Soon. Conrad *)
+              | "length" => (match descValueOpt with
+                            | None => default S "length" Desc throw
+                            | Some descValue => 
+                              if_spec (to_uint32 runs S C descValue) (fun S newLen => 
+                                if_number (to_number runs S C descValue) (fun S newLenN =>
+                                  ifb ((JsNumber.of_int newLen) <> newLenN) then
+                                    run_error S native_error_range
+                                  else
+                                    'let newLenDesc := descriptor_with_value Desc (Some (value_prim (prim_number (JsNumber.of_int newLen)))) in
+                                    ifb (oldLen <= newLen) then
+                                      default S "length" newLenDesc throw
+                                    else
+                                      ifb (not (attributes_data_writable A)) then
+                                        reject S throw
+                                      else
+                                        'let newWritable := (match (descriptor_writable newLenDesc) with
+                                                            | Some false => false
+                                                            | _ => true
+                                                            end) in
+                                        'let newLenDesc := (ifb (not newWritable) then
+                                                             descriptor_with_writable newLenDesc (Some true)
+                                                           else
+                                                             newLenDesc) in
+                                        if_bool (default S "length" newLenDesc throw) (fun S succ =>
+                                          ifb (not succ) then
+                                            res_ter S false
+                                          else
+                                            object_define_own_prop_array_loop runs S C l newLen (Z.to_nat (oldLen - newLen)) newLenDesc newWritable default throw)))
+                            end)
               | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
-                         if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S x =>
-                           ifb ((str = x) /\ ilen <> (nat_of_N 2147483647)) then
+                         if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S slen =>
+                           ifb ((str = slen) /\ ilen <> (2147483647%Z)) then
                              if_spec (to_uint32 runs S C x) (fun S index =>
                                ifb (oldLen <= index /\ (not (attributes_data_writable A))) then
                                  reject S throw
@@ -453,8 +503,8 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
                                      reject S throw
                                    else
                                      ifb (oldLen <= index) then
-                                       let Desc := (descriptor_with_value Desc (Some (value_prim (JsNumber.of_int (index + 1))))) in
-                                       default S "length" Desc false
+                                       let A := (descriptor_with_value A (Some (value_prim (JsNumber.of_int (index + 1))))) in
+                                       default S "length" A false
                                      else
                                        res_ter S true))
                            else
@@ -557,7 +607,10 @@ Definition prim_new_object S w : result :=
       'let O1 := object_with_get_own_property O2 builtin_get_own_prop_string in
       'let O :=  object_with_primitive_value O1 s in
       let '(l, S1) := object_alloc S O in
-      out_ter S1 l
+      if_some (pick_option (object_set_property S1 l "length" (attributes_data_intro_constant (String.length s)))) (fun S' => 
+        res_ter S' l) 
+      (* While the spec never explicitly says to do this, it specifies that it is the case immediately after creation*)
+
   | _ =>
     impossible_with_heap_because S "[prim_new_object] received an null or undef."
   end.
@@ -988,7 +1041,22 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
 
 
   | prealloc_string =>
-    result_not_yet_implemented (* LATER:  Waiting for specification *)
+    'let O2 := object_new prealloc_string_proto "String" in
+    'let O1 := object_with_get_own_property O2 builtin_get_own_prop_string in
+    'let follow := (fun S s =>
+                     'let O :=  object_with_primitive_value O1 s in
+                     let '(l, S1) := object_alloc S O in
+                     'let lenDesc := attributes_data_intro_constant (String.length s) in
+                     if_some (pick_option (object_set_property S1 l "length" lenDesc)) (fun S' => 
+                       res_ter S' l)) in
+                       (* While the spec never explicitly says to do this, it specifies that it is the case immediately after creation*)
+    'let arg_len := length args in
+    ifb (arg_len = 0) then
+      follow S ""
+    else
+      'let arg := get_arg 0 args in
+      if_string (to_string runs S C arg) (fun S s =>
+        follow S s)
 
   | prealloc_error =>
     'let v := get_arg 0 args in
