@@ -104,6 +104,7 @@ main:
     | COERCION IDENT COLON ctype COERCIONARROW ctype DOT main
       {
           let c = {
+              coercion_name = $2 ;
               coercion_from = $4 ;
               coercion_to = $6
           } in

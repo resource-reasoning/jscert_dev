@@ -50,6 +50,12 @@ let rec variable_used x = function
     | Cast (e, t) ->
         variable_used x e || variable_used_type x t
 
+let variable_unused e =
+    let rec aux x =
+        if variable_used x e then aux (x ^ "'")
+        else x
+    in aux "internal_variable"
+
 let rec get_pred = function
     | Ident (_, None, x) -> Some x
     | App (e, _, _) -> get_pred e
@@ -67,6 +73,39 @@ let rec convert_to_type = function (* In Coq, we never know what is meant to be 
         | _ -> None)
     | Expr_type t -> Some t
     | _ -> None
+
+let rec replace_ident x e = function
+    | (Wildcard | String _ | Int _ | Nat _ | Expr_type _) as e0 -> e0
+    | Ident (_, _, y) as e0 ->
+        if x = y then e else e0
+    | App (e1, internal, e2) ->
+        App (replace_ident x e e1, internal, replace_ident x e e2)
+    | Binop (op, e1, e2) ->
+        Binop (op, replace_ident x e e1, replace_ident x e e2)
+    | Unop (op, e0) ->
+        Unop (op, replace_ident x e e0)
+    | Couple (e1, e2) ->
+        Couple (replace_ident x e e1, replace_ident x e e2)
+    | Forall (l, e0) ->
+        if List.exists (fun (y, _) -> y = x) l then Forall (l, e0)
+        else Forall (l, replace_ident x e e0)
+    | Exists (l, e0) ->
+        if List.exists (fun (y, _) -> y = x) l then Exists (l, e0)
+        else Exists (l, replace_ident x e e0)
+    | Match (es, pes) ->
+        Match (List.map (replace_ident x e) es,
+            List.map (fun (ps, e0) ->
+                if List.exists (variable_used x) ps then (ps, e0)
+                else (ps, replace_ident x e e0)) pes)
+    | Ifthenelse (e0, e1, e2) ->
+        Ifthenelse (replace_ident x e e0, replace_ident x e e1, replace_ident x e e2)
+    | Expr_record l ->
+        Expr_record (List.map (fun (y, e0) -> (y, replace_ident x e e0)) l)
+    | Function (l, e0) ->
+        if List.exists (fun (y, _) -> y = x) l then Function (l, e0)
+        else Function (l, replace_ident x e e0)
+    | Cast (e0, t) ->
+        Cast (replace_ident x e e0, t)
 
 
 let rec string_of_type = function
@@ -119,8 +158,8 @@ let rec string_of_expr = function
     | Couple (e1, e2) ->
         par (string_of_expr e1 ^ ", " ^ string_of_expr e2)
     | String s -> par ("(\"" ^ s ^ "\")%string")
-    | Int i -> par (string_of_int i ^ " : int")
-    | Nat i -> string_of_int i
+    | Int i -> par (string_of_int i ^ "%Z")
+    | Nat i -> par (string_of_int i ^ "%nat")
     | Forall (l, e) ->
         par ("forall " ^ String.concat " "
             (List.map (function
@@ -137,6 +176,10 @@ let rec string_of_expr = function
         string_of_type t
     | Match (es, l) ->
         "match " ^ String.concat ", " (List.map string_of_expr es) ^ " with " ^
+        String.concat " | " (List.map (fun (patterns, e) ->
+            String.concat ", " (List.map string_of_expr patterns) ^ " => " ^ string_of_expr e) l) ^ " end"
+    | Cast (Match (es, l), t) ->
+        "match " ^ String.concat ", " (List.map string_of_expr es) ^ " return " ^ string_of_type t ^ " with " ^
         String.concat " | " (List.map (fun (patterns, e) ->
             String.concat ", " (List.map string_of_expr patterns) ^ " => " ^ string_of_expr e) l) ^ " end"
     | Ifthenelse (e1, e2, e3) ->
@@ -196,7 +239,7 @@ let output_rule1 f preds rules =
                 String.concat " " (List.map (fun (x, t, i) ->
                     par (x ^ " : " ^ string_of_type t ^
                     if i then " (* input *)" else "")) r.rule1_params) ^ ",") ;
-            List.iter (fun (x, e) -> output_endline f ("        let " ^ x ^ " := " ^ string_of_expr e ^ " in")) r.rule1_localdefs ;
+            List.iter (fun (x, e, t) -> output_endline f ("        let " ^ x ^ " : " ^ string_of_type t ^ " := " ^ string_of_expr e ^ " in")) r.rule1_localdefs ;
             List.iter (fun e -> output_endline f ("        " ^ string_of_expr e ^ " ->")) r.rule1_conditions ;
             output_endline f ("        (* " ^ String.make 42 '=' ^ " *)") ;
             List.iter (fun e -> output_endline f ("        " ^ string_of_expr e ^ " ->")) r.rule1_premisses ;

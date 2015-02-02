@@ -46,6 +46,15 @@ let normalise_var_name x =
         (char_list_of_string x))
 
 
+let compose f1 f2 x = f1 (f2 x)
+
+let compose_option (f1 : ('b -> 'c) option) (f2 : ('a -> 'b) option) =
+    match f1, f2 with
+    | Some f1, Some f2 ->
+        Some (compose f1 f2)
+    | _ -> None
+
+
 open Pervasives
 
 (** Input/outputs functions **)

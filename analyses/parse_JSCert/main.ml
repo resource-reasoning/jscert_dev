@@ -105,11 +105,25 @@ let _ =
     let is_pred p = List.exists (fun r -> p = r.red_pred_name) all_preds in
     let all_rule1 : rule1 list =
         List.map (fun r ->
-            let local = r.rule_params @ List.map (fun (x, _) -> (x, None)) r.rule_localdefs in
+            let local = r.rule_params in
             Typing.reset_loc_types () ;
-            List.iter (fun (x, e) -> ignore (Typing.type_expr (" in the local defintions of Rule " ^ r.rule_name) local e)) r.rule_localdefs ;
-            List.iter (fun e -> ignore (Typing.type_expr (" in the premisses of Rule " ^ r.rule_name) local e)) r.rule_statement_list ;
-            let (prems, conclusion) = cut_last r.rule_statement_list in
+            let local_defs =
+                List.map (fun (x, e) ->
+                    let location = " in the local definition of " ^ x ^ " in Rule " ^ r.rule_name in
+                    match Typing.type_expr location local e with
+                    | e, Some t -> (x, e, t)
+                    | e, None ->
+                        match Typing.var_type x with
+                        | Some t ->
+                            Typing.learn_type location local e t ;
+                            (x, e, t)
+                        | None ->
+                            prerr_endline ("Warning: Unable to get a type for " ^ x ^ " in the local definitions of Rule " ^ r.rule_name) ;
+                            (x, e, Basic_type (None, "_" (* Hack! *)))) r.rule_localdefs in
+            let local = List.map (fun (x, e, t) -> (x, Some t)) local_defs @ local in
+            let (prems, conclusion) =
+                cut_last (List.map (fun e ->
+                    fst (Typing.type_expr (" in the premisses of Rule " ^ r.rule_name) local e)) r.rule_statement_list) in
             let (premisses, conditions) = List.partition (fun e ->
                 match get_pred e with
                 | None -> false
@@ -161,16 +175,17 @@ let _ =
                         rule1_name = r.rule_name ;
                         rule1_params =
                             List.map (fun (x, t) -> (x, t, List.exists (variable_used x) inputs)) types_params ;
-                        rule1_localdefs = r.rule_localdefs ;
+                        rule1_localdefs = local_defs ;
                         rule1_conditions = conditions ;
                         rule1_premisses = premisses ;
                         rule1_conclusion = conclusion
                     }) all_rules in
-    (*****************************************)
-    print_endline "Extracting the reductions." ;
-    let rule1f = coq_file "gen/JsRules1.v" in (* Just to test if it has been well generated. *)
+    let rule1f = coq_file "gen/JsRules_1_typed.v" in
     output_rule1 rule1f all_preds all_rule1 ;
     separate_coq rule1f ;
-    let namesf = coq_file "gen/JsNames.v" in
+    close_out rule1f ;
+    (*****************************************)
+    print_endline "Unfolding definitions." ;
+    (*****************************************)
     ()
 
