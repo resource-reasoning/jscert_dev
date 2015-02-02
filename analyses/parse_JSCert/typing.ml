@@ -103,6 +103,40 @@ let _ =
         Basic_type (None, "number"), Basic_type (None, "prim"), (fun e -> App (Ident(false, None, "prim_number"), None, e))
     ]
 
+
+let definitions : (string * expr) list ref = ref []
+let add_def x e = definitions := (x, e) :: !definitions
+
+let rec unfold = function
+    | Ident (false, None, x) as e ->
+        (match assoc_option x !definitions with
+        | None -> e
+        | Some d -> unfold d)
+    | Cast (e, t) ->
+        Cast (unfold e, t)
+    | (Wildcard | Ident _ | String _ | Int _ | Nat _ | Expr_type _) as e -> e
+    | App (e1, internal, e2) ->
+        (match unfold e1, internal with
+        (*| Function ([(x, _)], e), None ->
+            unfold (replace_ident x (unfold e2) e)
+        | Function ((x, _) :: l, e), None ->
+            unfold (replace_ident x (Function (l, e)) (unfold e2))*)
+        | e1, _ -> App (e1, internal, unfold e2))
+    | Binop (op, e1, e2) ->
+        Binop (op, unfold e1, unfold e2)
+    | Unop (op, e) ->
+        Unop (op, unfold e)
+    | Couple (e1, e2) ->
+        Couple (unfold e1, unfold e2)
+    | (Forall _ | Exists _ | Function _) as e -> e
+    | Match (es, pes) ->
+        Match (List.map unfold es, pes)
+    | Ifthenelse (e1, e2, e3) ->
+        Ifthenelse (unfold e1, unfold e2, unfold e3)
+    | Expr_record l ->
+        Expr_record (List.map (fun (x, e) -> (x, unfold e)) l)
+
+
 let def_types : ((string option * string) * ctype) list ref =
     ref [
             (None, "undef"), Basic_type (None, "value") ;
@@ -146,6 +180,7 @@ let add_def_type location (local : (string * ctype option) list) mx t =
 let rec learn_type location local e t =
     let identifer_to_avoid = [
             "Some" ; "None" ;
+            "fst" ; "snd" ;
             "nil" ; "length" ;
             "binds" ; "indom" ; "empty" ; "write"
     ] in
@@ -431,6 +466,9 @@ let fetchcoerciondefs = function
         | Some t -> learn_type (" in Hypothesis " ^ h.hyp_name) [] (Ident (false, None, h.hyp_name)) t)
     | File_definition d ->
         let local = get_local d.arguments in
+        (match local with
+        | [] -> add_def d.def_name d.body
+        | l -> add_def d.def_name (Function (l, d.body))) ;
         reset_loc_types () ;
         let add t =
             match complete_local local with
