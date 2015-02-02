@@ -184,6 +184,26 @@ let _ =
     output_rule1 rule1f all_preds all_rule1 ;
     separate_coq rule1f ;
     close_out rule1f ;
+    let all_rule2 =
+        List.map (fun r ->
+            Typing.reset_loc_types () ;
+            let location =
+                " while unfolding coercions in Rule " ^ r.rule1_name in
+            let local =
+                List.map (fun (x, e, t) -> (x, Some t)) r.rule1_localdefs @
+                List.map (fun (x, t, input) -> (x, Some t)) r.rule1_params in
+            let display = Typing.display_coercions location local in
+            { r with
+                rule1_localdefs =
+                    List.map (fun (x, e, t) -> (x, display (Cast (e, t)), t)) r.rule1_localdefs ;
+                rule1_conditions = List.map display r.rule1_conditions ;
+                rule1_premisses = List.map display r.rule1_premisses ;
+                rule1_conclusion = display r.rule1_conclusion
+            }) all_rule1 in
+    let rule2f = coq_file "gen/JsRules_2_coercions.v" in
+    output_rule1 rule2f all_preds all_rule2 ;
+    separate_coq rule2f ;
+    close_out rule2f ;
     (*****************************************)
     print_endline "Unfolding definitions." ;
     (*****************************************)
