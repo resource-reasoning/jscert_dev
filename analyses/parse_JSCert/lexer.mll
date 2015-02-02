@@ -19,6 +19,7 @@ rule token = parse
   | "Set Implicit Arguments."                   { token lexbuf }
   | "Implicit Arguments" [^ '.']* '.'           { token lexbuf }
   | ("Lemma" | "Theorem" | "Corollary")         { proof lexbuf ; token lexbuf }
+  | ("" | "Global" | "Local") blank+ "Instance" { proof lexbuf ; token lexbuf }
 
   | "."                                         { DOT }
   | ":"                                         { COLON }
@@ -110,5 +111,6 @@ and comment = shortest
 and proof = shortest
   | _* "Qed."       { () }
   | _* "Admitted."  { () }
+  | _* "Defined."   { () }
   | _* eof          { failwith ("Unfinished proof" ^ add_pos lexbuf ^ ".") }
 
