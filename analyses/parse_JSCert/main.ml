@@ -12,6 +12,7 @@ let _ =
         let lexbuf = Lexing.from_channel (open_in file) in
         Parser.main Lexer.token lexbuf in
     let jssyntaxfile = parse_file "../../coq/JsSyntax.v" in
+    let jssyntaxauxfile = parse_file "../../coq/JsSyntaxAux.v" in
     let jscommonfile = parse_file "../../coq/JsCommon.v" in
     let jspreliminaryfile = parse_file "../../coq/JsPreliminary.v" in
     let jsprettyintermfile = parse_file "../../coq/JsPrettyInterm.v" in
@@ -38,12 +39,18 @@ let _ =
             ()) r.rule_params in
     List.iter checkrule all_rules ;
     (*****************************************)
+    print_endline "Typing things." ;
+    List.iter Typing.fetchcoerciondefs jssyntaxfile ;
+    (*List.iter Typing.fetchcoerciondefs jssyntaxauxfile ;*) (* I assume two much about the naming convention for this file... *)
+    List.iter Typing.fetchcoerciondefs jscommonfile ;
+    List.iter Typing.fetchcoerciondefs jspreliminaryfile ;
+    List.iter Typing.fetchcoerciondefs jsprettyintermfile ;
+    List.iter Typing.fetchcoerciondefs jsprettyrulesfile ;
+    (*****************************************)
     let imports =
         List.rev (select_map (function File_import s -> Some s | _ -> None) jsprettyrulesfile) in
     let scopes =
         List.rev (select_map (function File_scope s -> Some s | _ -> None) jsprettyrulesfile) in
-    let implicit_types : (string * ctype) list =
-        List.rev (select_map (function File_implicit_type im -> Some im | _ -> None) jsprettyrulesfile) in
     let coq_file name =
         let f = open_out_coq name in
         print_endline ("File " ^ name ^ " created and being written.") ;
@@ -51,18 +58,10 @@ let _ =
         separate_coq f ;
         List.iter (fun s -> output_endline f ("Open Scope " ^ s ^ ".")) scopes ;
         separate_coq f ;
-        List.iter (fun (x, t) -> output_endline f ("Implicit Type " ^ x ^ " : " ^ string_of_type t ^ ".")) implicit_types ;
+        List.iter (fun (x, t) -> output_endline f ("Implicit Type " ^ x ^ " : " ^ string_of_type t ^ ".")) (Typing.all_implicit_types ()) ;
         separate_coq f ;
         flush f ;
         f in
-    (*****************************************)
-    print_endline "Typing things." ;
-    let var_type x = assoc_option (normalise_var_name x) implicit_types in
-    List.iter (Typing.fetchcoerciondefs var_type) jssyntaxfile ;
-    List.iter (Typing.fetchcoerciondefs var_type) jsprettyintermfile ;
-    List.iter (Typing.fetchcoerciondefs var_type) jscommonfile ;
-    List.iter (Typing.fetchcoerciondefs var_type) jspreliminaryfile ;
-    List.iter (Typing.fetchcoerciondefs var_type) jsprettyrulesfile ;
     (*****************************************)
     print_endline "Normalising the rules." ;
     let inputoutput = [
@@ -108,8 +107,8 @@ let _ =
         List.map (fun r ->
             let local = r.rule_params @ List.map (fun (x, _) -> (x, None)) r.rule_localdefs in
             Typing.reset_loc_types () ;
-            List.iter (fun (x, e) -> ignore (Typing.type_expr (" in the local defintions of Rule " ^ r.rule_name) local var_type e)) r.rule_localdefs ;
-            List.iter (fun e -> ignore (Typing.type_expr (" in the premisses of Rule " ^ r.rule_name) local var_type e)) r.rule_statement_list ;
+            List.iter (fun (x, e) -> ignore (Typing.type_expr (" in the local defintions of Rule " ^ r.rule_name) local e)) r.rule_localdefs ;
+            List.iter (fun e -> ignore (Typing.type_expr (" in the premisses of Rule " ^ r.rule_name) local e)) r.rule_statement_list ;
             let (prems, conclusion) = cut_last r.rule_statement_list in
             let (premisses, conditions) = List.partition (fun e ->
                 match get_pred e with
@@ -145,7 +144,7 @@ let _ =
                         List.map (function
                             | (x, Some t) -> (x, t)
                             | (x, None) ->
-                                match var_type x with
+                                match Typing.var_type x with
                                 | Some t -> (x, t)
                                 | None ->
                                     match Typing.get_loc_type x with
@@ -154,7 +153,7 @@ let _ =
                                         match List.rev (char_list_of_string (normalise_var_name x)) with
                                         | 's' :: l -> (
                                             let x' = string_of_char_list (List.rev l) in
-                                            match var_type x' with
+                                            match Typing.var_type x' with
                                             | Some t -> (x, App_type (Basic_type (None, "list"), t))
                                             | None -> unable x)
                                         | _ -> unable x) r.rule_params in

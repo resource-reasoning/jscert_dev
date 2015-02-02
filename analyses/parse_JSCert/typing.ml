@@ -3,11 +3,15 @@ open Coq_repr
 open Coq_repr_aux
 open Utils
 
+let implicit_types : (string * ctype) list ref = ref []
+let all_implicit_types () = !implicit_types
+
+let var_type x = assoc_option (normalise_var_name x) !implicit_types
+
 let coercions : (ctype *(* >-> *) ctype) list ref =
     ref [
         Basic_type (None, "bool"), Prop ;
-        Basic_type (None, "nat"), Basic_type (None, "int") ;
-        Basic_type (None, "object_loc"), Basic_type (None, "value")
+        Basic_type (None, "nat"), Basic_type (None, "int")
     ]
 
 let rec coercable t1 t2 =
@@ -40,7 +44,8 @@ let rec simpl_coercion t1 t2 =
 let add_coercion t1 t2 =
     coercions := (t1, t2) ::
         List.fold_left (fun l (t3, t4) ->
-            (t3, t4) :: if t3 = t2 then (t1, t4) :: l else l) [] !coercions
+            let l' = if t4 = t1 then (t3, t2) :: l else l in
+            (t3, t4) :: if t3 = t2 then (t1, t4) :: l' else l') [] !coercions
 
 let def_types : ((string option * string) * ctype) list ref =
     ref [
@@ -79,19 +84,24 @@ let add_def_type location local mx t =
     | _ -> add ()
 
 let rec learn_type location local e t =
-    let identifer_to_avoid =
-        [ "nil" ; "binds" ; "indom" ; "empty" ; "write" ] in
+    let identifer_to_avoid = [
+            "Some" ; "None" ;
+            "nil" ; "length" ;
+            "binds" ; "indom" ; "empty" ; "write"
+    ] in
     match e, t with
     | Ident (_, m, x), _ ->
         if not (List.mem x identifer_to_avoid) then
-            add_def_type location local (m, x) t
+            add_def_type (location ^ " (while typing " ^ string_of_expr e ^ ")") local (m, x) t
     | Couple (e1, e2), Prod_type (t1, t2) ->
         learn_type location local e1 t1 ;
         learn_type location local e2 t2
     | _ -> () (* This is just a script, it hasn't to be complete :-) *)
 
-let rec type_expr location local var_type = function
-    | Ident (_, m, x) ->
+let rec type_expr location local = function
+    | Ident (true, m, x) ->
+        None (* At least for now. *)
+    | Ident (false, m, x) ->
         (match if m = None then var_type x else None with
         | Some t -> Some t
         | None ->
@@ -109,16 +119,53 @@ let rec type_expr location local var_type = function
                     | Some t -> Some (App_type (Basic_type (None, "list"), t))
                     | None -> None)
                 | _ -> None)
+    | App (Ident (false, _, "length"), None, e2) ->
+        ignore (type_expr location local e2) ;
+        Some (Basic_type (None, "nat"))
+    | App (Ident (false, _, "binds"), None, e2) ->
+        (match type_expr location local e2 with
+        | Some (App_type (App_type (Basic_type (Some "Heap", "heap"), t1), t2)) ->
+            Some (Fun_type (t1, Fun_type (t2, Prop)))
+        | Some (Basic_type (None, "decl_env_record")) ->
+            Some (Fun_type (Basic_type (None, "string"),
+                Fun_type (Prod_type (Basic_type (None, "mutability"), Basic_type (None, "value")), Prop)))
+        | Some (Basic_type (None, "object_properties_type")) ->
+            Some (Fun_type (Basic_type (None, "prop_name"),
+                Fun_type (Basic_type (None, "attributes"), Prop)))
+        | Some t -> None
+        | None -> None)
+    | App (Ident (false, _, "indom"), None, e2) ->
+        (match type_expr location local e2 with
+        | Some (App_type (App_type (Basic_type (Some "Heap", "heap"), t1), t2)) ->
+            Some (Fun_type (t1, Prop))
+        | Some (Basic_type (None, "decl_env_record")) ->
+            Some (Fun_type (Basic_type (None, "string"), Prop))
+        | Some (Basic_type (None, "object_properties_type")) ->
+            Some (Fun_type (Basic_type (None, "prop_name"), Prop))
+        | Some t -> None
+        | None -> None)
+    | App (Ident (false, _, "write"), None, e2) ->
+        (match type_expr location local e2 with
+        | Some (App_type (App_type (Basic_type (Some "Heap", "heap"), t1), t2) as th) ->
+            Some (Fun_type (t1, Fun_type (t2, th)))
+        | Some (Basic_type (None, "decl_env_record") as th) ->
+            Some (Fun_type (Basic_type (None, "string"),
+                Fun_type (Prod_type (Basic_type (None, "mutability"), Basic_type (None, "value")), th)))
+        | Some (Basic_type (None, "object_properties_type") as th) ->
+            Some (Fun_type (Basic_type (None, "prop_name"),
+                Fun_type (Basic_type (None, "attributes"), th)))
+        | Some t -> None
+        | None -> None)
     | App (e1, _, e2) ->
-        let t1 = type_expr location local var_type e1 in
-        ignore (type_expr location local var_type e2) ;
+        let t1 = type_expr location local e1 in
+        ignore (type_expr location local e2) ;
         (match t1 with
         | Some (Fun_type (t1, t2)) ->
             learn_type location local e2 t1 ;
             Some t2
         | _ -> None)
     | Binop ((Add | Sub | Mult), e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t, _ -> learn_type location local e2 t ; Some t
         | _, Some t -> learn_type location local e1 t ; Some t
         | _ -> None)
@@ -131,13 +178,13 @@ let rec type_expr location local var_type = function
         learn_type location local e2 (Basic_type (None, "bool")) ;
         Some (Basic_type (None, "bool"))
     | Binop ((Inf | Infeq | Sup | Supeq | Eq | Neq), e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t, _ -> learn_type location local e2 t
         | _, Some t -> learn_type location local e1 t
         | _ -> ()) ;
         Some Prop
     | Binop (Lcons, e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t, _ ->
             let tl = App_type (Basic_type (None, "list"), t) in
             learn_type location local e2 tl ;
@@ -147,7 +194,7 @@ let rec type_expr location local var_type = function
             Some tl
         | _ -> None)
     | Binop (Scons, e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t, _ ->
             let tl = App_type (Basic_type (None, "stream"), t) in
             learn_type location local e2 tl ;
@@ -157,12 +204,12 @@ let rec type_expr location local var_type = function
             Some tl
         | _ -> None)
     | Binop (Lapp, e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t, _ -> learn_type location local e2 t ; Some t
         | _, Some t -> learn_type location local e1 t ; Some t
         | _ -> None)
     | Binop (Llast, e1, e2) ->
-        (match type_expr location local var_type e2, type_expr location local var_type e1 with
+        (match type_expr location local e2, type_expr location local e1 with
         | Some t, _ ->
             let tl = App_type (Basic_type (None, "list"), t) in
             learn_type location local e2 tl ;
@@ -174,7 +221,7 @@ let rec type_expr location local var_type = function
     | Unop (Not, e) ->
         learn_type location local e Prop ; Some Prop
     | Couple (e1, e2) ->
-        (match type_expr location local var_type e1, type_expr location local var_type e2 with
+        (match type_expr location local e1, type_expr location local e2 with
         | Some t1, Some t2 -> Some (Prod_type (t1, t2))
         | _ -> None)
     | String _ -> Some (Basic_type (None, "string"))
@@ -185,11 +232,23 @@ let rec type_expr location local var_type = function
     | Expr_type _ -> Some Prop
     | Wildcard -> None
     | Match (_, l) -> (* This is just a script, it hasn't to be complete :-) *)
+        List.iter (fun (_, e) -> ignore (type_expr location local e)) l ;
         (match l with
         | [] -> None
-        | (_, e) :: _ -> type_expr location local var_type e)
-    | Ifthenelse (e1, e2, e3) ->
-        (match type_expr location local var_type e2, type_expr location local var_type e3 with
+        | (_, e) :: _ -> type_expr location local e)
+    | Ifthenelse (e1, e2, e3) as e ->
+        ignore (type_expr location local e1) ;
+        (match type_expr location local e2, type_expr location local e3 with
+        | Some t1, Some t2 ->
+            if coercable t1 t2
+            then Some t2
+            else if coercable t2 t1
+            then Some t1
+            else (
+                prerr_endline ("Warning: Unable to infer the return type of " ^ string_of_expr e ^ location ^ ". It will be supposed to be " ^ string_of_type t1 ^ " and the type " ^ string_of_type t2 ^ " will be assumed to be coercable to it.") ;
+                add_coercion t2 t1 ;
+                Some t1
+            )
         | Some t, _ -> learn_type location local e3 t ; Some t
         | _, Some t -> learn_type location local e2 t ; Some t
         | _ -> None)
@@ -197,12 +256,12 @@ let rec type_expr location local var_type = function
         (match l with
         | [] -> None
         | (x, _) :: _ ->
-            match type_expr location local var_type (Ident (false, None, x)) with
-            | Some (Fun_type (t1, t2)) -> Some t2
+            match type_expr location local (Ident (false, None, x)) with
+            | Some (Fun_type (t1, t2)) -> Some t1
             | _ -> None)
     | Function (l, e) ->
         let rec aux local = function
-        | [] -> type_expr location local var_type e
+        | [] -> type_expr location local e
         | (x, Some t) :: l ->
             (match aux ((x, Some t) :: local) l with
             | None -> None
@@ -215,7 +274,7 @@ let rec type_expr location local var_type = function
     | Cast (e, t) ->
         learn_type location local e t ; Some t
 
-let add_argument_types var_type resulttype =
+let add_argument_types resulttype =
     List.fold_left (fun rt (x, top, i) ->
         match rt with
         | None -> None
@@ -240,20 +299,23 @@ let rec complete_local : (string * ctype option) list -> (string * ctype) list o
         | None -> None
         | Some l -> Some ((x, t) :: l))
     | (x, None) :: l ->
-        match get_loc_type x with
+        match complete_local l with
         | None -> None
-        | Some t ->
-            match complete_local l with
-            | None -> None
-            | Some l -> Some ((x, t) :: l)
+        | Some l ->
+            match get_loc_type x with
+            | None ->
+                (match var_type x with
+                | None -> None
+                | Some t -> Some ((x, t) :: l))
+            | Some t -> Some ((x, t) :: l)
 
 let type_from_complete_local =
     List.fold_left (fun rt (x, t) ->
         Fun_type (t, rt))
 
-let fetchcoerciondefs var_type = function
+let fetchcoerciondefs = function
     | File_hypothesis h ->
-        (match add_argument_types var_type h.hyp_type h.hyp_arguments with
+        (match add_argument_types h.hyp_type h.hyp_arguments with
         | None -> ()
         | Some t -> learn_type (" in Hypothesis " ^ h.hyp_name) [] (Ident (false, None, h.hyp_name)) t)
     | File_definition d ->
@@ -272,7 +334,7 @@ let fetchcoerciondefs var_type = function
         (match d.def_type with
         | Some t -> learn_type (" in Definition " ^ d.def_name) local d.body t ; add t
         | None ->
-            match type_expr (" in Definition " ^ d.def_name) local var_type d.body with
+            match type_expr (" in Definition " ^ d.def_name) local d.body with
             | Some t -> add t
             | None -> ()) ;
         (match convert_to_type d.body with (* Maybe it's just a shortcut for a type. *)
@@ -338,5 +400,14 @@ let fetchcoerciondefs var_type = function
                     learn_type (" in Reduction " ^ r.red_name) [] (Ident (false, None, r.red_name)) t
                 | None -> ()) ;
             List.iter (fetchrule r.red_name) r.rules) rl
+    | File_implicit_type (x, t) ->
+        (match assoc_option x !implicit_types with
+        | None -> implicit_types := (x, t) :: !implicit_types
+        | Some t' ->
+            if not (coercable t t' && coercable t' t) then (
+                prerr_endline ("Warning: The implicit type for " ^ x ^ " has been declared as both " ^ string_of_type t ^ " and " ^ string_of_type t' ^ ". Assuming these two types are equals.") ;
+                add_coercion t t' ;
+                add_coercion t' t
+            ))
     | _ -> ()
 

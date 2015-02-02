@@ -15,51 +15,52 @@ Require Import JsInit.
 
 (******************************************)
 
-Implicit Type b : bool.
-Implicit Type n : number.
-Implicit Type k : int.
-Implicit Type s : string.
-Implicit Type i : literal.
-Implicit Type l : object_loc.
-Implicit Type lp : object_loc.
-Implicit Type w : prim.
-Implicit Type v : value.
-Implicit Type vi : value.
-Implicit Type vp : value.
-Implicit Type vthis : value.
-Implicit Type r : ref.
-Implicit Type ty : type.
-Implicit Type rt : restype.
-Implicit Type rv : resvalue.
-Implicit Type lab : label.
-Implicit Type labs : label_set.
-Implicit Type R : res.
-Implicit Type o : out.
-Implicit Type ct : codetype.
-Implicit Type x : prop_name.
-Implicit Type str : strictness_flag.
-Implicit Type m : mutability.
-Implicit Type Ad : attributes_data.
-Implicit Type Aa : attributes_accessor.
-Implicit Type A : attributes.
-Implicit Type Desc : descriptor.
-Implicit Type D : full_descriptor.
-Implicit Type L : env_loc.
-Implicit Type E : env_record.
-Implicit Type Ed : decl_env_record.
-Implicit Type X : lexical_env.
-Implicit Type O : object.
-Implicit Type S : state.
-Implicit Type C : execution_ctx.
-Implicit Type P : object_properties_type.
-Implicit Type e : expr.
-Implicit Type p : prog.
-Implicit Type t : stat.
-Implicit Type c : call.
-Implicit Type cstr : construct.
-Implicit Type xs : (list prop_name).
-Implicit Type sb : switchbody.
 Implicit Type sc : switchclause.
+Implicit Type sb : switchbody.
+Implicit Type xs : (list prop_name).
+Implicit Type cstr : construct.
+Implicit Type c : call.
+Implicit Type ct : codetype.
+Implicit Type vthis : value.
+Implicit Type vp : value.
+Implicit Type vi : value.
+Implicit Type lp : object_loc.
+Implicit Type pref : preftype.
+Implicit Type t : stat.
+Implicit Type p : prog.
+Implicit Type e : expr.
+Implicit Type P : object_properties_type.
+Implicit Type C : execution_ctx.
+Implicit Type S : state.
+Implicit Type O : object.
+Implicit Type X : lexical_env.
+Implicit Type Ed : decl_env_record.
+Implicit Type E : env_record.
+Implicit Type L : env_loc.
+Implicit Type D : full_descriptor.
+Implicit Type Desc : descriptor.
+Implicit Type A : attributes.
+Implicit Type Aa : attributes_accessor.
+Implicit Type Ad : attributes_data.
+Implicit Type m : mutability.
+Implicit Type str : strictness_flag.
+Implicit Type x : prop_name.
+Implicit Type o : out.
+Implicit Type R : res.
+Implicit Type labs : label_set.
+Implicit Type lab : label.
+Implicit Type rv : resvalue.
+Implicit Type rt : restype.
+Implicit Type ty : type.
+Implicit Type r : ref.
+Implicit Type v : value.
+Implicit Type w : prim.
+Implicit Type l : object_loc.
+Implicit Type i : literal.
+Implicit Type s : string.
+Implicit Type k : int.
+Implicit Type n : number.
+Implicit Type b : bool.
 
 (******************************************)
 
@@ -627,7 +628,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
         (red_stat S C (stat_with e1 t2) o)
 
   | red_stat_with_1 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (S' : state) (C : execution_ctx (* input *)) (t2 : stat (* input *)) (l : object_loc (* input *)) (o : out) (lex : lexical_env) (lex' : _) (C' : execution_ctx),
+      forall (S0 : state (* input *)) (S : state (* input *)) (S' : state) (C : execution_ctx (* input *)) (t2 : stat (* input *)) (l : object_loc (* input *)) (o : out) (lex : lexical_env) (lex' : lexical_env) (C' : execution_ctx),
         (lex = (execution_ctx_lexical_env C)) ->
         ((lex', S') = (lexical_env_alloc_object S lex l provide_this_true)) ->
         (C' = (execution_ctx_with_lex C lex')) ->
@@ -2864,7 +2865,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_env_record_set_mutable_binding L x v str) o)
 
   | red_spec_env_record_set_mutable_binding_1_decl_mutable :
-      forall (v_old : _) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
+      forall (v_old : value) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
         (decl_env_record_binds Ed x mu v_old) ->
         (mutability_is_mutable mu) ->
         (* ========================================== *)
@@ -2873,7 +2874,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_env_record_set_mutable_binding_1 L x v str (env_record_decl Ed)) o)
 
   | red_spec_env_record_set_mutable_binding_1_decl_non_mutable :
-      forall (v_old : _) (mu : _) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
+      forall (v_old : value) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
         (decl_env_record_binds Ed x mu v_old) ->
         (~ (mutability_is_mutable mu)) ->
         (* ========================================== *)
@@ -2945,7 +2946,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_env_record_delete_binding L x) o)
 
   | red_spec_env_record_delete_binding_1_decl_indom :
-      forall (mu : _) (v : value) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (Ed : decl_env_record (* input *)) (S' : state) (b : bool),
+      forall (mu : mutability) (v : value) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (Ed : decl_env_record (* input *)) (S' : state) (b : bool),
         (decl_env_record_binds Ed x mu v) ->
         (ifb (mu = mutability_deletable) then ((S' = (env_record_write S L (decl_env_record_rem Ed x))) /\ (b = true)) else ((S' = S) /\ (b = false))) ->
         (* ========================================== *)
@@ -2997,7 +2998,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_env_record_create_immutable_binding L x) (out_void S'))
 
   | red_spec_env_record_initialize_immutable_binding :
-      forall (Ed : decl_env_record) (v_old : _) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (S' : state),
+      forall (Ed : decl_env_record) (v_old : value) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (S' : state),
         (env_record_binds S L (env_record_decl Ed)) ->
         (decl_env_record_binds Ed x mutability_uninitialized_immutable v_old) ->
         (S' = (env_record_write_decl_env S L x mutability_immutable v)) ->
@@ -4825,13 +4826,13 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_call_object_proto_is_prototype_of_2_4 lthis null) (out_ter S false))
 
   | red_spec_call_object_proto_is_prototype_of_4_equal :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lthis : value (* input *)),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lthis : object_loc (* input *)),
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr S C (spec_call_object_proto_is_prototype_of_2_4 lthis lthis) (out_ter S true))
 
   | red_spec_call_object_proto_is_prototype_of_4_not_equal :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lthis : object_loc (* input *)) (lproto : value (* input *)) (o : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lthis : object_loc (* input *)) (lproto : object_loc (* input *)) (o : out),
         (lproto <> lthis) ->
         (* ========================================== *)
         (red_expr S C (spec_call_object_proto_is_prototype_of_2_3 lthis lproto) o) ->
@@ -4963,7 +4964,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S C (spec_function_has_instance_3 lo lv) (out_ter S true))
 
   | red_spec_function_has_instance_3_neq :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lo : object_loc (* input *)) (lv : value (* input *)) (o : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (lo : object_loc (* input *)) (lv : object_loc (* input *)) (o : out),
         (lv <> lo) ->
         (* ========================================== *)
         (red_expr S C (spec_function_has_instance_2 lo lv) o) ->
@@ -5516,7 +5517,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr S0 C (spec_call_error_proto_to_string_5 l sname (out_ter S v)) o)
 
   | red_spec_call_error_proto_to_string_6 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (sname : string (* input *)) (smsg : res (* input *)) (s : string),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (sname : string (* input *)) (smsg : string (* input *)) (s : string),
         (s = (ifb (sname = (("")%string)) then smsg else (ifb (smsg = (("")%string)) then sname else (string_concat (string_concat sname ((": ")%string)) smsg)))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -5542,7 +5543,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 with red_spec : forall {T}, state (* input *) -> execution_ctx (* input *) -> ext_spec (* input *) -> (specret T) -> Prop :=
 
   | red_spec_abort :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (exts : ext_spec (* input *)) (T : out) (o : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (exts : ext_spec (* input *)) (T : _) (o : out),
         ((out_of_ext_spec exts) = (Some o)) ->
         (abort o) ->
         (~ (abort_intercepted_spec exts)) ->
@@ -6021,7 +6022,7 @@ with red_spec : forall {T}, state (* input *) -> execution_ctx (* input *) -> ex
         (red_spec S C (spec_string_get_own_prop_4 x s) y)
 
   | red_spec_object_get_own_prop_string_5 :
-      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (s : string (* input *)) (idx : int (* input *)) (len : int) (y : (specret full_descriptor)),
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (s : string (* input *)) (idx : int (* input *)) (len : nat) (y : (specret full_descriptor)),
         (len = (String.length s)) ->
         (* ========================================== *)
         (red_spec S C (spec_string_get_own_prop_6 s idx len) y) ->
@@ -6184,7 +6185,7 @@ with red_spec : forall {T}, state (* input *) -> execution_ctx (* input *) -> ex
         (red_spec S C (spec_object_get_prop_3 l x null) (dret S full_descriptor_undef))
 
   | red_spec_object_get_prop_3_not_null :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (lproto : value (* input *)) (y : (specret full_descriptor)),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (lproto : object_loc (* input *)) (y : (specret full_descriptor)),
         (* ========================================== *)
         (red_spec S C (spec_object_get_prop lproto x) y) ->
         (* ------------------------------------------ *)

@@ -361,14 +361,28 @@ arglist:
     ;
 
 ctype:
+    | ctype_app_list %prec prec_app
+      {
+          match List.rev $1 with
+          | t :: l ->
+            List.fold_left (fun t1 t2 -> App_type (t1, t2)) t l
+          | _ -> prerr_endline "This should not happen!" ; exit 0
+      }
+    | ctype STAR ctype              { Prod_type ($1, $3) }
+    | ctype ARROW ctype             { Fun_type ($1, $3) }
+    ;
+
+ctype_app_list:
+    | simple_ctype                      { [$1] }
+    | ctype_app_list simple_ctype       { $2 :: $1 }
+    ;
+
+simple_ctype:
     | LPAR ctype RPAR               { $2 }
     | PROP                          { Prop }
     | TYPE                          { Prop }
     | IDENT                         { Basic_type (None, $1) }
     | MODULEIDENT                   { let (m, x) = $1 in Basic_type (Some m, x) }
-    | ctype STAR ctype              { Prod_type ($1, $3) }
-    | ctype ARROW ctype             { Fun_type ($1, $3) }
-    | ctype ctype %prec prec_app    { App_type ($1, $2) }
     ;
 
 identlist:
