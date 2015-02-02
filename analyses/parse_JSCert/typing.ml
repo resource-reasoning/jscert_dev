@@ -9,10 +9,7 @@ let all_implicit_types () = !implicit_types
 let var_type x = assoc_option (normalise_var_name x) !implicit_types
 
 let coercions : (ctype *(* >-> *) ctype *(* := *) (expr -> expr)) list ref =
-    ref [
-        Basic_type (None, "bool"), Prop, (fun e -> App (Ident(false, None, "istrue"), None, e)) ;
-        Basic_type (None, "nat"), Basic_type (None, "int"), (fun e -> App (Ident(false, None, "my_Z_of_nat"), None, e))
-    ]
+    ref []
 
 let direct_coercable t1 t2 =
     List.exists (fun (t1', t2', _) -> t1' = t1 && t2' = t2) !coercions
@@ -97,6 +94,15 @@ let add_coercion t1 t2 convert =
             let l' = if t4 = t1 then (t3, t2, compose convert convert') :: l else l in
             (t3, t4, convert') :: if t3 = t2 then (t1, t4, compose convert' convert) :: l' else l') [] !coercions
 
+let _ =
+    List.iter (fun (t1, t2, convert) -> add_coercion t1 t2 convert)
+    [
+        Basic_type (None, "bool"), Prop, (fun e -> App (Ident(false, None, "istrue"), None, e)) ;
+        Basic_type (None, "nat"), Basic_type (None, "int"), (fun e -> App (Ident(false, None, "my_Z_of_nat"), None, e)) ;
+        Basic_type (None, "int"), Basic_type (None, "number"), (fun e -> App (Ident(false, Some "JsNumber", "of_int"), None, e)) ;
+        Basic_type (None, "number"), Basic_type (None, "prim"), (fun e -> App (Ident(false, None, "prim_number"), None, e))
+    ]
+
 let def_types : ((string option * string) * ctype) list ref =
     ref [
             (None, "undef"), Basic_type (None, "value") ;
@@ -115,7 +121,7 @@ let add_def_type location (local : (string * ctype option) list) mx t =
             add_coercion t1 t2 (fun e -> Cast (e, t2)) ;
             prerr_endline ("Warning: The type " ^ string_of_type t1 ^ " have been assumed to be coercable to " ^ string_of_type t2 ^ location ^ ".")
         ) in
-    let add () =
+    let add_global () =
         match assoc_option mx !def_types with
         | None ->
             def_types := (mx, t) :: !def_types
@@ -123,15 +129,19 @@ let add_def_type location (local : (string * ctype option) list) mx t =
             shouldbecoercable t' t
     in match mx with
     | (None, x) ->
-        if assoc_option x local = None then add ()
-        else (match get_loc_type x with
+        (match assoc_option x local with
+        | None -> add_global ()
+        | Some (Some t') ->
+            shouldbecoercable t' t
+        | Some None ->
+            match get_loc_type x with
             | None ->
                 loc_types := (x, t) :: !loc_types
             | Some t' ->
                 if t <> t' && coercable t t' then (* We were probably wrong in the first time to guess such a big type. Let's get to something closer. *)
                     loc_types := (x, t) :: List.remove_assoc x !loc_types
                 else shouldbecoercable t' t)
-    | _ -> add ()
+    | _ -> add_global ()
 
 let rec learn_type location local e t =
     let identifer_to_avoid = [
@@ -310,12 +320,20 @@ let rec type_expr location local : expr -> expr * ctype option = function
     | Expr_type _ as e -> e, Some Prop
     | Wildcard -> Wildcard, None
     | Match (e, l) -> (* This is just a script, it hasn't to be complete :-) *)
+        let lp =
+            List.map (fun (p, e) -> p, type_expr location local e) l in
         let l =
-            List.map (fun (p, e) -> p, fst (type_expr location local e)) l in
+            List.map (fun (p, (e, t)) -> (p, e)) lp in
         (Match (e, l),
-            match l with
+            match lp with
             | [] -> None
-            | (_, e) :: _ -> snd (type_expr location local e))
+            | (_, (_, t)) :: l ->
+                List.fold_left (fun t (_, (_, t')) ->
+                    match t, t' with
+                    | Some t, None -> Some t
+                    | None, Some t -> Some t
+                    | None, None -> None
+                    | Some t, Some t' -> research_common t t') t l)
     | Ifthenelse (e1, e2, e3) as e ->
         let e1 = fst (type_expr location local e1) in
         (match type_expr location local e2, type_expr location local e3 with
@@ -363,6 +381,7 @@ let rec type_expr location local : expr -> expr * ctype option = function
             | Some t -> aux local ((x, Some t) :: l)
         in aux local l
     | Cast (e, t) as e0 ->
+        let (e, _) = type_expr location local e in
         learn_type location local e t ;
         e0, Some t
 
@@ -513,4 +532,34 @@ let fetchcoerciondefs = function
                 add_coercion t' t (fun e -> Cast (e, t))
             ))
     | _ -> ()
+
+let display_coercions location local =
+    let rec aux = function
+    | Cast (e, t) ->
+        let e = aux e in
+        let (_, t') = type_expr location local e in
+        (match t' with
+        | None -> Cast (e, t)
+        | Some t' ->
+            match get_coercion t' t with
+            | None ->
+                Cast (e, t)
+            | Some f -> f e)
+    | (Wildcard | Ident _ | String _ | Int _ | Nat _ | Expr_type _) as e -> e
+    | App (e1, internal, e2) ->
+        App (aux e1, internal, aux e2)
+    | Binop (op, e1, e2) ->
+        Binop (op, aux e1, aux e2)
+    | Unop (op, e) ->
+        Unop (op, aux e)
+    | Couple (e1, e2) ->
+        Couple (aux e1, aux e2)
+    | (Forall _ | Exists _ | Function _) as e -> e
+    | Match (es, pes) ->
+        Match (List.map aux es, pes)
+    | Ifthenelse (e1, e2, e3) ->
+        Ifthenelse (aux e1, aux e2, aux e3)
+    | Expr_record l ->
+        Expr_record (List.map (fun (x, e) -> (x, aux e)) l)
+    in aux
 
