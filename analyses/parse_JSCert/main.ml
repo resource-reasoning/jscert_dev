@@ -184,28 +184,66 @@ let _ =
     output_rule1 rule1f all_preds all_rule1 ;
     separate_coq rule1f ;
     close_out rule1f ;
+    (*****************************************)
+    print_endline "Unfolding definitions." ;
     let all_rule2 =
+        List.map (fun r ->
+            Typing.reset_loc_types () ;
+            let (eqs, cond') = List.partition (function
+                | Binop (Eq, Ident (false, None, x), _) -> true
+                | Binop (Eq, _, Ident (false, None, x)) -> true
+                | Binop (Eq, Couple (Ident (false, None, x), Ident (false, None, y)), _) -> true
+                | _ -> false) r.rule1_conditions in
+            let eqsn =
+                List.concat (List.map (function
+                    | Binop (Eq, Ident (false, None, x), e) -> [x, e]
+                    | Binop (Eq, e, Ident (false, None, x)) -> [x, e]
+                    | Binop (Eq, Couple (Ident (false, None, x), Ident (false, None, y)), e) ->
+                        [x, App (Ident (false, None, "fst"), None, e)] @
+                        [y, App (Ident (false, None, "snd"), None, e)]
+                    | _ -> prerr_endline "Should not happen!" ; exit 0) eqs) in
+            let unfold_local e =
+                let rec aux e = function
+                    | [] -> e
+                    | (x, ex) :: l ->
+                        let e = replace_ident x ex e in
+                        aux e (List.map (fun (y, ey) ->
+                            (y, replace_ident x ex ey)) l)
+                in let lcls =
+                    List.map (fun (x, ex, tx) -> (x, Cast (ex, tx))) r.rule1_localdefs
+                in aux e (lcls @ eqsn)
+            in let unfold_inputs e =
+                e (* Typing.unfold, TODO: Do it previously. *)
+            in { r with
+                rule1_params =
+                    List.filter (fun (x, _, _) ->
+                        not (List.exists (fun (y, _) -> x = y) eqsn)) r.rule1_params ;
+                rule1_localdefs = [] ;
+                rule1_conditions = List.map unfold_local cond' ;
+                rule1_premisses = List.map unfold_local r.rule1_premisses ;
+                rule1_conclusion = unfold_inputs (unfold_local r.rule1_conclusion)
+            }) all_rule1 in
+    let rule2f = coq_file "gen/JsRules_2_unfolding.v" in
+    output_rule1 rule2f all_preds all_rule2 ;
+    separate_coq rule2f ;
+    close_out rule2f ;
+    let all_rule3 =
         List.map (fun r ->
             Typing.reset_loc_types () ;
             let location =
                 " while unfolding coercions in Rule " ^ r.rule1_name in
             let local =
-                List.map (fun (x, e, t) -> (x, Some t)) r.rule1_localdefs @
                 List.map (fun (x, t, input) -> (x, Some t)) r.rule1_params in
             let display = Typing.display_coercions location local in
             { r with
-                rule1_localdefs =
-                    List.map (fun (x, e, t) -> (x, display (Cast (e, t)), t)) r.rule1_localdefs ;
                 rule1_conditions = List.map display r.rule1_conditions ;
                 rule1_premisses = List.map display r.rule1_premisses ;
                 rule1_conclusion = display r.rule1_conclusion
-            }) all_rule1 in
-    let rule2f = coq_file "gen/JsRules_2_coercions.v" in
-    output_rule1 rule2f all_preds all_rule2 ;
-    separate_coq rule2f ;
-    close_out rule2f ;
-    (*****************************************)
-    print_endline "Unfolding definitions." ;
+            }) all_rule2 in
+    let rule3f = coq_file "gen/JsRules_3_coercions.v" in
+    output_rule1 rule3f all_preds all_rule3 ;
+    separate_coq rule3f ;
+    close_out rule3f ;
     (*****************************************)
     ()
 
