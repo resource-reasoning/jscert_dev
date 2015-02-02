@@ -63,6 +63,7 @@ type hypothesis = {
 }
 
 type coercion = {
+    coercion_name : string ;
     coercion_from : ctype ;
     coercion_to : ctype
 }
@@ -101,7 +102,7 @@ let make_red_pred name l = {
 type rule1 = {
     rule1_name : string ;
     rule1_params : (string * ctype * bool (* It is an input *)) list ;
-    rule1_localdefs : (string * expr) list (* local let-bindings *) ;
+    rule1_localdefs : (string * expr * ctype) list (* local let-bindings *) ;
     rule1_conditions : expr list ;
     rule1_premisses : expr list ;
     rule1_conclusion : expr
