@@ -381,7 +381,7 @@ ctype_app_list:
 simple_ctype:
     | LPAR ctype RPAR               { $2 }
     | PROP                          { Prop }
-    | TYPE                          { Prop }
+    | TYPE                          { Type }
     | IDENT                         { Basic_type (None, $1) }
     | MODULEIDENT                   { let (m, x) = $1 in Basic_type (Some m, x) }
     ;

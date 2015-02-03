@@ -1,6 +1,7 @@
 
 type ctype =
     | Prop
+    | Type
     | Basic_type of string option (* Modules *) * string
     | Prod_type of ctype * ctype
     | Fun_type of ctype * ctype

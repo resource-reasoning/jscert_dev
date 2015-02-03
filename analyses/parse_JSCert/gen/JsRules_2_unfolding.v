@@ -5389,7 +5389,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (red_expr (S : state) (C : execution_ctx) ((spec_construct_prealloc ((prealloc_native_error (ne : native_error)) : prealloc) (args : (list value))) : ext_expr) (o : out))
 
 
-with red_spec : forall {T}, state (* input *) -> execution_ctx (* input *) -> ext_spec (* input *) -> (specret T) -> Prop :=
+with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *) -> ext_spec (* input *) -> (specret T) -> Prop :=
 
   | red_spec_abort :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (exts : ext_spec (* input *)) (T : _) (o : out),
