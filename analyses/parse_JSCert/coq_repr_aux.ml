@@ -3,7 +3,7 @@ open Coq_repr
 open Utils
 
 let rec variable_used_type x = function
-    | Prop ->
+    | Prop | Type ->
         false
     | Basic_type (m, y) ->
         m = None && x = y
@@ -111,6 +111,8 @@ let rec replace_ident x e = function
 let rec string_of_type = function
     | Prop ->
         "Prop"
+    | Type ->
+        "Type"
     | Basic_type (None, s) -> s
     | Basic_type (Some m, s) -> m ^ "." ^ s
     | Prod_type (t1, t2) ->

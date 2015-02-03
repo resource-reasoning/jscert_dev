@@ -90,6 +90,7 @@ let _ =
                     let ts =
                         let rec aux = function
                             | Fun_type (t, Prop) -> [t]
+                            | Fun_type (t, Type) -> [t]
                             | Fun_type (t1, t2) -> t1 :: aux t2
                             | t ->
                                 prerr_endline ("I don't understand the subtype " ^ string_of_type t ^ " of " ^ string_of_type rt ^ " of the reduction " ^ r.red_name ^ ". Aborting.") ;
@@ -254,6 +255,78 @@ let _ =
     output_rule1 rule3f all_preds all_rule3 ;
     separate_coq rule3f ;
     close_out rule3f ;
+    (*****************************************)
+    print_endline "Merging inductive rules." ;
+    let red_name = "red" in
+    let red_in_name = red_name ^ "_in" in
+    let red_out_name = red_name ^ "_out" in
+    let output_red_in_out f =
+        let print_ind name accept =
+            output_endline f ("Inductive " ^ name ^ " :=") ;
+            List.iter (fun r ->
+                output_endline f ("  | " ^ name ^ "_" ^ r.red_pred_name ^ " : " ^
+                    (if r.red_forall_params = [] then ""
+                    else ("forall " ^ String.concat " " (List.map (function
+                        | (x, None, false) -> x
+                        | (x, None, true) -> "{" ^ x ^ "}"
+                        | (x, Some t, false) -> par (x ^ " : " ^ string_of_type t)
+                        | (x, Some t, true) -> "{" ^ x ^ " : " ^ string_of_type t ^ "}") r.red_forall_params) ^ ", ")) ^
+                        String.concat "" (List.map (fun (t, b) -> if accept b then (string_of_type t ^ " -> ") else "") r.red_pred_types) ^ name
+                )) all_preds ;
+            output_endline f "  ." ;
+        in
+        print_ind red_in_name (fun b -> b) ;
+        separate_coq f ;
+        print_ind red_out_name not ;
+        separate_coq f in
+    let red_pred = {
+        red_pred_name = red_name ;
+        red_forall_params = [] ;
+        red_pred_types = [
+            Basic_type (None, red_in_name), true ;
+            Basic_type (None, red_out_name), false ]
+    } in
+    let all_rule4 =
+        List.map (fun r ->
+            let merge e =
+                match get_pred e with
+                | None -> prerr_endline "Should not happen." ; exit 0
+                | Some p ->
+                    match assoc_option p inputoutput with
+                    | None -> prerr_endline "Should not happen." ; exit 0
+                    | Some input_spec ->
+                        let rec get_inputs = function
+                            | [], _ -> []
+                            | true :: input_spec, App (e, None, arg) ->
+                                arg :: get_inputs (input_spec, e)
+                            | false :: input_spec, App (e, None, arg) ->
+                                get_inputs (input_spec, e)
+                            | _ ->
+                                prerr_endline ("Rule " ^ r.rule1_name ^ " doesn't match its status in inputoutput (see main.ml). Aborting.") ;
+                                exit 0 in
+                        let inputs : expr list =
+                            List.rev (get_inputs (List.rev input_spec, e)) in
+                        let input_expr =
+                            List.fold_left (fun e e' ->
+                                App (e, None, e')) (Ident (false, None, red_in_name ^ "_" ^ p)) inputs
+                        in
+                        let outputs : expr list = (* TODO: Like this we are filtering the output of recursive call! This is wrong! *)
+                            List.rev (get_inputs (List.rev (List.map not input_spec), e)) in
+                        let output_expr =
+                            List.fold_left (fun e e' ->
+                                App (e, None, e')) (Ident (false, None, red_out_name ^ "_" ^ p)) outputs
+                        in
+                        App (App (Ident (false, None, red_name), None, input_expr), None, output_expr)
+            in
+            { r with
+                rule1_premisses = List.map merge r.rule1_premisses ;
+                rule1_conclusion = merge r.rule1_conclusion
+            }) all_rule3 in
+    let rule4f = coq_file "gen/JsRules_4_merging.v" in
+    output_red_in_out rule4f ;
+    output_rule1 rule4f [red_pred] all_rule4 ;
+    separate_coq rule4f ;
+    close_out rule4f ;
     (*****************************************)
     ()
 
