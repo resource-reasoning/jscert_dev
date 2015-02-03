@@ -171,6 +171,18 @@ let _ =
                                             | Some t -> (x, App_type (Basic_type (None, "list"), t))
                                             | None -> unable x)
                                         | _ -> unable x) r.rule_params in
+                    let rec unfold_inputs = function
+                        | [true], e -> Typing.unfold e
+                        | [false], e -> e
+                        | true :: input_spec, App (e, None, arg) ->
+                            App (unfold_inputs (input_spec, e), None, Typing.unfold arg)
+                        | false :: input_spec, App (e, None, arg) ->
+                            App (unfold_inputs (input_spec, e), None, arg)
+                        | _ ->
+                            prerr_endline ("Rule " ^ r.rule_name ^ " doesn't match its status in inputoutput or contain some internal call assignments in its conclusion (see main.ml). Aborting.") ;
+                            exit 0 in
+                    let new_conclusion =
+                        unfold_inputs (List.rev input_spec, conclusion) in
                     {
                         rule1_name = r.rule_name ;
                         rule1_params =
@@ -178,7 +190,7 @@ let _ =
                         rule1_localdefs = local_defs ;
                         rule1_conditions = conditions ;
                         rule1_premisses = premisses ;
-                        rule1_conclusion = conclusion
+                        rule1_conclusion = new_conclusion
                     }) all_rules in
     let rule1f = coq_file "gen/JsRules_1_typed.v" in
     output_rule1 rule1f all_preds all_rule1 ;
@@ -212,8 +224,6 @@ let _ =
                 in let lcls =
                     List.map (fun (x, ex, tx) -> (x, Cast (ex, tx))) r.rule1_localdefs
                 in aux e (lcls @ eqsn)
-            in let unfold_inputs e =
-                e (* Typing.unfold, TODO: Do it previously. *)
             in { r with
                 rule1_params =
                     List.filter (fun (x, _, _) ->
@@ -221,7 +231,7 @@ let _ =
                 rule1_localdefs = [] ;
                 rule1_conditions = List.map unfold_local cond' ;
                 rule1_premisses = List.map unfold_local r.rule1_premisses ;
-                rule1_conclusion = unfold_inputs (unfold_local r.rule1_conclusion)
+                rule1_conclusion = unfold_local r.rule1_conclusion
             }) all_rule1 in
     let rule2f = coq_file "gen/JsRules_2_unfolding.v" in
     output_rule1 rule2f all_preds all_rule2 ;

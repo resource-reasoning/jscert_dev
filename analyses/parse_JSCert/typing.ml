@@ -115,13 +115,15 @@ let rec unfold = function
     | Cast (e, t) ->
         Cast (unfold e, t)
     | (Wildcard | Ident _ | String _ | Int _ | Nat _ | Expr_type _) as e -> e
-    | App (e1, internal, e2) ->
-        (match unfold e1, internal with
-        (*| Function ([(x, _)], e), None ->
+    | App (e1, Some _, e2) ->
+        unfold e1
+    | App (e1, None, e2) ->
+        (match unfold e1 with
+        | Function ([(x, _)], e) ->
             unfold (replace_ident x (unfold e2) e)
-        | Function ((x, _) :: l, e), None ->
-            unfold (replace_ident x (Function (l, e)) (unfold e2))*)
-        | e1, _ -> App (e1, internal, unfold e2))
+        | Function ((x, _) :: l, e) ->
+            unfold (replace_ident x (unfold e2) (Function (l, e)))
+        | e1 -> App (e1, None, unfold e2))
     | Binop (op, e1, e2) ->
         Binop (op, unfold e1, unfold e2)
     | Unop (op, e) ->
@@ -466,9 +468,16 @@ let fetchcoerciondefs = function
         | Some t -> learn_type (" in Hypothesis " ^ h.hyp_name) [] (Ident (false, None, h.hyp_name)) t)
     | File_definition d ->
         let local = get_local d.arguments in
-        (match local with
+        let arguments' =
+            List.map (function
+                | (x, Some (Basic_type (None, t)), b)
+                    when List.exists (fun (x, _, _) -> t = x) d.arguments ->
+                    (x, None, b)
+                | tr -> tr) d.arguments in
+        (match get_local (List.filter (fun (_, _, b) -> not b) arguments') with
         | [] -> add_def d.def_name d.body
-        | l -> add_def d.def_name (Function (l, d.body))) ;
+        | l ->
+            add_def d.def_name (Function (List.rev l, d.body))) ;
         reset_loc_types () ;
         let add t =
             match complete_local local with
@@ -484,7 +493,7 @@ let fetchcoerciondefs = function
                                 | (_, _, true) :: l -> aux l
                                 | (x, _, false) :: _ ->
                                     fun e -> replace_ident x e d.body
-                            in aux d.arguments
+                            in aux arguments'
                         in add_coercion t1 t2 convert
                     | _ -> ())
             | None -> () in
@@ -499,7 +508,7 @@ let fetchcoerciondefs = function
         (match convert_to_type d.body with (* Maybe it's just a shortcut for a type. *)
         | Some t ->
             let t0 = Basic_type (None, d.def_name) in
-            if d.arguments = [] && d.def_type = None then (
+            if arguments' = [] && d.def_type = None then (
                 add_coercion t0 t (fun e -> Cast (e, t)) ;
                 add_coercion t t0 (fun e -> Cast (e, t0)))
         | None -> ())
@@ -520,9 +529,9 @@ let fetchcoerciondefs = function
             learn_type (" in Record " ^ r.record_name) [] (Ident (false, None, make)) t
         | None -> ())
     | File_reductions rl ->
-        let fetchrule red_name (r : rule) =
+        let fetchrule red_name red_params (r : rule) =
             reset_loc_types () ;
-            if r.rule_params = [] && r.rule_localdefs = [] then ((* We only want simple inductive constructors. *)
+            if red_params = [] && r.rule_params = [] && r.rule_localdefs = [] then ((* We only want simple inductive constructors. *)
                 let rec get_type = function
                     | Ident (false, m, x) ->
                         Some (Basic_type (m, x))
@@ -559,7 +568,7 @@ let fetchcoerciondefs = function
                 | Some t ->
                     learn_type (" in Reduction " ^ r.red_name) [] (Ident (false, None, r.red_name)) t
                 | None -> ()) ;
-            List.iter (fetchrule r.red_name) r.rules) rl
+            List.iter (fetchrule r.red_name r.red_params) r.rules) rl
     | File_implicit_type (x, t) ->
         (match assoc_option x !implicit_types with
         | None -> implicit_types := (x, t) :: !implicit_types

@@ -192,7 +192,7 @@ let rec string_of_expr = function
             (List.map (function
                 | (x, None) -> x
                 | (x, Some t) -> par (x ^ " : " ^ string_of_type t)) l) ^
-        "=> " ^ string_of_expr e)
+        " => " ^ string_of_expr e)
     | Cast (e, t) ->
         par (string_of_expr e ^ " : " ^ string_of_type t)
 
