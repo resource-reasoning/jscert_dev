@@ -1,14 +1,11 @@
-Add Rec LoadPath "../src/" as Debug.
-Add ML Path "../src/".
-
-Require Debug.
+Require Tracejs.
 
 Section test.
   Variable A B C D G : Prop.
   Hypothesis H : A -> B -> C -> D.
     Goal G.
-    Show Proof.
-    debug.
+    tracejs "Test goal G".
+    tracejs_hyp H.
   Abort.
 End test.
 

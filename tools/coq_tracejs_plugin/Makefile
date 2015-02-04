@@ -1,5 +1,5 @@
-MODULES :=  src/debug.ml4 src/Debug.v test/Tests.v
-NAME := Debug
+MODULES :=  src/tracejs.ml4 src/Tracejs.v test/Tests.v
+NAME := Tracejs
 ROOT := ./
 .PHONY: coq clean
 
