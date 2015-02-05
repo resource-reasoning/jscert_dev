@@ -20,12 +20,6 @@ Implicit Type sb : switchbody.
 Implicit Type xs : (list prop_name).
 Implicit Type cstr : construct.
 Implicit Type c : call.
-Implicit Type ct : codetype.
-Implicit Type vthis : value.
-Implicit Type vp : value.
-Implicit Type vi : value.
-Implicit Type lp : object_loc.
-Implicit Type pref : preftype.
 Implicit Type t : stat.
 Implicit Type p : prog.
 Implicit Type e : expr.
@@ -45,6 +39,7 @@ Implicit Type Ad : attributes_data.
 Implicit Type m : mutability.
 Implicit Type str : strictness_flag.
 Implicit Type x : prop_name.
+Implicit Type ct : codetype.
 Implicit Type o : out.
 Implicit Type R : res.
 Implicit Type labs : label_set.
@@ -53,8 +48,12 @@ Implicit Type rv : resvalue.
 Implicit Type rt : restype.
 Implicit Type ty : type.
 Implicit Type r : ref.
+Implicit Type vthis : value.
+Implicit Type vp : value.
+Implicit Type vi : value.
 Implicit Type v : value.
 Implicit Type w : prim.
+Implicit Type lp : object_loc.
 Implicit Type l : object_loc.
 Implicit Type i : literal.
 Implicit Type s : string.
@@ -2496,7 +2495,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_default_value_1_default :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (prefo : (option preftype) (* input *)) (pref : preftype) (o : out),
-        (pref = ((unsome_default preftype_number prefo) : preftype)) ->
+        (pref = (unsome_default preftype_number prefo)) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_object_default_value_2 (l : object_loc) (pref : preftype) ((other_preftypes pref) : preftype)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
