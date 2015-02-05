@@ -5,6 +5,7 @@ open Utils
 
 let implicit_types : (string * ctype) list ref = ref []
 let all_implicit_types () = !implicit_types
+let clear_implicit_types () = implicit_types := []
 
 let var_type x = assoc_option (normalise_var_name x) !implicit_types
 
@@ -104,12 +105,24 @@ let _ =
     ]
 
 
-let definitions : (string * expr) list ref = ref []
-let add_def x e = definitions := (x, e) :: !definitions
+let all_defs : definition list ref = ref []
+
+let get_all_defs () = !all_defs
+
+let add_def x e =
+    all_defs := Definition_def (x, e) :: !all_defs
+
+let get_def x =
+    let rec aux = function
+        | [] -> None
+        | Definition_def (y, e) :: _ when x = y -> Some e
+        | _ :: l -> aux l
+    in aux !all_defs
+
 
 let rec unfold = function
     | Ident (false, None, x) as e ->
-        (match assoc_option x !definitions with
+        (match get_def x with
         | None -> e
         | Some d -> unfold d)
     | Cast (e, t) ->
@@ -357,8 +370,13 @@ let rec type_expr location local : expr -> expr * ctype option = function
     | Expr_type _ as e -> e, Some Prop
     | Wildcard -> Wildcard, None
     | Match (e, l) -> (* This is just a script, it hasn't to be complete :-) *)
+        let add_loc_types_pattern p =
+            ()
+            (*ignore (type_expr (location ^ " in pattern " ^ string_of_expr p) local p)*) in
         let lp =
-            List.map (fun (p, e) -> p, type_expr location local e) l in
+            List.map (fun (p, e) ->
+                List.iter add_loc_types_pattern p ;
+                (p, type_expr location local e)) l in
         let l =
             List.map (fun (p, (e, t)) -> (p, e)) lp in
         (Match (e, l),
@@ -516,6 +534,7 @@ let fetchcoerciondefs = function
         add_coercion c.coercion_from c.coercion_to
             (fun e -> App (Ident (false, None, c.coercion_name), None, e))
     | File_record r ->
+        all_defs := Definition_record r :: !all_defs ;
         reset_loc_types () ;
         List.iter (fun (x, t) ->
             learn_type (" in Record " ^ r.record_name) [] (Ident (false, None, x))
@@ -532,24 +551,11 @@ let fetchcoerciondefs = function
         let fetchrule red_name red_params (r : rule) =
             reset_loc_types () ;
             if red_params = [] && r.rule_params = [] && r.rule_localdefs = [] then ((* We only want simple inductive constructors. *)
-                let rec get_type = function
-                    | Ident (false, m, x) ->
-                        Some (Basic_type (m, x))
-                    | App (e1, None, e2) ->
-                        (match get_type e1, get_type e2 with
-                        | Some t1, Some t2 -> Some (App_type (t1, t2))
-                        | _ -> None)
-                    | Binop (Mult, e1, e2) ->
-                        (match get_type e1, get_type e2 with
-                        | Some t1, Some t2 -> Some (Prod_type (t1, t2))
-                        | _ -> None)
-                    | Expr_type t -> Some t
-                    | _ -> None in
                 let rec get_type_list = function
                     | [] -> None
-                    | [a] -> get_type a
+                    | [a] -> convert_to_type a
                     | a :: l ->
-                        match get_type a, get_type_list l with
+                        match convert_to_type a, get_type_list l with
                         | Some ta, Some tl -> Some (Fun_type (ta, tl))
                         | _, _ -> None
                 in
@@ -568,7 +574,26 @@ let fetchcoerciondefs = function
                 | Some t ->
                     learn_type (" in Reduction " ^ r.red_name) [] (Ident (false, None, r.red_name)) t
                 | None -> ()) ;
-            List.iter (fetchrule r.red_name r.red_params) r.rules) rl
+            List.iter (fetchrule r.red_name r.red_params) r.rules) rl ;
+        if List.for_all (fun r ->
+            List.for_all (fun ru ->
+                ru.rule_params = [] && ru.rule_localdefs = []
+            ) r.rules) rl
+        then (
+            let it =
+                List.map (fun r -> {
+                    inductive_type_name = r.red_name ;
+                    inductive_type_params = r.red_params ;
+                    inductive_type_constructors =
+                        List.map (fun r ->
+                            (r.rule_name, remove_last (List.map (fun e ->
+                                match convert_to_type e with
+                                | Some t -> t
+                                | None -> Basic_type (None, "_" (* Hack! *))) r.rule_statement_list))
+                            ) r.rules
+                    }) rl
+                in
+            all_defs := Definition_inductive it :: !all_defs)
     | File_implicit_type (x, t) ->
         (match assoc_option x !implicit_types with
         | None -> implicit_types := (x, t) :: !implicit_types

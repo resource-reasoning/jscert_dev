@@ -2,6 +2,7 @@
 open Coq_repr
 open Utils
 
+
 let rec variable_used_type x = function
     | Prop | Type ->
         false
@@ -74,8 +75,33 @@ let rec convert_to_type = function (* In Coq, we never know what is meant to be 
     | Expr_type t -> Some t
     | _ -> None
 
-let rec replace_ident x e = function
-    | (Wildcard | String _ | Int _ | Nat _ | Expr_type _) as e0 -> e0
+let rec replace_ident_type x t = function
+    | (Prop | Type) as t0 -> t0
+    | Basic_type (m, y) as t0 ->
+        if m = None && y = x
+        then t
+        else t0
+    | Prod_type (t1, t2) ->
+        Prod_type (replace_ident_type x t t1, replace_ident_type x t t2)
+    | Fun_type (t1, t2) ->
+        Fun_type (replace_ident_type x t t1, replace_ident_type x t t2)
+    | App_type (t1, t2) ->
+        App_type (replace_ident_type x t t1, replace_ident_type x t t2)
+
+let rec replace_ident x e =
+    let replace_in_type =
+        match convert_to_type e with
+        | None -> fun t -> t
+        | Some t' ->
+            fun t -> replace_ident_type x t' t
+    in let replace_in_args =
+        List.map (function
+            | (x, None) -> (x, None)
+            | (x, Some t) -> (x, Some (replace_in_type t)))
+    in function
+    | (Wildcard | String _ | Int _ | Nat _) as e0 -> e0
+    | Expr_type t ->
+        Expr_type (replace_in_type t)
     | Ident (_, _, y) as e0 ->
         if x = y then e else e0
     | App (e1, internal, e2) ->
@@ -88,10 +114,10 @@ let rec replace_ident x e = function
         Couple (replace_ident x e e1, replace_ident x e e2)
     | Forall (l, e0) ->
         if List.exists (fun (y, _) -> y = x) l then Forall (l, e0)
-        else Forall (l, replace_ident x e e0)
+        else Forall (replace_in_args l, replace_ident x e e0)
     | Exists (l, e0) ->
         if List.exists (fun (y, _) -> y = x) l then Exists (l, e0)
-        else Exists (l, replace_ident x e e0)
+        else Exists (replace_in_args l, replace_ident x e e0)
     | Match (es, pes) ->
         Match (List.map (replace_ident x e) es,
             List.map (fun (ps, e0) ->
@@ -103,9 +129,22 @@ let rec replace_ident x e = function
         Expr_record (List.map (fun (y, e0) -> (y, replace_ident x e e0)) l)
     | Function (l, e0) ->
         if List.exists (fun (y, _) -> y = x) l then Function (l, e0)
-        else Function (l, replace_ident x e e0)
+        else Function (replace_in_args l, replace_ident x e e0)
     | Cast (e0, t) ->
-        Cast (replace_ident x e e0, t)
+        Cast (replace_ident x e e0, replace_in_type t)
+
+
+let rec prefix_to_type excn prefix = function
+    | (Prop | Type) as t -> t
+    | Basic_type (_, s) as t when excn s -> t
+    | Basic_type (None, s) -> Basic_type (None, prefix ^ s)
+    | Basic_type (Some m, s) as t -> t
+    | Prod_type (t1, t2) ->
+        Prod_type (prefix_to_type excn prefix t1, prefix_to_type excn prefix t2)
+    | Fun_type (t1, t2) ->
+        Fun_type (prefix_to_type excn prefix t1, prefix_to_type excn prefix t2)
+    | App_type (t1, t2) ->
+        App_type (prefix_to_type excn prefix t1, prefix_to_type excn prefix t2)
 
 
 let rec string_of_type = function

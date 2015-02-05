@@ -20,12 +20,6 @@ Implicit Type sb : switchbody.
 Implicit Type xs : (list prop_name).
 Implicit Type cstr : construct.
 Implicit Type c : call.
-Implicit Type ct : codetype.
-Implicit Type vthis : value.
-Implicit Type vp : value.
-Implicit Type vi : value.
-Implicit Type lp : object_loc.
-Implicit Type pref : preftype.
 Implicit Type t : stat.
 Implicit Type p : prog.
 Implicit Type e : expr.
@@ -45,6 +39,7 @@ Implicit Type Ad : attributes_data.
 Implicit Type m : mutability.
 Implicit Type str : strictness_flag.
 Implicit Type x : prop_name.
+Implicit Type ct : codetype.
 Implicit Type o : out.
 Implicit Type R : res.
 Implicit Type labs : label_set.
@@ -53,8 +48,12 @@ Implicit Type rv : resvalue.
 Implicit Type rt : restype.
 Implicit Type ty : type.
 Implicit Type r : ref.
+Implicit Type vthis : value.
+Implicit Type vp : value.
+Implicit Type vi : value.
 Implicit Type v : value.
 Implicit Type w : prim.
+Implicit Type lp : object_loc.
 Implicit Type l : object_loc.
 Implicit Type i : literal.
 Implicit Type s : string.
@@ -65,21 +64,21 @@ Implicit Type b : bool.
 (******************************************)
 
 Inductive red_in :=
-  | red_in_red_javascript : prog -> red_in
-  | red_in_red_prog : state -> execution_ctx -> ext_prog -> red_in
-  | red_in_red_stat : state -> execution_ctx -> ext_stat -> red_in
-  | red_in_red_expr : state -> execution_ctx -> ext_expr -> red_in
-  | red_in_red_spec : forall {T : Type}, state -> execution_ctx -> ext_spec -> red_in
+  | red_in_red_javascript : pbs_prog -> red_in
+  | red_in_red_prog : pbs_state -> pbs_execution_ctx -> pbs_ext_prog -> red_in
+  | red_in_red_stat : pbs_state -> pbs_execution_ctx -> pbs_ext_stat -> red_in
+  | red_in_red_expr : pbs_state -> pbs_execution_ctx -> pbs_ext_expr -> red_in
+  | red_in_red_spec : pbs_state -> pbs_execution_ctx -> pbs_ext_spec -> red_in
   .
 
 (******************************************)
 
 Inductive red_out :=
-  | red_out_red_javascript : out -> red_out
-  | red_out_red_prog : out -> red_out
-  | red_out_red_stat : out -> red_out
-  | red_out_red_expr : out -> red_out
-  | red_out_red_spec : forall {T : Type}, (specret T) -> red_out
+  | red_out_red_javascript : pbs_out -> red_out
+  | red_out_red_prog : pbs_out -> red_out
+  | red_out_red_stat : pbs_out -> red_out
+  | red_out_red_expr : pbs_out -> red_out
+  | red_out_red_spec : forall {T : Type}, (pbs_specret T) -> red_out
   .
 
 (******************************************)
@@ -2438,7 +2437,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_spec_object_default_value_1_default :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (prefo : (option preftype) (* input *)) (o : out),
         (* ========================================== *)
-        (red (red_in_red_expr S C (spec_object_default_value_2 l ((unsome_default preftype_number prefo) : preftype) ((other_preftypes ((unsome_default preftype_number prefo) : preftype)) : preftype))) (red_out_red_expr o)) ->
+        (red (red_in_red_expr S C (spec_object_default_value_2 l ((unsome_default preftype_number prefo) : preftype) ((other_preftypes (unsome_default preftype_number prefo)) : preftype))) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_object_default_value_1 builtin_default_value_default l prefo)) (red_out_red_expr o))
 

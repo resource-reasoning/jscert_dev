@@ -88,6 +88,17 @@ type file_item =
 
 (** Some intermediate forms. **)
 
+type inductive_type = {
+    inductive_type_name : string ;
+    inductive_type_params : (string * ctype option * bool) list ;
+    inductive_type_constructors : (string * ctype list) list
+}
+
+type definition =
+    | Definition_def of (string * expr)
+    | Definition_inductive of inductive_type list (* Mutually defined *)
+    | Definition_record of record
+
 type red_pred = {
     red_pred_name : string ;
     red_forall_params : (string * ctype option * bool) list ;

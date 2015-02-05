@@ -1,4 +1,9 @@
 
+type ('a, 'b) sum =
+    | Left of 'a
+    | Right of 'b
+
+
 let count f =
     List.fold_left (fun i x -> if f x then i + 1 else i) 0
 
@@ -17,11 +22,15 @@ let assoc_option a l =
     with Not_found -> None
 
 let rec cut_last = function
-    | [] -> raise Not_found
+    | [] -> raise (Invalid_argument "cut_last")
     | [a] -> ([], a)
     | a :: l ->
         let (l, b) = cut_last l in
         (a :: l, b)
+
+let remove_last l =
+    try fst (cut_last l)
+    with _ -> []
 
 
 (** Some string manipulations **)
