@@ -152,6 +152,11 @@ Definition object_prealloc_global_properties :=
   let P := write_native P "ReferenceError" native_error_ref in
   let P := write_native P "SyntaxError" native_error_syntax in
   let P := write_native P "TypeError" native_error_type in
+  (* V8 helpers *)
+  let P := write_native P "__InternalArray" prealloc_v8_internal_array in
+  let P := write_native P "__removeConstructor" prealloc_v8_remove_constructor in
+  let P := write_native P "__functionSetLength" prealloc_v8_function_set_length in
+  let P := write_native P "__getPrototype" prealloc_v8_get_prototype in
   P.
 
   (* LATER: let P := write_native P "parse_int" prealloc_parse_int in *)
@@ -368,6 +373,7 @@ Definition object_prealloc_array_proto :=
   let P := Heap.empty in
   let P := write_native P "pop" prealloc_array_proto_pop in
   let P := write_native P "push" prealloc_array_proto_push in
+  let P := write_constant P "length" 0 in
   (* LATER *)
   object_create_builtin prealloc_object_proto "Array" P.
 
@@ -521,6 +527,33 @@ Definition throw_type_error_object :=  (* TODO: check this *)
   let o := object_set_extensible o false in
   o.
 
+(* V8 helpers *)
+(**************************************************************)
+(** V8 InternalArray object *)
+
+Definition object_prealloc_v8_internal_array_proto :=
+  let P := Heap.empty in
+  object_create_builtin null "InternalArray" P.
+
+Definition object_prealloc_v8_internal_array :=
+  let P := Heap.empty in
+  let P := write_constant P "prototype" prealloc_v8_internal_array_proto in
+  object_create_prealloc_constructor prealloc_v8_internal_array 1 P.
+
+(**************************************************************)
+(** V8 removeConstructor helper *)
+Definition v8_remove_constructor_function_object :=
+  object_create_prealloc_call prealloc_v8_remove_constructor 1 Heap.empty.
+
+(**************************************************************)
+(** V8 functionSetLength helper *)
+Definition v8_function_set_length_function_object :=
+  object_create_prealloc_call prealloc_v8_function_set_length 1 Heap.empty.
+
+(**************************************************************)
+(** V8 getPrototype helper *)
+Definition v8_function_get_prototype_function_object :=
+  object_create_prealloc_call prealloc_v8_get_prototype 1 Heap.empty.
 
 (**************************************************************)
 (** Initial object heap *)
@@ -613,6 +646,12 @@ Definition object_heap_initial :=
   let h := Heap.write h native_error_ref (object_prealloc_native_error native_error_ref) in
   let h := Heap.write h native_error_syntax (object_prealloc_native_error native_error_syntax) in
   let h := Heap.write h native_error_type (object_prealloc_native_error native_error_type) in
+  (* V8 *)
+  let h := Heap.write h prealloc_v8_internal_array object_prealloc_v8_internal_array in
+  let h := Heap.write h prealloc_v8_internal_array_proto object_prealloc_v8_internal_array_proto in
+  let h := Heap.write h prealloc_v8_remove_constructor v8_remove_constructor_function_object in
+  let h := Heap.write h prealloc_v8_function_set_length v8_function_set_length_function_object in
+  let h := Heap.write h prealloc_v8_get_prototype v8_function_get_prototype_function_object in
   object_heap_initial_function_objects h.
 
   (* LATER : update and uncomment once definitions have been completed

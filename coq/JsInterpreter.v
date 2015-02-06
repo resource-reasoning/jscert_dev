@@ -113,6 +113,11 @@ Definition run_object_heap_set_extensible b S l : option state :=
     object_write S l (object_set_extensible O b))
     (pick_option (object_binds S l)).
 
+Definition run_object_heap_remove_constructor S l : option state :=
+  LibOption.map (fun O =>
+    object_write S l (object_remove_constructor O))
+    (pick_option (object_binds S l)).
+
 
 (**************************************************************)
 (* The functions taking such arguments can call any arbitrary code,
@@ -493,7 +498,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
                             end)
               | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
                          if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S slen =>
-                           ifb ((str = slen) /\ ilen <> (2147483647%Z)) then
+                           ifb ((str = slen) /\ ilen <> (4294967295%Z)) then
                              if_spec (to_uint32 runs S C x) (fun S index =>
                                ifb (oldLen <= index /\ (not (attributes_data_writable A))) then
                                  reject S throw
@@ -1020,7 +1025,7 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
     'let O := object_for_array O' builtin_define_own_prop_array in
     'let p := object_alloc S O in
     let '(l, S') := p in
-    'let follow := fun S'' length => if_some (pick_option (object_set_property S'' l "length" (attributes_data_intro (JsNumber.of_int length) true true true))) (fun S => res_ter S l)
+    'let follow := fun S'' length => if_some (pick_option (object_set_property S'' l "length" (attributes_data_intro (JsNumber.of_int length) true false false))) (fun S => res_ter S l)
     in
     'let arg_len := length args in
     ifb (arg_len = 1) then
@@ -1036,7 +1041,7 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
         follow S 1)
       end
     else
-      if_some (pick_option (object_set_property S' l "length" (attributes_data_intro (JsNumber.of_int arg_len) true true true))) (fun S =>
+      if_some (pick_option (object_set_property S' l "length" (attributes_data_intro (JsNumber.of_int arg_len) true false false))) (fun S =>
         if_void (array_args_map_loop runs S C l args 0) (fun S => res_ter S l))
 
 
@@ -1069,6 +1074,19 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
   | prealloc_native_error_proto ne =>
     'let v := get_arg 0 args in
     build_error S B v
+  
+  | prealloc_v8_internal_array =>
+    'let O := object_new prealloc_v8_internal_array_proto "InternalArray" in
+    'let p := object_alloc S O in
+    let '(l, S') := p in
+    'let arg_len := length args in
+    ifb (arg_len = 1) then
+      'let v := get_arg 0 args in
+      if_some (pick_option (object_set_property S' l "length" (attributes_data_intro_all_true v))) (fun S'' =>
+        res_ter S'' l)
+    else
+      if_some (pick_option (object_set_property S' l "length" (attributes_data_intro_all_true JsNumber.zero))) (fun S'' =>
+        res_ter S'' l)
 
   | _ => (* NOTE:  Are there other cases missing? *)
     impossible_with_heap_because S "Missing case in [run_construct_prealloc]."
@@ -2760,6 +2778,34 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
         if_spec (to_uint32 runs S C vlen) (fun S ilen =>
           push runs S C l args ilen)))
 
+  | prealloc_v8_remove_constructor =>
+    let v := get_arg 0 args in
+    match v with
+    | value_object l =>
+      if_some (run_object_heap_remove_constructor S l) (fun S' =>
+        res_ter S' l)
+    | value_prim _ => impossible_with_heap_because S "Cannot remove constructor from primitive."
+    end
+
+  | prealloc_v8_function_set_length =>
+    let v := get_arg 0 args in
+    let len := get_arg 1 args in
+    match v with
+    | value_object l =>
+      'let lenDesc := attributes_data_intro_constant (len) in
+      if_some (pick_option (object_set_property S l "length" lenDesc)) (fun S' =>
+        res_ter S' l)
+    | value_prim _ => impossible_with_heap_because S "Cannot set length on primitive."
+    end
+
+  | prealloc_v8_get_prototype =>
+    let v := get_arg 0 args in
+    let len := get_arg 1 args in
+    match v with
+    | value_object l =>
+      if_some (run_object_method object_proto_ S l) (fun v => res_ter S v)
+    | value_prim _ => res_ter S undef
+    end
   | _ =>
     result_not_yet_implemented (* LATER *)
 

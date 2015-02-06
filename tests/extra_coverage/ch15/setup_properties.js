@@ -11,6 +11,7 @@ function InstallFunctions(object, attributes, functions) {
     var key = functions[i];
     var f = functions[i + 1];
     f.prototype = undefined;
+    __removeConstructor(f);
 
     var read_only = Boolean(attributes & 1);
     var dont_enum = Boolean(attributes & 2);
@@ -62,6 +63,7 @@ function SetUpLockedPrototype(constructor, fields, methods) {
   prototype.prototype = null;
 }
 
+var UNDEFINED = void(0);
 var DEBUG_IS_ACTIVE = false;
 var READ_ONLY = 1;
 var DONT_ENUM = 2;
@@ -79,13 +81,16 @@ var ArgsToArray = function(args_obj) {
   return ret;
 };
 
+//var ObjectProtoHasOwnProp = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+//var ObjectProtoToString = Function.prototype.call.bind(Object.prototype.toString);
 //var FunctionProtoApply = Function.prototype.call.bind(Function.prototype.apply);
 
+var %GetPrototype = __getPrototype;
+var %FunctionSetLength = __functionSetLength;
+
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
-var InternalArray = function(length) {this.length = length || 0};
-var InternalPackedArray = function(length) {this.length = length};
-InternalArray.prototype = {push: Array.prototype.push, pop: Array.prototype.pop};
-InternalPackedArray.prototype = {push: Array.prototype.push, pop: Array.prototype.pop};
+var InternalArray = __InternalArray;
+var InternalPackedArray = __InternalArray;
 function %SpecialArrayFunctions() {
   return {push: Array.prototype.push, pop: Array.prototype.pop};
 }
@@ -93,14 +98,16 @@ function %SpecialArrayFunctions() {
 function %_CallFunction() {
   var f = arguments[arguments.length - 1];
   var this_v = arguments[0];
-  var args_array = new Array(arguments.length - 2);
+  var args_array = new InternalArray(arguments.length - 2);
   var i = 1;
   while(i < arguments.length - 1) {
-    args_array[i - 1] = arguments[i];
+//if(ObjectProtoHasOwnProp(i)) {
+    if(arguments.hasOwnProperty(i)) {
+      args_array[i - 1] = arguments[i];
+    }
     i++;
   }
 //  FunctionProtoApply(f, this_v, args_array);
-
   return Function.prototype.apply.call(f, this_v, args_array);
 }
 
@@ -183,8 +190,9 @@ function IS_BOOLEAN(x) {
   return typeof x === "boolean";
 }
 
-function IS_ARRAY(x) { // TODO: BROKEN????
-  return x instanceof $Array;
+function IS_ARRAY(x) { // TODO: BROKEN???? YES
+  //var ret = ObjectProtoToString(x) === "[object Array]";
+  return Object.prototype.toString.call(x) === "[object Array]";
 }
 
 function %IsSloppyModeFunction(arg1) {
@@ -217,15 +225,15 @@ function abs(x) {
 }
 
 function TO_UINT32(x) {
-  var num = TO_NUMBER(x);
-  if(num === +0 || num === -0 || num === +Infinity || num === -Infinity) {
+  var num = TO_INTEGER(x);
+  if(num === +0 || num === -0 || num === Infinity || num === -Infinity) {
     return +0;
   }
-  var posInt = abs(num) - (abs(num) % 1);
-  if(num < 0) {
-    posInt = -(round_num);
+  num = num % 4294967296;
+  if(num >= 0) {
+    return num;
   }
-  return mod(posInt, 4294967296);
+  return 4294967296 - num;
 }
 
 function ToUint32(x) {
@@ -272,7 +280,8 @@ function %MoveArrayContents(old_array, array) {
     array[i] = old_array[i];
   }
   var j = len;
-  while(old_array[j] !== undefined) {
+//  while(ObjectProtoHasOwnProp(old_array,String(j))) {
+  while(old_array.hasOwnProperty(String(j))) {
     array[j] = old_array[j];
     j++;
   }
@@ -327,10 +336,6 @@ function %StringBuilderJoin(elements, length, separator) {
   return ret;
 }
 
-function %GetPrototype(arg1) {
-  return {};
-}
-
 function %RemoveArrayHoles(arg1, arg2) {
   return -1;
 }
@@ -362,13 +367,13 @@ function IS_SPEC_FUNCTION(f) {
   return typeof(f) == "function";
 }
 
-function %GetDefaultReceiver(f) {
-  return void(0);
+function IS_SPEC_OBJECT(val) {
+    if (val === null) { return false;}
+    return ( (typeof(val) === 'function') || (typeof(val) === 'object') );
 }
 
-function %FunctionSetLength(f, len) {
-  //TODO: this needs to work
-  return;
+function %GetDefaultReceiver(f) {
+  return void(0);
 }
 
 function %FinishArrayPrototypeSetup(arg1) {
@@ -400,7 +405,6 @@ function SetUpArray() {
 // Global list of arrays visited during toString, toLocaleString and
 // join invocations.
 var visited_arrays = new InternalArray();
-
 
 // Gets a sorted array of array keys.  Useful for operations on sparse
 // arrays.  Dupes have not been removed.
@@ -1176,7 +1180,6 @@ function ArraySort(comparefn) {
 
   // In-place QuickSort algorithm.
   // For short (length <= 22) arrays, insertion sort is used for efficiency.
-
   if (!IS_SPEC_FUNCTION(comparefn)) {
     comparefn = function (x, y) {
       if (x === y) return 0;
@@ -1395,6 +1398,7 @@ function ArraySort(comparefn) {
         obj[last_defined] = UNDEFINED;
       }
     }
+
     // If there were any undefineds in the entire array, first_undefined
     // points to one past the last defined element.  Make this true if
     // there were no undefineds, as well, so that first_undefined == number
@@ -1813,7 +1817,6 @@ function ArrayIsArray(obj) {
 // -------------------------------------------------------------------
 
 function SetUpArray() {
-
   %CheckIsBootstrapping();
 
   // Set up non-enumerable constructor property on the Array.prototype
@@ -1894,3 +1897,7 @@ SetUpArray();
 //********************************************************************
 })();
 })();
+delete __InternalArray;
+delete __removeConstructor;
+delete __functionSetLength;
+delete __getPrototype;

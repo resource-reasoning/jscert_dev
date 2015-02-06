@@ -83,7 +83,11 @@ let prprealloc = function
   | Coq_prealloc_throw_type_error -> "Coq_prealloc_throw_type_error"
   | Coq_prealloc_error_proto -> "Coq_prealloc_error_proto"
   | Coq_prealloc_error_proto_to_string -> "Coq_prealloc_error_proto_to_string"
-
+  | Coq_prealloc_v8_internal_array -> "Coq_prealloc_v8_internal_array"
+  | Coq_prealloc_v8_internal_array_proto -> "Coq_prealloc_v8_internal_array_proto"
+  | Coq_prealloc_v8_remove_constructor -> "Coq_prealloc_v8_remove_constructor"
+  | Coq_prealloc_v8_function_set_length -> "Coq_prealloc_v8_function_set_length"
+  | Coq_prealloc_v8_get_prototype -> "Coq_prealloc_v8_function_get_prototype"
 
 let prcall = function
   | Coq_call_default -> "Coq_call_default"
