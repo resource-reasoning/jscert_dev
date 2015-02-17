@@ -295,4 +295,41 @@ let output_rule1 f preds rules =
         print_start_pred "Inductive " p ;
         aux preds (fun p' -> p.red_pred_name = p') rules
 
+let output_definition f = function
+    | Definition_def (x, e) ->
+        output_endline f ("Definition " ^ x ^ " :=") ;
+        output_endline f ("  " ^ string_of_expr e) ;
+        output_endline f "  .\n"
+    | Definition_inductive l ->
+        let print_ind i =
+            output_endline f (i.inductive_type_name ^
+              (if i.inductive_type_params = [] then ""
+              else (" : forall " ^
+                String.concat " " (List.map (function
+                    | (x, None, true) -> "{" ^ x ^ "}"
+                    | (x, Some t, true) ->  "{" ^ x ^ " : " ^ string_of_type t ^ "}"
+                    | (x, None, false) -> x
+                    | (x, Some t, false) -> par (x ^ " : " ^ string_of_type t)) i.inductive_type_params) ^ ", Type")) ^ " :=") ;
+            List.iter (fun (x, l) ->
+                output_endline f ("  | " ^ x ^ " : " ^
+                    String.concat " -> " (List.map string_of_type l @ [i.inductive_type_name]))) i.inductive_type_constructors
+            in
+        (match l with
+        | [] -> ()
+        | i :: l ->
+            output_string f "Inductive " ;
+            print_ind i ;
+            List.iter (fun i ->
+                output_string f "with " ;
+                print_ind i) l ;
+            output_endline f "  .\n")
+    | Definition_record r ->
+        output_endline f ("Record " ^ r.record_name ^ " :=") ;
+        (match r.record_make with
+        | None -> output_endline f "  {"
+        | Some m -> output_endline f ("  " ^ m ^ " {")) ;
+            output_endline f (String.concat " ;\n" (
+                List.map (fun (x, t) ->
+                    "    " ^ x ^ " : " ^ string_of_type t) r.record_inner)) ;
+            output_endline f "  }.\n"
 
