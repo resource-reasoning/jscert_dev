@@ -246,6 +246,8 @@ let rule_merging all_preds r =
 
 (*****************************************)
 
+let print_defs f all_defs =
+    List.iter (output_definition f) (List.map fst (List.filter snd all_defs))
 
 let _ =
     print_endline "Reading rules." ;
@@ -294,6 +296,8 @@ let _ =
     List.iter Typing.fetchcoerciondefs jsprettyintermfile ;
     Typing.clear_implicit_types () ;
     List.iter Typing.fetchcoerciondefs jsprettyrulesfile ;
+    let all_defs =
+        List.map (fun d -> (d, false)) (Typing.get_all_defs ()) in
     (*****************************************)
     let imports =
         List.rev (select_map (function File_import s -> Some s | _ -> None) jsprettyrulesfile) in
@@ -337,6 +341,9 @@ let _ =
     close_out rule3f ;
     (*****************************************)
     print_endline "Merging inductive rules." ;
+    let (all_defs, name_changes) =
+        Domains.change_def_type prefix_types
+            ["out" (* TODO *), red_out_name] all_defs in
     let output_red_in_out f = (* TODO
         let print_ind pbsify name accept =
             output_endline f ("Inductive " ^ name ^ " :=") ;
@@ -370,7 +377,9 @@ let _ =
     let all_rule4 =
         List.map (rule_merging all_preds) all_rule3 in
     let rule4f = coq_file "gen/JsRules_4_merging.v" in
-    output_red_in_out rule4f ;
+    print_defs rule4f all_defs ;
+    separate_coq rule4f ;
+    (*output_red_in_out rule4f ;*)
     output_rule1 rule4f [red_pred] all_rule4 ;
     separate_coq rule4f ;
     close_out rule4f ;

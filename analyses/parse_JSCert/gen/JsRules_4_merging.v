@@ -63,23 +63,543 @@ Implicit Type b : bool.
 
 (******************************************)
 
-Inductive red_in :=
-  | red_in_red_javascript : pbs_prog -> red_in
-  | red_in_red_prog : pbs_state -> pbs_execution_ctx -> pbs_ext_prog -> red_in
-  | red_in_red_stat : pbs_state -> pbs_execution_ctx -> pbs_ext_stat -> red_in
-  | red_in_red_expr : pbs_state -> pbs_execution_ctx -> pbs_ext_expr -> red_in
-  | red_in_red_spec : pbs_state -> pbs_execution_ctx -> pbs_ext_spec -> red_in
+Inductive pbs_specret : forall (T : Type), Type :=
+  | pbs_specret_val : state -> T -> pbs_specret
+  | pbs_specret_out : red_out -> pbs_specret
   .
 
-(******************************************)
-
-Inductive red_out :=
-  | red_out_red_javascript : pbs_out -> red_out
-  | red_out_red_prog : pbs_out -> red_out
-  | red_out_red_stat : pbs_out -> red_out
-  | red_out_red_expr : pbs_out -> red_out
-  | red_out_red_spec : forall {T : Type}, (pbs_specret T) -> red_out
+Definition pbs_ret :=
+  (fun S a => (pbs_specret_val S a))
   .
+
+Definition pbs_ret_void :=
+  (fun S => (pbs_specret_val S tt))
+  .
+
+Inductive pbs_ext_expr :=
+  | pbs_expr_basic : expr -> pbs_ext_expr
+  | pbs_expr_identifier_1 : (pbs_specret ref) -> pbs_ext_expr
+  | pbs_expr_object_0 : red_out -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_1 : object_loc -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_2 : object_loc -> string -> propbody -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_3_val : object_loc -> string -> (pbs_specret value) -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_3_get : object_loc -> string -> red_out -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_3_set : object_loc -> string -> red_out -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_4 : object_loc -> string -> attributes -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_5 : object_loc -> propdefs -> red_out -> pbs_ext_expr
+  | pbs_expr_function_1 : string -> (list string) -> funcbody -> env_loc -> lexical_env -> red_out -> pbs_ext_expr
+  | pbs_expr_function_2 : string -> env_loc -> red_out -> pbs_ext_expr
+  | pbs_expr_function_3 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_expr_access_1 : (pbs_specret value) -> expr -> pbs_ext_expr
+  | pbs_expr_access_2 : value -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_access_3 : value -> red_out -> value -> pbs_ext_expr
+  | pbs_expr_access_4 : value -> red_out -> pbs_ext_expr
+  | pbs_expr_new_1 : (pbs_specret value) -> (list expr) -> pbs_ext_expr
+  | pbs_expr_new_2 : value -> (pbs_specret (list value)) -> pbs_ext_expr
+  | pbs_expr_call_1 : red_out -> bool -> (list expr) -> pbs_ext_expr
+  | pbs_expr_call_2 : res -> bool -> (list expr) -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_call_3 : res -> value -> bool -> (pbs_specret (list value)) -> pbs_ext_expr
+  | pbs_expr_call_4 : res -> object_loc -> bool -> (list value) -> pbs_ext_expr
+  | pbs_expr_call_5 : object_loc -> bool -> (list value) -> red_out -> pbs_ext_expr
+  | pbs_spec_eval : bool -> value -> (list value) -> pbs_ext_expr
+  | pbs_expr_unary_op_1 : unary_op -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_unary_op_2 : unary_op -> value -> pbs_ext_expr
+  | pbs_expr_delete_1 : red_out -> pbs_ext_expr
+  | pbs_expr_delete_2 : ref -> pbs_ext_expr
+  | pbs_expr_delete_3 : ref -> red_out -> pbs_ext_expr
+  | pbs_expr_delete_4 : ref -> env_loc -> pbs_ext_expr
+  | pbs_expr_typeof_1 : red_out -> pbs_ext_expr
+  | pbs_expr_typeof_2 : (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_prepost_1 : unary_op -> red_out -> pbs_ext_expr
+  | pbs_expr_prepost_2 : unary_op -> res -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_prepost_3 : unary_op -> res -> red_out -> pbs_ext_expr
+  | pbs_expr_prepost_4 : value -> red_out -> pbs_ext_expr
+  | pbs_expr_unary_op_neg_1 : red_out -> pbs_ext_expr
+  | pbs_expr_unary_op_bitwise_not_1 : (pbs_specret int) -> pbs_ext_expr
+  | pbs_expr_unary_op_not_1 : red_out -> pbs_ext_expr
+  | pbs_expr_conditional_1 : (pbs_specret value) -> expr -> expr -> pbs_ext_expr
+  | pbs_expr_conditional_1' : red_out -> expr -> expr -> pbs_ext_expr
+  | pbs_expr_conditional_2 : (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_binary_op_1 : binary_op -> (pbs_specret value) -> expr -> pbs_ext_expr
+  | pbs_expr_binary_op_2 : binary_op -> value -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_binary_op_3 : binary_op -> value -> value -> pbs_ext_expr
+  | pbs_expr_binary_op_add_1 : (pbs_specret (value * value)) -> pbs_ext_expr
+  | pbs_expr_binary_op_add_string_1 : (pbs_specret (value * value)) -> pbs_ext_expr
+  | pbs_expr_puremath_op_1 : (number -> (number -> number)) -> (pbs_specret (value * value)) -> pbs_ext_expr
+  | pbs_expr_shift_op_1 : (int -> (int -> int)) -> (pbs_specret int) -> value -> pbs_ext_expr
+  | pbs_expr_shift_op_2 : (int -> (int -> int)) -> int -> (pbs_specret int) -> pbs_ext_expr
+  | pbs_expr_inequality_op_1 : bool -> bool -> value -> value -> pbs_ext_expr
+  | pbs_expr_inequality_op_2 : bool -> bool -> (pbs_specret (value * value)) -> pbs_ext_expr
+  | pbs_expr_binary_op_in_1 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_expr_binary_op_disequal_1 : red_out -> pbs_ext_expr
+  | pbs_spec_equal : value -> value -> pbs_ext_expr
+  | pbs_spec_equal_1 : type -> type -> value -> value -> pbs_ext_expr
+  | pbs_spec_equal_2 : bool -> pbs_ext_expr
+  | pbs_spec_equal_3 : value -> (value -> pbs_ext_expr) -> value -> pbs_ext_expr
+  | pbs_spec_equal_4 : value -> red_out -> pbs_ext_expr
+  | pbs_expr_bitwise_op_1 : (int -> (int -> int)) -> (pbs_specret int) -> value -> pbs_ext_expr
+  | pbs_expr_bitwise_op_2 : (int -> (int -> int)) -> int -> (pbs_specret int) -> pbs_ext_expr
+  | pbs_expr_lazy_op_1 : bool -> (pbs_specret value) -> expr -> pbs_ext_expr
+  | pbs_expr_lazy_op_2 : bool -> value -> red_out -> expr -> pbs_ext_expr
+  | pbs_expr_lazy_op_2_1 : (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_assign_1 : red_out -> (option binary_op) -> expr -> pbs_ext_expr
+  | pbs_expr_assign_2 : res -> (pbs_specret value) -> binary_op -> expr -> pbs_ext_expr
+  | pbs_expr_assign_3 : res -> value -> binary_op -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_assign_3' : res -> red_out -> pbs_ext_expr
+  | pbs_expr_assign_4 : res -> (pbs_specret value) -> pbs_ext_expr
+  | pbs_expr_assign_5 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_to_primitive : value -> (option preftype) -> pbs_ext_expr
+  | pbs_spec_to_boolean : value -> pbs_ext_expr
+  | pbs_spec_to_number : value -> pbs_ext_expr
+  | pbs_spec_to_number_1 : red_out -> pbs_ext_expr
+  | pbs_spec_to_integer : value -> pbs_ext_expr
+  | pbs_spec_to_integer_1 : red_out -> pbs_ext_expr
+  | pbs_spec_to_string : value -> pbs_ext_expr
+  | pbs_spec_to_string_1 : red_out -> pbs_ext_expr
+  | pbs_spec_to_object : value -> pbs_ext_expr
+  | pbs_spec_check_object_coercible : value -> pbs_ext_expr
+  | pbs_spec_eq : value -> value -> pbs_ext_expr
+  | pbs_spec_eq0 : value -> value -> pbs_ext_expr
+  | pbs_spec_eq1 : value -> value -> pbs_ext_expr
+  | pbs_spec_eq2 : pbs_ext_expr -> value -> value -> pbs_ext_expr
+  | pbs_spec_object_get : value -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_get_1 : builtin_get -> value -> object_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_get_2 : value -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_get_3 : value -> value -> pbs_ext_expr
+  | pbs_spec_object_can_put : object_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_can_put_1 : builtin_can_put -> object_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_can_put_2 : object_loc -> prop_name -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_can_put_4 : object_loc -> prop_name -> value -> pbs_ext_expr
+  | pbs_spec_object_can_put_5 : object_loc -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_can_put_6 : attributes_data -> bool -> pbs_ext_expr
+  | pbs_spec_object_put : value -> prop_name -> value -> bool -> pbs_ext_expr
+  | pbs_spec_object_put_1 : builtin_put -> value -> object_loc -> prop_name -> value -> bool -> pbs_ext_expr
+  | pbs_spec_object_put_2 : value -> object_loc -> prop_name -> value -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_object_put_3 : value -> object_loc -> prop_name -> value -> bool -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_put_4 : value -> object_loc -> prop_name -> value -> bool -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_put_5 : red_out -> pbs_ext_expr
+  | pbs_spec_object_has_prop : object_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_has_prop_1 : builtin_has_prop -> object_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_object_has_prop_2 : (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_delete : object_loc -> prop_name -> bool -> pbs_ext_expr
+  | pbs_spec_object_delete_1 : builtin_delete -> object_loc -> prop_name -> bool -> pbs_ext_expr
+  | pbs_spec_object_delete_2 : object_loc -> prop_name -> bool -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_delete_3 : object_loc -> prop_name -> bool -> bool -> pbs_ext_expr
+  | pbs_spec_object_default_value : object_loc -> (option preftype) -> pbs_ext_expr
+  | pbs_spec_object_default_value_1 : builtin_default_value -> object_loc -> (option preftype) -> pbs_ext_expr
+  | pbs_spec_object_default_value_2 : object_loc -> preftype -> preftype -> pbs_ext_expr
+  | pbs_spec_object_default_value_3 : object_loc -> preftype -> pbs_ext_expr
+  | pbs_spec_object_default_value_4 : pbs_ext_expr
+  | pbs_spec_object_default_value_sub_1 : object_loc -> string -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_object_default_value_sub_2 : object_loc -> red_out -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_object_default_value_sub_3 : red_out -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop : object_loc -> prop_name -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_1 : builtin_define_own_prop -> object_loc -> prop_name -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_2 : object_loc -> prop_name -> descriptor -> bool -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_3 : object_loc -> prop_name -> descriptor -> bool -> full_descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_4 : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_5 : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_6a : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_6b : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_6c : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_reject : bool -> pbs_ext_expr
+  | pbs_spec_object_define_own_prop_write : object_loc -> prop_name -> attributes -> descriptor -> bool -> pbs_ext_expr
+  | pbs_spec_prim_value_get : value -> prop_name -> pbs_ext_expr
+  | pbs_spec_prim_value_get_1 : value -> prop_name -> red_out -> pbs_ext_expr
+  | pbs_spec_prim_value_put : value -> prop_name -> value -> bool -> pbs_ext_expr
+  | pbs_spec_prim_value_put_1 : prim -> prop_name -> value -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_put_value : resvalue -> value -> pbs_ext_expr
+  | pbs_spec_env_record_has_binding : env_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_env_record_has_binding_1 : env_loc -> prop_name -> env_record -> pbs_ext_expr
+  | pbs_spec_env_record_get_binding_value : env_loc -> prop_name -> bool -> pbs_ext_expr
+  | pbs_spec_env_record_get_binding_value_1 : env_loc -> prop_name -> bool -> env_record -> pbs_ext_expr
+  | pbs_spec_env_record_get_binding_value_2 : prop_name -> bool -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_env_record_create_immutable_binding : env_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_env_record_initialize_immutable_binding : env_loc -> prop_name -> value -> pbs_ext_expr
+  | pbs_spec_env_record_create_mutable_binding : env_loc -> prop_name -> (option bool) -> pbs_ext_expr
+  | pbs_spec_env_record_create_mutable_binding_1 : env_loc -> prop_name -> bool -> env_record -> pbs_ext_expr
+  | pbs_spec_env_record_create_mutable_binding_2 : env_loc -> prop_name -> bool -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_env_record_create_mutable_binding_3 : red_out -> pbs_ext_expr
+  | pbs_spec_env_record_set_mutable_binding : env_loc -> prop_name -> value -> bool -> pbs_ext_expr
+  | pbs_spec_env_record_set_mutable_binding_1 : env_loc -> prop_name -> value -> bool -> env_record -> pbs_ext_expr
+  | pbs_spec_env_record_delete_binding : env_loc -> prop_name -> pbs_ext_expr
+  | pbs_spec_env_record_delete_binding_1 : env_loc -> prop_name -> env_record -> pbs_ext_expr
+  | pbs_spec_env_record_create_set_mutable_binding : env_loc -> prop_name -> (option bool) -> value -> bool -> pbs_ext_expr
+  | pbs_spec_env_record_create_set_mutable_binding_1 : red_out -> env_loc -> prop_name -> value -> bool -> pbs_ext_expr
+  | pbs_spec_env_record_implicit_this_value : env_loc -> pbs_ext_expr
+  | pbs_spec_env_record_implicit_this_value_1 : env_loc -> env_record -> pbs_ext_expr
+  | pbs_spec_from_descriptor : (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_from_descriptor_1 : attributes -> red_out -> pbs_ext_expr
+  | pbs_spec_from_descriptor_2 : object_loc -> attributes_data -> red_out -> pbs_ext_expr
+  | pbs_spec_from_descriptor_3 : object_loc -> attributes_accessor -> red_out -> pbs_ext_expr
+  | pbs_spec_from_descriptor_4 : object_loc -> attributes -> red_out -> pbs_ext_expr
+  | pbs_spec_from_descriptor_5 : object_loc -> attributes -> red_out -> pbs_ext_expr
+  | pbs_spec_from_descriptor_6 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_entering_eval_code : bool -> funcbody -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_entering_eval_code_1 : funcbody -> pbs_ext_expr -> bool -> pbs_ext_expr
+  | pbs_spec_entering_eval_code_2 : red_out -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_call_global_eval : bool -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_global_eval_1 : bool -> value -> pbs_ext_expr
+  | pbs_spec_call_global_eval_2 : prog -> pbs_ext_expr
+  | pbs_spec_call_global_eval_3 : red_out -> pbs_ext_expr
+  | pbs_spec_entering_func_code : object_loc -> value -> (list value) -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_entering_func_code_1 : object_loc -> (list value) -> funcbody -> value -> strictness_flag -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_entering_func_code_2 : object_loc -> (list value) -> funcbody -> red_out -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_entering_func_code_3 : object_loc -> (list value) -> strictness_flag -> funcbody -> value -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_entering_func_code_4 : red_out -> pbs_ext_expr -> pbs_ext_expr
+  | pbs_spec_binding_inst_formal_params : (list value) -> env_loc -> (list string) -> strictness_flag -> pbs_ext_expr
+  | pbs_spec_binding_inst_formal_params_1 : (list value) -> env_loc -> string -> (list string) -> strictness_flag -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_formal_params_2 : (list value) -> env_loc -> string -> (list string) -> strictness_flag -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_formal_params_3 : (list value) -> env_loc -> string -> (list string) -> strictness_flag -> value -> pbs_ext_expr
+  | pbs_spec_binding_inst_formal_params_4 : (list value) -> env_loc -> (list string) -> strictness_flag -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls : (list value) -> env_loc -> (list funcdecl) -> strictness_flag -> bool -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_1 : (list value) -> env_loc -> funcdecl -> (list funcdecl) -> strictness_flag -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_2 : (list value) -> env_loc -> funcdecl -> (list funcdecl) -> strictness_flag -> object_loc -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_3 : (list value) -> funcdecl -> (list funcdecl) -> strictness_flag -> object_loc -> bool -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_3a : (list value) -> funcdecl -> (list funcdecl) -> strictness_flag -> object_loc -> bool -> full_descriptor -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_4 : (list value) -> env_loc -> funcdecl -> (list funcdecl) -> strictness_flag -> object_loc -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_5 : (list value) -> env_loc -> funcdecl -> (list funcdecl) -> strictness_flag -> object_loc -> bool -> pbs_ext_expr
+  | pbs_spec_binding_inst_function_decls_6 : (list value) -> env_loc -> (list funcdecl) -> strictness_flag -> bool -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_arg_obj : object_loc -> prog -> (list string) -> (list value) -> env_loc -> pbs_ext_expr
+  | pbs_spec_binding_inst_arg_obj_1 : prog -> env_loc -> strictness_flag -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_arg_obj_2 : prog -> env_loc -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_var_decls : env_loc -> (list string) -> bool -> strictness_flag -> pbs_ext_expr
+  | pbs_spec_binding_inst_var_decls_1 : env_loc -> string -> (list string) -> bool -> strictness_flag -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_var_decls_2 : env_loc -> (list string) -> bool -> strictness_flag -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst : codetype -> (option object_loc) -> prog -> (list value) -> pbs_ext_expr
+  | pbs_spec_binding_inst_1 : codetype -> (option object_loc) -> prog -> (list value) -> env_loc -> pbs_ext_expr
+  | pbs_spec_binding_inst_2 : codetype -> object_loc -> prog -> (list string) -> (list value) -> env_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_3 : codetype -> (option object_loc) -> prog -> (list string) -> (list value) -> env_loc -> pbs_ext_expr
+  | pbs_spec_binding_inst_4 : codetype -> (option object_loc) -> prog -> (list string) -> (list value) -> bool -> env_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_5 : codetype -> (option object_loc) -> prog -> (list string) -> (list value) -> bool -> env_loc -> pbs_ext_expr
+  | pbs_spec_binding_inst_6 : codetype -> (option object_loc) -> prog -> (list string) -> (list value) -> bool -> env_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_7 : prog -> bool -> env_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_binding_inst_8 : prog -> bool -> env_loc -> pbs_ext_expr
+  | pbs_spec_make_arg_getter : string -> lexical_env -> pbs_ext_expr
+  | pbs_spec_make_arg_setter : string -> lexical_env -> pbs_ext_expr
+  | pbs_spec_args_obj_get_1 : value -> object_loc -> prop_name -> object_loc -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_1 : object_loc -> prop_name -> descriptor -> bool -> object_loc -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_2 : object_loc -> prop_name -> descriptor -> bool -> object_loc -> full_descriptor -> red_out -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_3 : object_loc -> prop_name -> descriptor -> bool -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_4 : object_loc -> prop_name -> descriptor -> bool -> object_loc -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_5 : red_out -> pbs_ext_expr
+  | pbs_spec_args_obj_define_own_prop_6 : pbs_ext_expr
+  | pbs_spec_args_obj_delete_1 : object_loc -> prop_name -> bool -> object_loc -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_args_obj_delete_2 : object_loc -> prop_name -> bool -> object_loc -> full_descriptor -> red_out -> pbs_ext_expr
+  | pbs_spec_args_obj_delete_3 : red_out -> pbs_ext_expr
+  | pbs_spec_args_obj_delete_4 : bool -> pbs_ext_expr
+  | pbs_spec_arguments_object_map : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_1 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> red_out -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_2 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_3 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> red_out -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_4 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> string -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_5 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> string -> red_out -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_6 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_7 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> (list string) -> int -> red_out -> pbs_ext_expr
+  | pbs_spec_arguments_object_map_8 : object_loc -> object_loc -> (list string) -> pbs_ext_expr
+  | pbs_spec_create_arguments_object : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> pbs_ext_expr
+  | pbs_spec_create_arguments_object_1 : object_loc -> (list string) -> (list value) -> lexical_env -> strictness_flag -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_create_arguments_object_2 : object_loc -> strictness_flag -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_create_arguments_object_3 : object_loc -> value -> attributes -> red_out -> pbs_ext_expr
+  | pbs_spec_create_arguments_object_4 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_object_has_instance : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_object_has_instance_1 : builtin_has_instance -> object_loc -> value -> pbs_ext_expr
+  | pbs_spec_function_has_instance_1 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_function_has_instance_2 : object_loc -> object_loc -> pbs_ext_expr
+  | pbs_spec_function_has_instance_3 : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_function_get_1 : object_loc -> prop_name -> red_out -> pbs_ext_expr
+  | pbs_spec_error : native_error -> pbs_ext_expr
+  | pbs_spec_error_1 : red_out -> pbs_ext_expr
+  | pbs_spec_error_or_cst : bool -> native_error -> value -> pbs_ext_expr
+  | pbs_spec_error_or_void : bool -> native_error -> pbs_ext_expr
+  | pbs_spec_init_throw_type_error : pbs_ext_expr
+  | pbs_spec_init_throw_type_error_1 : red_out -> pbs_ext_expr
+  | pbs_spec_build_error : value -> value -> pbs_ext_expr
+  | pbs_spec_build_error_1 : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_build_error_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_new_object : (object_loc -> pbs_ext_expr) -> pbs_ext_expr
+  | pbs_spec_new_object_1 : red_out -> (object_loc -> pbs_ext_expr) -> pbs_ext_expr
+  | pbs_spec_prim_new_object : prim -> pbs_ext_expr
+  | pbs_spec_creating_function_object_proto : object_loc -> pbs_ext_expr
+  | pbs_spec_creating_function_object_proto_1 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_creating_function_object_proto_2 : object_loc -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_creating_function_object : (list string) -> funcbody -> lexical_env -> strictness_flag -> pbs_ext_expr
+  | pbs_spec_creating_function_object_1 : strictness_flag -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_creating_function_object_2 : strictness_flag -> object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_creating_function_object_3 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_creating_function_object_4 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_create_new_function_in : execution_ctx -> (list string) -> funcbody -> pbs_ext_expr
+  | pbs_spec_call : object_loc -> value -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_1 : call -> object_loc -> value -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_prealloc : prealloc -> value -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_default : object_loc -> value -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_default_1 : object_loc -> pbs_ext_expr
+  | pbs_spec_call_default_2 : (option funcbody) -> pbs_ext_expr
+  | pbs_spec_call_default_3 : red_out -> pbs_ext_expr
+  | pbs_spec_construct : object_loc -> (list value) -> pbs_ext_expr
+  | pbs_spec_construct_1 : construct -> object_loc -> (list value) -> pbs_ext_expr
+  | pbs_spec_construct_prealloc : prealloc -> (list value) -> pbs_ext_expr
+  | pbs_spec_construct_default : object_loc -> (list value) -> pbs_ext_expr
+  | pbs_spec_construct_default_1 : object_loc -> (list value) -> red_out -> pbs_ext_expr
+  | pbs_spec_construct_default_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_global_is_nan_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_global_is_finite_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_object_call_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_new_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_get_proto_of_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_is_extensible_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_create_1 : value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_create_2 : red_out -> value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_create_3 : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_1 : value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_2 : red_out -> object_loc -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_3 : object_loc -> object_loc -> (list prop_name) -> (list (prop_name * attributes)) -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_4 : red_out -> object_loc -> object_loc -> prop_name -> (list prop_name) -> (list (prop_name * attributes)) -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_5 : object_loc -> object_loc -> prop_name -> (list prop_name) -> (list (prop_name * attributes)) -> (pbs_specret attributes) -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_6 : object_loc -> (list (prop_name * attributes)) -> pbs_ext_expr
+  | pbs_spec_call_object_define_props_7 : red_out -> object_loc -> (list (prop_name * attributes)) -> pbs_ext_expr
+  | pbs_spec_call_object_seal_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_seal_2 : object_loc -> (list prop_name) -> pbs_ext_expr
+  | pbs_spec_call_object_seal_3 : object_loc -> prop_name -> (list prop_name) -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_seal_4 : object_loc -> (list prop_name) -> red_out -> pbs_ext_expr
+  | pbs_spec_call_object_is_sealed_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_is_sealed_2 : object_loc -> (list prop_name) -> pbs_ext_expr
+  | pbs_spec_call_object_is_sealed_3 : object_loc -> (list prop_name) -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_freeze_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_freeze_2 : object_loc -> (list prop_name) -> pbs_ext_expr
+  | pbs_spec_call_object_freeze_3 : object_loc -> prop_name -> (list prop_name) -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_freeze_4 : object_loc -> prop_name -> (list prop_name) -> full_descriptor -> pbs_ext_expr
+  | pbs_spec_call_object_freeze_5 : object_loc -> (list prop_name) -> red_out -> pbs_ext_expr
+  | pbs_spec_call_object_is_frozen_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_is_frozen_2 : object_loc -> (list prop_name) -> pbs_ext_expr
+  | pbs_spec_call_object_is_frozen_3 : object_loc -> (list prop_name) -> (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_is_frozen_4 : object_loc -> (list prop_name) -> full_descriptor -> pbs_ext_expr
+  | pbs_spec_call_object_is_frozen_5 : object_loc -> (list prop_name) -> full_descriptor -> pbs_ext_expr
+  | pbs_spec_call_object_prevent_extensions_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_define_prop_1 : value -> value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_define_prop_2 : object_loc -> red_out -> value -> pbs_ext_expr
+  | pbs_spec_call_object_define_prop_3 : object_loc -> string -> (pbs_specret descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_define_prop_4 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_object_get_own_prop_descriptor_1 : value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_get_own_prop_descriptor_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_object_proto_to_string_1 : value -> pbs_ext_expr
+  | pbs_spec_call_object_proto_to_string_2 : red_out -> pbs_ext_expr
+  | pbs_spec_call_object_proto_has_own_prop_1 : red_out -> value -> pbs_ext_expr
+  | pbs_spec_call_object_proto_has_own_prop_2 : red_out -> prop_name -> pbs_ext_expr
+  | pbs_spec_call_object_proto_has_own_prop_3 : (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_object_proto_is_prototype_of_2_1 : value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_proto_is_prototype_of_2_2 : red_out -> object_loc -> pbs_ext_expr
+  | pbs_spec_call_object_proto_is_prototype_of_2_3 : object_loc -> object_loc -> pbs_ext_expr
+  | pbs_spec_call_object_proto_is_prototype_of_2_4 : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_call_object_proto_prop_is_enumerable_1 : value -> value -> pbs_ext_expr
+  | pbs_spec_call_object_proto_prop_is_enumerable_2 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_object_proto_prop_is_enumerable_3 : red_out -> string -> pbs_ext_expr
+  | pbs_spec_call_object_proto_prop_is_enumerable_4 : (pbs_specret full_descriptor) -> pbs_ext_expr
+  | pbs_spec_call_array_new_1 : (list value) -> pbs_ext_expr
+  | pbs_spec_call_array_new_2 : object_loc -> (list value) -> int -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3 : object_loc -> (pbs_specret int) -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_empty_1 : object_loc -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_empty_2 : red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_nonempty_1 : object_loc -> int -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_nonempty_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_nonempty_3 : object_loc -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_nonempty_4 : object_loc -> value -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_pop_3_nonempty_5 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_1 : red_out -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_2 : object_loc -> (list value) -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_3 : object_loc -> (list value) -> (pbs_specret int) -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_4 : object_loc -> (list value) -> int -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_4_nonempty_1 : object_loc -> (list value) -> int -> value -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_4_nonempty_2 : object_loc -> (list value) -> int -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_4_nonempty_3 : object_loc -> (list value) -> int -> value -> red_out -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_5 : object_loc -> value -> pbs_ext_expr
+  | pbs_spec_call_array_proto_push_6 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_construct_bool_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_bool_proto_to_string_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_bool_proto_value_of_1 : value -> pbs_ext_expr
+  | pbs_spec_call_bool_proto_value_of_2 : value -> pbs_ext_expr
+  | pbs_spec_call_number_proto_to_string_1 : value -> (list value) -> pbs_ext_expr
+  | pbs_spec_call_number_proto_to_string_2 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_construct_number_1 : red_out -> pbs_ext_expr
+  | pbs_spec_call_number_proto_value_of_1 : value -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_1 : value -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_2 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_3 : object_loc -> red_out -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_4 : object_loc -> string -> red_out -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_5 : object_loc -> string -> red_out -> pbs_ext_expr
+  | pbs_spec_call_error_proto_to_string_6 : object_loc -> string -> red_out -> pbs_ext_expr
+  | pbs_spec_returns : red_out -> pbs_ext_expr
+with pbs_ext_stat :=
+  | pbs_stat_basic : stat -> pbs_ext_stat
+  | pbs_stat_expr_1 : (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_block_1 : red_out -> stat -> pbs_ext_stat
+  | pbs_stat_block_2 : resvalue -> red_out -> pbs_ext_stat
+  | pbs_stat_label_1 : label -> red_out -> pbs_ext_stat
+  | pbs_stat_var_decl_1 : red_out -> (list (string * (option expr))) -> pbs_ext_stat
+  | pbs_stat_var_decl_item : (string * (option expr)) -> pbs_ext_stat
+  | pbs_stat_var_decl_item_1 : string -> (pbs_specret ref) -> expr -> pbs_ext_stat
+  | pbs_stat_var_decl_item_2 : string -> ref -> (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_var_decl_item_3 : string -> red_out -> pbs_ext_stat
+  | pbs_stat_if_1 : (pbs_specret value) -> stat -> (option stat) -> pbs_ext_stat
+  | pbs_stat_while_1 : label_set -> expr -> stat -> resvalue -> pbs_ext_stat
+  | pbs_stat_while_2 : label_set -> expr -> stat -> resvalue -> (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_while_3 : label_set -> expr -> stat -> resvalue -> red_out -> pbs_ext_stat
+  | pbs_stat_while_4 : label_set -> expr -> stat -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_while_5 : label_set -> expr -> stat -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_while_6 : label_set -> expr -> stat -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_do_while_1 : label_set -> stat -> expr -> resvalue -> pbs_ext_stat
+  | pbs_stat_do_while_2 : label_set -> stat -> expr -> resvalue -> red_out -> pbs_ext_stat
+  | pbs_stat_do_while_3 : label_set -> stat -> expr -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_do_while_4 : label_set -> stat -> expr -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_do_while_5 : label_set -> stat -> expr -> resvalue -> res -> pbs_ext_stat
+  | pbs_stat_do_while_6 : label_set -> stat -> expr -> resvalue -> pbs_ext_stat
+  | pbs_stat_do_while_7 : label_set -> stat -> expr -> resvalue -> (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_for_1 : label_set -> (pbs_specret value) -> (option expr) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_2 : label_set -> resvalue -> (option expr) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_3 : label_set -> resvalue -> expr -> (pbs_specret value) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_4 : label_set -> resvalue -> (option expr) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_5 : label_set -> resvalue -> (option expr) -> red_out -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_6 : label_set -> resvalue -> (option expr) -> (option expr) -> stat -> res -> pbs_ext_stat
+  | pbs_stat_for_7 : label_set -> resvalue -> (option expr) -> (option expr) -> stat -> res -> pbs_ext_stat
+  | pbs_stat_for_8 : label_set -> resvalue -> (option expr) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_for_9 : label_set -> resvalue -> (option expr) -> expr -> (pbs_specret value) -> stat -> pbs_ext_stat
+  | pbs_stat_for_var_1 : red_out -> label_set -> (option expr) -> (option expr) -> stat -> pbs_ext_stat
+  | pbs_stat_switch_1 : (pbs_specret value) -> label_set -> switchbody -> pbs_ext_stat
+  | pbs_stat_switch_2 : red_out -> label_set -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_1 : value -> resvalue -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_2 : (pbs_specret value) -> value -> resvalue -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_3 : bool -> value -> resvalue -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_4 : red_out -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_5 : resvalue -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_nodefault_6 : resvalue -> red_out -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_1 : value -> resvalue -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_A_1 : bool -> value -> resvalue -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_A_2 : (pbs_specret value) -> value -> resvalue -> (list stat) -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_A_3 : bool -> value -> resvalue -> (list stat) -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_A_4 : resvalue -> value -> (list stat) -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_A_5 : resvalue -> red_out -> value -> (list switchclause) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_B_1 : value -> resvalue -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_B_2 : (pbs_specret value) -> value -> resvalue -> (list stat) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_B_3 : bool -> value -> resvalue -> (list stat) -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_B_4 : red_out -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_5 : value -> resvalue -> (list stat) -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_6 : red_out -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_7 : resvalue -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_switch_default_8 : resvalue -> red_out -> (list switchclause) -> pbs_ext_stat
+  | pbs_stat_with_1 : stat -> (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_throw_1 : (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_return_1 : (pbs_specret value) -> pbs_ext_stat
+  | pbs_stat_try_1 : red_out -> (option (string * stat)) -> (option stat) -> pbs_ext_stat
+  | pbs_stat_try_2 : red_out -> lexical_env -> stat -> (option stat) -> pbs_ext_stat
+  | pbs_stat_try_3 : red_out -> (option stat) -> pbs_ext_stat
+  | pbs_stat_try_4 : res -> (option stat) -> pbs_ext_stat
+  | pbs_stat_try_5 : res -> red_out -> pbs_ext_stat
+with pbs_ext_prog :=
+  | pbs_prog_basic : prog -> pbs_ext_prog
+  | pbs_javascript_1 : red_out -> prog -> pbs_ext_prog
+  | pbs_prog_1 : red_out -> element -> pbs_ext_prog
+  | pbs_prog_2 : resvalue -> red_out -> pbs_ext_prog
+with pbs_ext_spec :=
+  | pbs_spec_to_int32 : value -> pbs_ext_spec
+  | pbs_spec_to_int32_1 : red_out -> pbs_ext_spec
+  | pbs_spec_to_uint32 : value -> pbs_ext_spec
+  | pbs_spec_to_uint32_1 : red_out -> pbs_ext_spec
+  | pbs_spec_expr_get_value_conv : (value -> pbs_ext_expr) -> expr -> pbs_ext_spec
+  | pbs_spec_expr_get_value_conv_1 : (value -> pbs_ext_expr) -> (pbs_specret value) -> pbs_ext_spec
+  | pbs_spec_expr_get_value_conv_2 : red_out -> pbs_ext_spec
+  | pbs_spec_convert_twice : pbs_ext_expr -> pbs_ext_expr -> pbs_ext_spec
+  | pbs_spec_convert_twice_1 : red_out -> pbs_ext_expr -> pbs_ext_spec
+  | pbs_spec_convert_twice_2 : value -> red_out -> pbs_ext_spec
+  | pbs_spec_list_expr : (list expr) -> pbs_ext_spec
+  | pbs_spec_list_expr_1 : (list value) -> (list expr) -> pbs_ext_spec
+  | pbs_spec_list_expr_2 : (list value) -> (pbs_specret value) -> (list expr) -> pbs_ext_spec
+  | pbs_spec_to_descriptor : value -> pbs_ext_spec
+  | pbs_spec_to_descriptor_1a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_1b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_1c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_2a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_2b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_2c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_3a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_3b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_3c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_4a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_4b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_4c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_5a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_5b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_5c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_6a : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_6b : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_6c : red_out -> object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_to_descriptor_7 : object_loc -> descriptor -> pbs_ext_spec
+  | pbs_spec_object_get_own_prop : object_loc -> prop_name -> pbs_ext_spec
+  | pbs_spec_object_get_own_prop_1 : builtin_get_own_prop -> object_loc -> prop_name -> pbs_ext_spec
+  | pbs_spec_object_get_own_prop_2 : object_loc -> prop_name -> (option attributes) -> pbs_ext_spec
+  | pbs_spec_object_get_prop : object_loc -> prop_name -> pbs_ext_spec
+  | pbs_spec_object_get_prop_1 : builtin_get_prop -> object_loc -> prop_name -> pbs_ext_spec
+  | pbs_spec_object_get_prop_2 : object_loc -> prop_name -> (pbs_specret full_descriptor) -> pbs_ext_spec
+  | pbs_spec_object_get_prop_3 : object_loc -> prop_name -> value -> pbs_ext_spec
+  | pbs_spec_get_value : resvalue -> pbs_ext_spec
+  | pbs_spec_get_value_ref_b_1 : red_out -> pbs_ext_spec
+  | pbs_spec_get_value_ref_c_1 : red_out -> pbs_ext_spec
+  | pbs_spec_expr_get_value : expr -> pbs_ext_spec
+  | pbs_spec_expr_get_value_1 : red_out -> pbs_ext_spec
+  | pbs_spec_lexical_env_get_identifier_ref : lexical_env -> prop_name -> bool -> pbs_ext_spec
+  | pbs_spec_lexical_env_get_identifier_ref_1 : env_loc -> lexical_env -> prop_name -> bool -> pbs_ext_spec
+  | pbs_spec_lexical_env_get_identifier_ref_2 : env_loc -> lexical_env -> prop_name -> bool -> red_out -> pbs_ext_spec
+  | pbs_spec_error_spec : native_error -> pbs_ext_spec
+  | pbs_spec_error_spec_1 : red_out -> pbs_ext_spec
+  | pbs_spec_args_obj_get_own_prop_1 : object_loc -> prop_name -> (pbs_specret full_descriptor) -> pbs_ext_spec
+  | pbs_spec_args_obj_get_own_prop_2 : object_loc -> prop_name -> object_loc -> full_descriptor -> (pbs_specret full_descriptor) -> pbs_ext_spec
+  | pbs_spec_args_obj_get_own_prop_3 : full_descriptor -> red_out -> pbs_ext_spec
+  | pbs_spec_args_obj_get_own_prop_4 : full_descriptor -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_1 : object_loc -> prop_name -> (pbs_specret full_descriptor) -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_2 : object_loc -> prop_name -> (pbs_specret int) -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_3 : object_loc -> prop_name -> red_out -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_4 : prop_name -> string -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_5 : string -> (pbs_specret int) -> pbs_ext_spec
+  | pbs_spec_string_get_own_prop_6 : string -> int -> int -> pbs_ext_spec
+  .
+
+Definition pbs_spec_to_primitive_auto :=
+  (fun v => (pbs_spec_to_primitive v None))
+  .
+
+Definition pbs_out_of_specret :=
+  (fun T (y : (pbs_specret T)) => match y with (specret_out o) => (Some o) | (specret_val _ _) => None end)
+  .
+
+Definition pbs_out_of_ext_expr :=
+  (fun (e : pbs_ext_expr) => match e with (expr_basic _) => None | (expr_identifier_1 y) => (pbs_out_of_specret y) | (expr_object_0 o _) => (Some o) | (expr_object_1 _ _) => None | (expr_object_2 _ _ _ _) => None | (expr_object_3_val _ _ y _) => (pbs_out_of_specret y) | (expr_object_3_get _ _ o _) => (Some o) | (expr_object_3_set _ _ o _) => (Some o) | (expr_object_4 _ _ _ _) => None | (expr_object_5 _ _ o) => (Some o) | (expr_function_1 _ _ _ _ _ o) => (Some o) | (expr_function_2 _ _ o) => (Some o) | (expr_function_3 _ o) => (Some o) | (expr_access_1 y _) => (pbs_out_of_specret y) | (expr_access_2 _ y) => (pbs_out_of_specret y) | (expr_access_3 _ o _) => (Some o) | (expr_access_4 _ o) => (Some o) | (expr_new_1 y _) => (pbs_out_of_specret y) | (expr_new_2 _ y) => (pbs_out_of_specret y) | (expr_call_1 o _ _) => (Some o) | (expr_call_2 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_4 _ _ _ _) => None | (expr_call_5 _ _ _ o) => (Some o) | (spec_eval _ _ _) => None | (expr_unary_op_1 _ y) => (pbs_out_of_specret y) | (expr_unary_op_2 _ _) => None | (expr_delete_1 o) => (Some o) | (expr_delete_2 _) => None | (expr_delete_3 _ o) => (Some o) | (expr_delete_4 _ _) => None | (expr_typeof_1 o) => (Some o) | (expr_typeof_2 y) => (pbs_out_of_specret y) | (expr_prepost_1 _ o) => (Some o) | (expr_prepost_2 _ _ y) => (pbs_out_of_specret y) | (expr_prepost_3 _ _ o) => (Some o) | (expr_prepost_4 _ o) => (Some o) | (expr_unary_op_neg_1 o) => (Some o) | (expr_unary_op_bitwise_not_1 y) => (pbs_out_of_specret y) | (expr_unary_op_not_1 o) => (Some o) | (expr_conditional_1 y _ _) => (pbs_out_of_specret y) | (expr_conditional_1' o _ _) => None | (expr_conditional_2 y) => (pbs_out_of_specret y) | (expr_binary_op_1 _ y _) => (pbs_out_of_specret y) | (expr_binary_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_3 _ _ _) => None | (expr_binary_op_add_1 y) => (pbs_out_of_specret y) | (expr_binary_op_add_string_1 y) => (pbs_out_of_specret y) | (expr_puremath_op_1 _ y) => (pbs_out_of_specret y) | (expr_shift_op_1 _ y _) => (pbs_out_of_specret y) | (expr_shift_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_inequality_op_1 _ _ _ _) => None | (expr_inequality_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_in_1 _ o) => (Some o) | (expr_binary_op_disequal_1 o) => (Some o) | (spec_equal _ _) => None | (spec_equal_1 _ _ _ _) => None | (spec_equal_2 _) => None | (spec_equal_3 _ _ _) => None | (spec_equal_4 _ o) => (Some o) | (expr_bitwise_op_1 _ y _) => (pbs_out_of_specret y) | (expr_bitwise_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_lazy_op_1 _ y _) => (pbs_out_of_specret y) | (expr_lazy_op_2 _ _ o _) => (Some o) | (expr_lazy_op_2_1 y) => (pbs_out_of_specret y) | (expr_assign_1 o _ _) => (Some o) | (expr_assign_2 _ y _ _) => (pbs_out_of_specret y) | (expr_assign_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_assign_3' _ o) => (Some o) | (expr_assign_4 _ y) => (pbs_out_of_specret y) | (expr_assign_5 _ o) => (Some o) | (spec_to_primitive _ _) => None | (spec_to_boolean _) => None | (spec_to_number _) => None | (spec_to_number_1 o) => (Some o) | (spec_to_integer _) => None | (spec_to_integer_1 o) => (Some o) | (spec_to_string _) => None | (spec_to_string_1 o) => (Some o) | (spec_to_object _) => None | (spec_check_object_coercible _) => None | (spec_eq _ _) => None | (spec_eq0 _ _) => None | (spec_eq1 _ _) => None | (spec_eq2 _ _ _) => None | (spec_object_get _ _) => None | (spec_object_get_1 _ _ _ _) => None | (spec_object_get_2 _ y) => (pbs_out_of_specret y) | (spec_object_get_3 _ _) => None | (spec_object_can_put _ _) => None | (spec_object_can_put_1 _ _ _) => None | (spec_object_can_put_2 _ _ y) => (pbs_out_of_specret y) | (spec_object_can_put_4 _ _ _) => None | (spec_object_can_put_5 _ y) => (pbs_out_of_specret y) | (spec_object_can_put_6 _ _) => None | (spec_object_put _ _ _ _) => None | (spec_object_put_1 _ _ _ _ _ _) => None | (spec_object_put_2 _ _ _ _ _ o) => (Some o) | (spec_object_put_3 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_4 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_5 o) => (Some o) | (spec_object_has_prop _ _) => None | (spec_object_has_prop_1 _ _ _) => None | (spec_object_has_prop_2 y) => (pbs_out_of_specret y) | (spec_object_delete _ _ _) => None | (spec_object_delete_1 _ _ _ _) => None | (spec_object_delete_2 _ _ _ y) => (pbs_out_of_specret y) | (spec_object_delete_3 _ _ _ _) => None | (spec_object_default_value _ _) => None | (spec_object_default_value_1 _ _ _) => None | (spec_object_default_value_2 _ _ _) => None | (spec_object_default_value_3 _ _) => None | spec_object_default_value_4 => None | (spec_object_default_value_sub_1 _ _ _) => None | (spec_object_default_value_sub_2 _ o _) => (Some o) | (spec_object_default_value_sub_3 o _) => (Some o) | (spec_object_define_own_prop _ _ _ _) => None | (spec_object_define_own_prop_1 _ _ _ _ _) => None | (spec_object_define_own_prop_2 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_define_own_prop_3 _ _ _ _ _ _) => None | (spec_object_define_own_prop_4 _ _ _ _ _) => None | (spec_object_define_own_prop_5 _ _ _ _ _) => None | (spec_object_define_own_prop_6a _ _ _ _ _) => None | (spec_object_define_own_prop_6b _ _ _ _ _) => None | (spec_object_define_own_prop_6c _ _ _ _ _) => None | (spec_object_define_own_prop_reject _) => None | (spec_object_define_own_prop_write _ _ _ _ _) => None | (spec_prim_value_get _ _) => None | (spec_prim_value_get_1 _ _ o) => (Some o) | (spec_prim_value_put _ _ _ _) => None | (spec_prim_value_put_1 _ _ _ _ o) => (Some o) | (spec_put_value _ _) => None | (spec_env_record_has_binding _ _) => None | (spec_env_record_has_binding_1 _ _ _) => None | (spec_env_record_get_binding_value _ _ _) => None | (spec_env_record_get_binding_value_1 _ _ _ _) => None | (spec_env_record_get_binding_value_2 _ _ _ o) => (Some o) | (spec_env_record_create_immutable_binding _ _) => None | (spec_env_record_initialize_immutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding_1 _ _ _ _) => None | (spec_env_record_create_mutable_binding_2 _ _ _ _ o) => (Some o) | (spec_env_record_create_mutable_binding_3 o) => (Some o) | (spec_env_record_set_mutable_binding _ _ _ _) => None | (spec_env_record_set_mutable_binding_1 _ _ _ _ _) => None | (spec_env_record_delete_binding _ _) => None | (spec_env_record_delete_binding_1 _ _ _) => None | (spec_env_record_create_set_mutable_binding _ _ _ _ _) => None | (spec_env_record_create_set_mutable_binding_1 o _ _ _ _) => (Some o) | (spec_env_record_implicit_this_value _) => None | (spec_env_record_implicit_this_value_1 _ _) => None | (spec_from_descriptor _) => None | (spec_from_descriptor_1 _ o) => (Some o) | (spec_from_descriptor_2 _ _ o) => (Some o) | (spec_from_descriptor_3 _ _ o) => (Some o) | (spec_from_descriptor_4 _ _ o) => (Some o) | (spec_from_descriptor_5 _ _ o) => (Some o) | (spec_from_descriptor_6 _ o) => (Some o) | (spec_entering_eval_code _ _ _) => None | (spec_entering_eval_code_1 _ _ _) => None | (spec_entering_eval_code_2 o _) => (Some o) | (spec_call_global_eval _ _) => None | (spec_call_global_eval_1 _ _) => None | (spec_call_global_eval_2 _) => None | (spec_call_global_eval_3 o) => (Some o) | (spec_entering_func_code _ _ _ _) => None | (spec_entering_func_code_1 _ _ _ _ _ _) => None | (spec_entering_func_code_2 _ _ _ o _) => (Some o) | (spec_entering_func_code_3 _ _ _ _ _ _) => None | (spec_entering_func_code_4 o _) => (Some o) | (spec_binding_inst_formal_params _ _ _ _) => None | (spec_binding_inst_formal_params_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_3 _ _ _ _ _ _) => None | (spec_binding_inst_formal_params_4 _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls _ _ _ _ _) => None | (spec_binding_inst_function_decls_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_2 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_3 _ _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_binding_inst_function_decls_3a _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_6 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj object_loc _ _ _ _) => None | (spec_binding_inst_arg_obj_1 _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj_2 _ _ _ o) => (Some o) | (spec_binding_inst_var_decls _ _ _ _) => None | (spec_binding_inst_var_decls_1 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_var_decls_2 _ _ _ _ o) => (Some o) | (spec_binding_inst _ _ _ _) => None | (spec_binding_inst_1 _ _ _ _ _) => None | (spec_binding_inst_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_3 _ _ _ _ _ _) => None | (spec_binding_inst_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_6 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_7 _ _ _ o) => (Some o) | (spec_binding_inst_8 _ _ _) => None | (spec_make_arg_getter _ _) => None | (spec_make_arg_setter _ _) => None | (spec_args_obj_get_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_1 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_2 _ _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_3 _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_4 _ _ _ _ _) => None | (spec_args_obj_define_own_prop_5 o) => (Some o) | spec_args_obj_define_own_prop_6 => None | (spec_args_obj_delete_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_delete_2 _ _ _ _ _ o) => (Some o) | (spec_args_obj_delete_3 o) => (Some o) | (spec_args_obj_delete_4 _) => None | (spec_arguments_object_map _ _ _ _ _) => None | (spec_arguments_object_map_1 _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_2 _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_3 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_4 _ _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_5 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_6 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_7 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_8 _ _ _) => None | (spec_create_arguments_object _ _ _ _ _) => None | (spec_create_arguments_object_1 _ _ _ _ _ _ o) => (Some o) | (spec_create_arguments_object_2 _ _ _ o) => (Some o) | (spec_create_arguments_object_3 _ _ _ o) => (Some o) | (spec_create_arguments_object_4 _ o) => (Some o) | (spec_object_has_instance _ _) => None | (spec_object_has_instance_1 _ _ _) => None | (spec_function_has_instance_1 _ o) => (Some o) | (spec_function_has_instance_2 _ _) => None | (spec_function_has_instance_3 _ _) => None | (spec_function_get_1 _ _ o) => (Some o) | (spec_error _) => None | (spec_error_1 o) => (Some o) | (spec_error_or_cst _ _ _) => None | (spec_error_or_void _ _) => None | spec_init_throw_type_error => None | (spec_init_throw_type_error_1 o) => (Some o) | (spec_build_error _ _) => None | (spec_build_error_1 _ _) => None | (spec_build_error_2 _ o) => (Some o) | (spec_new_object _) => None | (spec_new_object_1 o _) => (Some o) | (spec_prim_new_object _) => None | (spec_creating_function_object_proto _) => None | (spec_creating_function_object_proto_1 _ o) => (Some o) | (spec_creating_function_object_proto_2 _ _ o) => (Some o) | (spec_creating_function_object _ _ _ _) => None | (spec_creating_function_object_1 _ _ o) => (Some o) | (spec_creating_function_object_2 _ _ o) => (Some o) | (spec_creating_function_object_3 _ o) => (Some o) | (spec_creating_function_object_4 _ o) => (Some o) | (spec_create_new_function_in execution_ctx _ _) => None | (spec_call _ _ _) => None | (spec_call_1 _ _ _ _) => None | (spec_call_prealloc _ _ _) => None | (spec_call_default _ _ _) => None | (spec_call_default_1 _) => None | (spec_call_default_2 _) => None | (spec_call_default_3 o) => (Some o) | (spec_construct _ _) => None | (spec_construct_1 _ _ _) => None | (spec_construct_prealloc _ _) => None | (spec_construct_default _ _) => None | (spec_construct_default_1 _ _ o) => (Some o) | (spec_construct_default_2 _ o) => (Some o) | (spec_construct_bool_1 o) => (Some o) | (spec_construct_number_1 o) => (Some o) | (spec_call_global_is_nan_1 o) => (Some o) | (spec_call_global_is_finite_1 o) => (Some o) | (spec_call_object_call_1 _) => None | (spec_call_object_new_1 _) => None | (spec_call_object_get_proto_of_1 _) => None | (spec_call_object_is_extensible_1 _) => None | (spec_call_object_define_props_1 _ _) => None | (spec_call_object_define_props_2 o _) => (Some o) | (spec_call_object_define_props_3 _ _ _ _) => None | (spec_call_object_define_props_4 o _ _ _ _ _) => (Some o) | (spec_call_object_define_props_5 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_call_object_define_props_6 _ _) => None | (spec_call_object_define_props_7 o _ _) => (Some o) | (spec_call_object_create_1 _ _) => None | (spec_call_object_create_2 o _ _) => (Some o) | (spec_call_object_create_3 _ _) => None | (spec_call_object_seal_1 _) => None | (spec_call_object_seal_2 _ _) => None | (spec_call_object_seal_3 _ _ _ _) => None | (spec_call_object_seal_4 _ _ o) => (Some o) | (spec_call_object_is_sealed_1 _) => None | (spec_call_object_is_sealed_2 _ _) => None | (spec_call_object_is_sealed_3 _ _ _) => None | (spec_call_object_freeze_1 _) => None | (spec_call_object_freeze_2 _ _) => None | (spec_call_object_freeze_3 _ _ _ _) => None | (spec_call_object_freeze_4 _ _ _ _) => None | (spec_call_object_freeze_5 _ _ o) => (Some o) | (spec_call_object_is_frozen_1 _) => None | (spec_call_object_is_frozen_2 _ _) => None | (spec_call_object_is_frozen_3 _ _ _) => None | (spec_call_object_is_frozen_4 _ _ _) => None | (spec_call_object_is_frozen_5 _ _ _) => None | (spec_call_object_prevent_extensions_1 _) => None | (spec_call_object_define_prop_1 _ _ _) => None | (spec_call_object_define_prop_2 _ o _) => (Some o) | (spec_call_object_define_prop_3 _ _ _) => None | (spec_call_object_define_prop_4 _ o) => (Some o) | (spec_call_object_get_own_prop_descriptor_1 _ _) => None | (spec_call_object_get_own_prop_descriptor_2 _ o) => (Some o) | (spec_call_object_proto_to_string_1 _) => None | (spec_call_object_proto_to_string_2 o) => (Some o) | (spec_call_object_proto_has_own_prop_1 o _) => (Some o) | (spec_call_object_proto_has_own_prop_2 o _) => (Some o) | (spec_call_object_proto_has_own_prop_3 y) => (pbs_out_of_specret y) | (spec_call_object_proto_is_prototype_of_2_1 _ _) => None | (spec_call_object_proto_is_prototype_of_2_2 o _) => (Some o) | (spec_call_object_proto_is_prototype_of_2_3 _ _) => None | (spec_call_object_proto_is_prototype_of_2_4 _ _) => None | (spec_call_object_proto_prop_is_enumerable_1 _ _) => None | (spec_call_object_proto_prop_is_enumerable_2 _ o) => (Some o) | (spec_call_object_proto_prop_is_enumerable_3 o _) => (Some o) | (spec_call_object_proto_prop_is_enumerable_4 _) => None | (spec_call_array_new_1 _) => None | (spec_call_array_new_2 _ _ _) => None | (spec_call_array_proto_pop_1 o) => (Some o) | (spec_call_array_proto_pop_2 _ o) => (Some o) | (spec_call_array_proto_pop_3 _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_pop_3_empty_1 _) => None | (spec_call_array_proto_pop_3_empty_2 o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_1 _ _) => None | (spec_call_array_proto_pop_3_nonempty_2 _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_3 _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_4 _ _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_5 _ o) => (Some o) | (spec_call_array_proto_push_1 o _) => (Some o) | (spec_call_array_proto_push_2 _ _ o) => (Some o) | (spec_call_array_proto_push_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_push_4 _ _ _) => None | (spec_call_array_proto_push_4_nonempty_1 _ _ _ _) => None | (spec_call_array_proto_push_4_nonempty_2 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_4_nonempty_3 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_5 _ _) => None | (spec_call_array_proto_push_6 _ o) => (Some o) | (spec_call_bool_proto_to_string_1 o) => (Some o) | (spec_call_bool_proto_value_of_1 _) => None | (spec_call_bool_proto_value_of_2 _) => None | (spec_call_number_proto_to_string_1 _ _) => None | (spec_call_number_proto_to_string_2 _ o) => (Some o) | (spec_call_number_proto_value_of_1 _) => None | (spec_call_error_proto_to_string_1 _) => None | (spec_call_error_proto_to_string_2 _ o) => (Some o) | (spec_call_error_proto_to_string_3 _ o) => (Some o) | (spec_call_error_proto_to_string_4 _ _ o) => (Some o) | (spec_call_error_proto_to_string_5 _ _ o) => (Some o) | (spec_call_error_proto_to_string_6 _ _ o) => (Some o) | (spec_returns o) => (Some o) end)
+  .
+
+Definition pbs_out_of_ext_stat :=
+  (fun (p : pbs_ext_stat) => match p with (stat_expr_1 (specret_out o)) => (Some o) | (stat_expr_1 (specret_val _ _)) => None | (stat_basic _) => None | (stat_block_1 o _) => (Some o) | (stat_block_2 _ o) => (Some o) | (stat_label_1 _ o) => (Some o) | (stat_var_decl_1 o _) => (Some o) | (stat_var_decl_item _) => None | (stat_var_decl_item_1 _ y _) => (pbs_out_of_specret y) | (stat_var_decl_item_2 _ _ y) => (pbs_out_of_specret y) | (stat_var_decl_item_3 _ o) => (Some o) | (stat_if_1 y _ _) => (pbs_out_of_specret y) | (stat_while_1 _ _ _ _) => None | (stat_while_2 _ _ _ _ y) => (pbs_out_of_specret y) | (stat_while_3 _ _ _ _ o) => (Some o) | (stat_while_4 _ _ _ _ _) => None | (stat_while_5 _ _ _ _ _) => None | (stat_while_6 _ _ _ _ _) => None | (stat_do_while_1 _ _ _ _) => None | (stat_do_while_2 _ _ _ _ o) => (Some o) | (stat_do_while_3 _ _ _ _ _) => None | (stat_do_while_4 _ _ _ _ _) => None | (stat_do_while_5 _ _ _ _ _) => None | (stat_do_while_6 _ _ _ _) => None | (stat_do_while_7 _ _ _ _ y) => (pbs_out_of_specret y) | (stat_for_1 _ y _ _ _) => (pbs_out_of_specret y) | (stat_for_2 _ _ _ _ _) => None | (stat_for_3 _ _ _ y _ _) => (pbs_out_of_specret y) | (stat_for_4 _ _ _ _ _) => None | (stat_for_5 _ _ _ o _ _) => (Some o) | (stat_for_6 _ _ _ _ _ _) => None | (stat_for_7 _ _ _ _ _ _) => None | (stat_for_8 _ _ _ _ _) => None | (stat_for_9 _ _ _ _ y _) => (pbs_out_of_specret y) | (stat_for_var_1 o _ _ _ _) => (Some o) | (stat_with_1 _ y) => (pbs_out_of_specret y) | (stat_throw_1 y) => (pbs_out_of_specret y) | (stat_return_1 y) => (pbs_out_of_specret y) | (stat_try_1 o _ _) => (Some o) | (stat_try_2 o _ _ _) => (Some o) | (stat_try_3 o _) => (Some o) | (stat_try_4 _ _) => None | (stat_try_5 _ o) => (Some o) | (stat_switch_1 y _ _) => (pbs_out_of_specret y) | (stat_switch_2 o _) => (Some o) | (stat_switch_nodefault_1 _ _ _) => None | (stat_switch_nodefault_2 y _ _ _ _) => (pbs_out_of_specret y) | (stat_switch_nodefault_3 _ _ _ _ _) => None | (stat_switch_nodefault_4 o _) => (Some o) | (stat_switch_nodefault_5 _ _) => None | (stat_switch_nodefault_6 _ o _) => (Some o) | (stat_switch_default_1 _ _ _ _ _) => None | (stat_switch_default_A_1 _ _ _ _ _ _) => None | (stat_switch_default_A_2 y _ _ _ _ _ _) => (pbs_out_of_specret y) | (stat_switch_default_A_3 _ _ _ _ _ _ _) => None | (stat_switch_default_A_4 _ _ _ _ _ _) => None | (stat_switch_default_A_5 _ o _ _ _ _) => (Some o) | (stat_switch_default_B_1 _ _ _ _) => None | (stat_switch_default_B_2 y _ _ _ _ _) => (pbs_out_of_specret y) | (stat_switch_default_B_3 _ _ _ _ _ _) => None | (stat_switch_default_B_4 o _ _) => (Some o) | (stat_switch_default_5 _ _ _ _) => None | (stat_switch_default_6 o _) => (Some o) | (stat_switch_default_7 _ _) => None | (stat_switch_default_8 _ o _) => (Some o) end)
+  .
+
+Definition pbs_out_of_ext_prog :=
+  (fun (p : pbs_ext_prog) => match p with (prog_basic _) => None | (javascript_1 o _) => (Some o) | (prog_1 o _) => (Some o) | (prog_2 _ o) => (Some o) end)
+  .
+
+Definition pbs_out_of_ext_spec :=
+  (fun (es : pbs_ext_spec) => match es with (spec_to_int32 _) => None | (spec_to_int32_1 o) => (Some o) | (spec_to_uint32 _) => None | (spec_to_uint32_1 o) => (Some o) | (spec_expr_get_value_conv _ _) => None | (spec_expr_get_value_conv_1 _ y) => (pbs_out_of_specret y) | (spec_expr_get_value_conv_2 o) => (Some o) | (spec_convert_twice _ _) => None | (spec_convert_twice_1 o _) => (Some o) | (spec_convert_twice_2 _ o) => (Some o) | (spec_list_expr _) => None | (spec_list_expr_1 _ _) => None | (spec_list_expr_2 _ y _) => (pbs_out_of_specret y) | (spec_to_descriptor _) => None | (spec_to_descriptor_1a _ _) => None | (spec_to_descriptor_1b o _ _) => (Some o) | (spec_to_descriptor_1c o _ _) => (Some o) | (spec_to_descriptor_2a _ _) => None | (spec_to_descriptor_2b o _ _) => (Some o) | (spec_to_descriptor_2c o _ _) => (Some o) | (spec_to_descriptor_3a _ _) => None | (spec_to_descriptor_3b o _ _) => (Some o) | (spec_to_descriptor_3c o _ _) => (Some o) | (spec_to_descriptor_4a _ _) => None | (spec_to_descriptor_4b o _ _) => (Some o) | (spec_to_descriptor_4c o _ _) => (Some o) | (spec_to_descriptor_5a _ _) => None | (spec_to_descriptor_5b o _ _) => (Some o) | (spec_to_descriptor_5c o _ _) => (Some o) | (spec_to_descriptor_6a _ _) => None | (spec_to_descriptor_6b o _ _) => (Some o) | (spec_to_descriptor_6c o _ _) => (Some o) | (spec_to_descriptor_7 _ _) => None | (spec_object_get_own_prop _ _) => None | (spec_object_get_own_prop_1 _ _ _) => None | (spec_object_get_own_prop_2 _ _ _) => None | (spec_object_get_prop _ _) => None | (spec_object_get_prop_1 _ _ _) => None | (spec_object_get_prop_2 _ _ y) => (pbs_out_of_specret y) | (spec_object_get_prop_3 _ _ _) => None | (spec_get_value _) => None | (spec_get_value_ref_b_1 o) => (Some o) | (spec_get_value_ref_c_1 o) => (Some o) | (spec_expr_get_value _) => None | (spec_expr_get_value_1 o) => (Some o) | (spec_lexical_env_get_identifier_ref _ _ _) => None | (spec_lexical_env_get_identifier_ref_1 _ _ _ _) => None | (spec_lexical_env_get_identifier_ref_2 _ _ _ _ o) => (Some o) | (spec_error_spec _) => None | (spec_error_spec_1 o) => (Some o) | (spec_args_obj_get_own_prop_1 _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_get_own_prop_2 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_get_own_prop_3 _ o) => (Some o) | (spec_args_obj_get_own_prop_4 _) => None | (spec_string_get_own_prop_1 _ _ y) => (pbs_out_of_specret y) | (spec_string_get_own_prop_2 _ _ y) => (pbs_out_of_specret y) | (spec_string_get_own_prop_3 _ _ o) => (Some o) | (spec_string_get_own_prop_4 _ _) => None | (spec_string_get_own_prop_5 _ y) => (pbs_out_of_specret y) | (spec_string_get_own_prop_6 _ _ _) => None end)
+  .
+
+Definition pbs_spec_identifier_resolution :=
+  (fun C x => match (execution_ctx_lexical_env C) with lex => match (execution_ctx_strict C) with strict => (pbs_spec_lexical_env_get_identifier_ref lex x strict) end end)
+  .
+
+Definition pbs_vret :=
+  (pbs_ret (T := value))
+  .
+
+Definition pbs_dret :=
+  (pbs_ret (T := full_descriptor))
+  .
+
 
 (******************************************)
 

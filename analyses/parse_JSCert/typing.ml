@@ -107,7 +107,7 @@ let _ =
 
 let all_defs : definition list ref = ref []
 
-let get_all_defs () = !all_defs
+let get_all_defs () = List.rev !all_defs
 
 let add_def x e =
     all_defs := Definition_def (x, e) :: !all_defs
@@ -275,12 +275,14 @@ let rec type_expr location local : expr -> expr * ctype option = function
             | None -> None)
     | App (e1, internal, e2) ->
         let (e1, t1) = type_expr location local e1 in
-        let (e2, _) = type_expr location local e2 in
         (match t1 with
         | Some (Fun_type (t1, t2)) ->
             learn_type location local e2 t1 ;
+            let (e2, _) = type_expr location local e2 in
             (App (e1, internal, Cast (e2, t1)), Some t2)
-        | _ -> (App (e1, internal, e2), None))
+        | _ ->
+            let (e2, _) = type_expr location local e2 in
+            (App (e1, internal, e2), None))
     | Binop ((Add | Sub | Mult) as op, e1, e2) ->
         (match type_expr location local e1, type_expr location local e2 with
         | (e1, Some t), (e2, _) ->
