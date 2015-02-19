@@ -674,7 +674,7 @@ Coercion resvalue_ref : ref >-> resvalue.
 
 (** Representation of a result as a triple *)
 
-Inductive res := res_intro {
+Record res := res_intro {
   res_type : restype;
   res_value : resvalue;
   res_label : label }.
@@ -727,7 +727,7 @@ Implicit Arguments specret_out [[T]].
 
 (** [ret S a] is a shorthand for [specret_val S a] *)
 
-Definition ret T S (a:T) := specret_val S a.
+Definition ret {T} S (a:T) := specret_val S a.
 Implicit Arguments ret [[T]].
 
 (** [ret_void S] is a shorthand for [specret_val S tt],

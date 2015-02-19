@@ -1,0 +1,6 @@
+
+*.swp
+*.native
+
+_build
+
