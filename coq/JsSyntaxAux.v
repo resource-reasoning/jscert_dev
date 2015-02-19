@@ -244,6 +244,7 @@ Definition prealloc_compare bl1 bl2 :=
   | prealloc_function_proto, prealloc_function_proto => true
   | prealloc_function_proto_to_string, prealloc_function_proto_to_string => true
   | prealloc_function_proto_apply, prealloc_function_proto_apply => true
+  | prealloc_function_proto_call, prealloc_function_proto_call => true
   | prealloc_function_proto_bind, prealloc_function_proto_bind => true
   | prealloc_bool, prealloc_bool => true
   | prealloc_bool_proto, prealloc_bool_proto => true
@@ -276,6 +277,11 @@ Definition prealloc_compare bl1 bl2 :=
   | prealloc_native_error_proto ne1, prealloc_native_error_proto ne2 => decide (ne1 = ne2)
   | prealloc_error_proto_to_string, prealloc_error_proto_to_string => true
   | prealloc_throw_type_error, prealloc_throw_type_error => true
+  | prealloc_v8_internal_array, prealloc_v8_internal_array => true
+  | prealloc_v8_internal_array_proto, prealloc_v8_internal_array_proto => true
+  | prealloc_v8_remove_constructor, prealloc_v8_remove_constructor => true
+  | prealloc_v8_function_set_length, prealloc_v8_function_set_length => true
+  | prealloc_v8_get_prototype, prealloc_v8_get_prototype => true
   | _,_ => false
   end.
 
