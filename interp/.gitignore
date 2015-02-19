@@ -4,4 +4,5 @@ run_jstrace
 *.native
 *.byte
 src/run_jstrace.ml
+src/version.ml
 top
