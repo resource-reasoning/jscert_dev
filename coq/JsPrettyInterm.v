@@ -1498,3 +1498,9 @@ Inductive make_delete_event : state -> object_loc -> prop_name -> event -> Prop 
 (* LATER *)
 
 
+(**************************************************************)
+(** Shorthand **)
+
+Definition vret : state -> value -> specret value := ret (T:=value).
+Definition dret : state -> full_descriptor -> specret full_descriptor := ret (T:=full_descriptor).
+
