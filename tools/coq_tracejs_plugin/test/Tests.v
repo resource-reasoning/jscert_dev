@@ -2,14 +2,15 @@ Require Tracejs.
 
 Section test.
   Theorem plus_n_0 : forall m n : nat,
-    n = m -> n + n = m + m.
+    m = n -> m + m = n + n.
   Proof.
-    intros n m H.
-    tracejs_hyp H.
-    tracejs_code H.    (* Expects n *)
-    tracejs_code lhs H.(* Expects n *)
-    tracejs_code rhs H.(* Expects m *)
-    tracejs_code m.    (* Expected no output -- error case *)
+    intros m n HR.
+    tracejs_hyp HR.
+    tracejs_code.       (* Expects n *)
+    tracejs_code HR.    (* Expects n *)
+    tracejs_code <- HR. (* Expects m *)
+    tracejs_code -> HR. (* Expects n *)
+    tracejs_code m.     (* Expected no output -- error case *)
   Abort.
 End test.
 

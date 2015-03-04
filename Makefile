@@ -252,6 +252,7 @@ interpreter: interp/run_js interp/top
 
 #######################################################
 # TargetJS interpreter variant
+
 interp/src/%_targetjs.ml: interp/src/%.ml
 	cp $< $@
 
@@ -265,7 +266,6 @@ interp/%_targetjs.js: interp/%_targetjs.byte
 
 .PHONY: targetjs
 targetjs: interp/run_js_targetjs.js
-
 #######################################################
 # JSRef Bisect Mode
 
@@ -281,6 +281,17 @@ interp/run_jsbisect.native: interp/src/extract/JsInterpreterBisect.ml
 
 #######################################################
 # Tracing version of the interpreter
+
+.PHONY: tracejs tracejs_coq_plugin tracejs_symbols
+tracejs: tracejs_symbols
+
+tracejs_coq_plugin:
+	$(MAKE) -C tools/coq_tracejs_plugin
+
+# Check JsCorrectness.v with tracejs tactic instrumentation
+# This may rebuild JsCorrectness.vo twice, but it guarantees the dependencies
+tracejs_symbols: tracejs_coq_plugin coq/JsCorrectness.vo
+	$(COQC) $(COQFLAGS) $(COQINCLUDES) -R tools/coq_tracejs_plugin/src Tracejs coq/JsCorrectness.v
 
 interp/tracer/annotml/ppx_lines.native:
 	$(MAKE) -C interp/tracer/annotml ppx_lines.native

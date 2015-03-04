@@ -1,4 +1,5 @@
 Set Implicit Arguments.
+Require Import LibTactics.
 Require Import Shared.
 Require Import LibFix LibList.
 Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
@@ -2608,7 +2609,7 @@ Proof.
   introv IH. cuts M: (forall es S C vs y,
       run_list_expr runs S C vs es = result_some y ->
       red_spec S C (spec_list_expr_1 (rev vs) es) y).
-    intros HR. apply red_spec_list_expr. applys* M (@nil value).
+    intros HR. sapply red_spec_list_expr. applys* M (@nil value).
   clears S C es y. intros es. induction es; introv HR.
   simpls. run_inv. applys* red_spec_list_expr_1_nil.
   simpls. run red_spec_list_expr_1_cons.
@@ -3235,7 +3236,7 @@ Proof.
      | e | eo | labo | labo | t co fo | labs e1 e2 e3 t
      | labs xeo1s e2 e3 t | labs e1 e2 e3 t | labs str eo e t | eo | ].
   (* Expression *)
-  run red_stat_expr. apply red_stat_expr_1.
+  run red_stat_expr. sapply red_stat_expr_1.
   (* Label *)
   unfolds in R. run red_stat_label.
     tests HC: (res_is_normal R0).
@@ -3311,7 +3312,7 @@ Proof.
   (* For-in-var *)
   discriminate.
   (* Debugger *)
-  run_inv. apply red_stat_debugger.
+  run_inv. sapply red_stat_debugger.
   (* switch *)
   applys~ run_stat_switch_correct R.
 Admitted. (*faster*)
@@ -3437,7 +3438,7 @@ Proof.
   (* prealloc_function *)
   discriminate. (* LATER *)
   (* prealloc_function_proto *)
-  inverts HR. apply red_spec_call_function_proto_invoked.
+  inverts HR. sapply red_spec_call_function_proto_invoked.
   (* prealloc_function_proto_to_string *)
   discriminate.
   (* prealloc_function_proto_apply *)
@@ -3647,7 +3648,7 @@ Proof.
     clear EQrv'. cases_if.
      run_inv. apply~ red_stat_for_6_break.
      apply~ red_stat_for_6_not_break. rew_logic~ in *. cases_if.
-      apply red_stat_for_7_continue. rew_logic~ in *. destruct eo3.
+      sapply red_stat_for_7_continue. rew_logic~ in *. destruct eo3.
        run red_stat_for_8_some. subst loop. run_hyp.
         apply~ red_stat_for_9.
        subst loop. run_hyp. apply~ red_stat_for_8_none.

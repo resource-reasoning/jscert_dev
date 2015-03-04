@@ -3,15 +3,11 @@ open Tacmach
 open Pp
 
 (* Base string output tactic *)
-(* TODO: Output name/info of current theorem being proved *)
 let tracejs (pp : std_ppcmds) : tactic =
-  Tacticals.tclIDTAC_MESSAGE (str "tracejs: " ++ pp ++ fnl ())
+  let pfname = Pfedit.get_current_proof_name () in
+  Tacticals.tclIDTAC_MESSAGE (str "tracejs (" ++ str (string_of_id pfname) ++ str "): " ++ pp ++ fnl ())
 
 let idtac = Tacticals.tclIDTAC
-
-TACTIC EXTEND tracejs
-  | ["tracejs" string(s)] -> [tracejs (str s)]
-END
 
 open Printer
 open Ppconstr
@@ -41,6 +37,11 @@ let rec my_pr_constr constr =
 and pr_constr_arr arr =
   str "[" ++ hv 2 (prlist_with_sep pr_semicolon pr_constr (Array.to_list arr)) ++ str "]"
 
+TACTIC EXTEND tracejs
+  | ["tracejs" string(s)] -> [tracejs (str s)]
+  | ["tracejs" constr(s)] -> [tracejs (my_pr_constr s)]
+END
+
 
 let my_pr_var_decl env (id,c,typ) =
   pr_id id ++ str " :: " ++ my_pr_constr typ
@@ -69,17 +70,17 @@ let pp_flat (pp : Pp.std_ppcmds) : Pp.std_ppcmds =
   str (Format.flush_str_formatter ())
 
 (* Print the term from a given side of an equality *)
-(* FIXME: LHS and RHS seem to sometimes be allocated randomly, find a better way of picking from the args *)
-let print_hyp_code (h : identifier) (i : int) : tactic = fun gl ->
-  let (_,_,hyp) = pf_get_hyp gl h in
-  match Hipattern.match_with_equality_type hyp with
-    | Some (_, args) -> tracejs (pp_flat (pr_constr (List.nth args i))) gl
-    | None           -> idtac gl
+let print_hyp_code (h : identifier) (dir : bool) : tactic = fun gl ->
+  try
+    let hyp = pf_get_hyp_typ gl h in
+    let i = if dir then 2 else 1 in
+    match Hipattern.match_with_equality_type hyp with
+      | Some (_, args) -> tracejs (str "CODE: " ++ pp_flat (pr_constr (List.nth args i))) gl
+      | None           -> error "NO CODE FOUND"
+  with UserError (_,str) -> tracejs str gl
 
+open Extraargs (* for orient *)
 TACTIC EXTEND tracejs_code
-  | ["tracejs_code" hyp(h)] -> [print_hyp_code h 1]
-  | ["tracejs_code" "lhs" hyp(h)] -> [print_hyp_code h 1]
+  | ["tracejs_code" orient(dir)] -> [print_hyp_code (id_of_string "HR") dir]
+  | ["tracejs_code" orient(dir) hyp(h)] -> [print_hyp_code h dir]
 END
-TACTIC EXTEND tracejs_code_rhs
-  | ["tracejs_code" "rhs" hyp(h)] -> [print_hyp_code h 2]
-END;;
