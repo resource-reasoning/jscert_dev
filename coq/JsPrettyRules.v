@@ -2917,12 +2917,12 @@ with red_expr : state -> execution_ctx -> ext_expr -> out -> Prop :=
       red_expr S C (spec_call_global_eval_1 bdirect v) (out_ter S v)
 
   | red_spec_call_global_eval_1_string_not_parse : forall s b S C bdirect o, (* Step 2 *)
-      parse s b None ->
+      (forall p, ~ parse s b p) ->
       red_expr S C (spec_error native_error_syntax) o ->
       red_expr S C (spec_call_global_eval_1 bdirect s) o
 
   | red_spec_call_global_eval_1_string_parse : forall s b p S C bdirect o, (* Step 3 and 5 *)
-      parse s b (Some p) ->
+      parse s b p ->
       red_expr S C (spec_entering_eval_code bdirect (funcbody_intro p s) (spec_call_global_eval_2 p)) o ->
       red_expr S C (spec_call_global_eval_1 bdirect s) o
 
