@@ -1434,7 +1434,7 @@ Proof.
     applys* Def.
     (* array *)
     skip. (* TODO Conrad *)
-     (* I didn't find the corresponding rules for this, are they writen? :-\ -- Martin. *)
+     (* I didn't find the corresponding rules for this, are they written? :-\ -- Martin. *)
     (* arguments object *)
     run. forwards~ obpm: run_object_method_correct (rm E).
     run. subst. run~ red_spec_object_define_own_prop_args_obj.
@@ -1476,7 +1476,7 @@ Proof.
  applys* red_spec_prim_new_object_number.
  run_simpl. applys* red_spec_prim_new_object_string.
   rewrite <- EQX. fequals. skip. (* FIXME: Problem here! The interpreter is not following the rules! *)
-Admitted.
+Admitted. (* faster *)
 
 Lemma run_error_correct_2 : forall T S (ne : native_error) o C,
   run_error S ne = (res_out o : specres T) -> red_expr S C (spec_error ne) o.
@@ -2755,8 +2755,8 @@ Proof.
   introv IH. gen S. induction pds as [|(pn&pb) pds]; introv HR.
   simpls. run_inv. applys red_expr_object_1_nil.
   simpls. let_name. let_name.
-  asserts follows_correct: (forall S A, follows S A = res_out o ->
-      red_expr S C (expr_object_4 l x A pds) o).
+  asserts follows_correct: (forall S Desc, follows S Desc = res_out o ->
+      red_expr S C (expr_object_4 l x Desc pds) o).
     subst follows. clear HR. introv HR.
     run red_expr_object_4 using object_define_own_prop_correct.
      applys* red_expr_object_5.
@@ -2766,9 +2766,9 @@ Proof.
    run red_expr_object_2_val.
     applys* red_expr_object_3_val.
    run red_expr_object_2_get using create_new_function_in_correct.
-    applys* red_expr_object_3_get. apply* follows_correct. simpls~. skip. (* FIXME: There is a missmatch here. *)
+    applys* red_expr_object_3_get.
    run red_expr_object_2_set using create_new_function_in_correct.
-    applys* red_expr_object_3_set. apply* follows_correct. simpls~. skip. (* FIXME: There is a missmatch here. *)
+    applys* red_expr_object_3_set.
 Qed.
 
 Lemma lexical_env_get_identifier_ref_correct : forall runs S C lexs x str y,
@@ -3376,11 +3376,17 @@ Proof.
       applys* red_spec_entering_func_code_1_object.
 Admitted. (* faster *)
 
-Lemma run_to_descriptor_correct : forall runs S C attr y,
+Lemma run_to_descriptor_correct : forall runs S C v y,
   runs_type_correct runs ->
-  run_to_descriptor runs S C attr = result_some y ->
-  red_spec S C (spec_to_descriptor attr) y.
+  run_to_descriptor runs S C v = result_some y ->
+  red_spec S C (spec_to_descriptor v) y.
 Proof.
+  introv IH HR. unfolds in HR.
+  destruct v as [p|l].
+   apply~ red_spec_to_descriptor_not_object.
+    (* apply~ run_error_correct.
+    destruct p; discriminate. *)
+   skip. (* Is it [spec_error_spec] or [spec_error]? *)
   skip. (* TODO! *)
 Qed.
 
@@ -3410,7 +3416,7 @@ Proof.
   (* prealloc_global_parse_int *)
   discriminate.
   (* prealloc_object *)
-  let_name. skip. (* FIXME: Mismatch! Where does this [ifb] comes from? *) (* LATER? - Conrad *)
+  let_name. skip. (* TODO *)
   (* prealloc_object_get_proto_of *)
   let_name. apply~ red_spec_call_object_get_proto_of.
     substs. apply* get_arg_correct_0.
