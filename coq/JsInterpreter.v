@@ -2433,16 +2433,12 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
         (decide (n = JsNumber.nan \/ n = JsNumber.infinity \/ n = JsNumber.neg_infinity))))
 
   | prealloc_object =>
-    'let arg_len := length args in
-    ifb (arg_len = 0) then
-      run_construct_prealloc runs S C B args
-    else
-      'let value := get_arg 0 args in
-      match value with
-      | prim_null
-      | prim_undef => run_construct_prealloc runs S C B args
-      | _ => to_object S value
-      end
+    'let value := get_arg 0 args in
+    match value with
+    | prim_null
+    | prim_undef => run_construct_prealloc runs S C B args
+    | _ => to_object S value
+    end
 
   | prealloc_object_get_proto_of =>
     'let v := get_arg 0 args in
