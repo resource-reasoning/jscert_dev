@@ -453,7 +453,7 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
 
   if_some (run_object_method object_define_own_prop_ S l) (fun B =>
     match B with
-    | builtin_define_own_prop_default => default S x Desc throw (* MARKERS *)
+    | builtin_define_own_prop_default => default S x Desc throw
     | builtin_define_own_prop_array =>
       if_spec (runs_type_object_get_own_prop runs S C l "length") (fun S D =>
         match D with
@@ -466,55 +466,55 @@ Definition object_define_own_prop runs S C l x Desc throw : result :=
             | value_prim w =>
               'let oldLen := JsNumber.to_uint32 (convert_prim_to_number w) in
               'let descValueOpt := (descriptor_value Desc) in
-              (match x with
-              | "length" => (match descValueOpt with
-                            | None => default S "length" Desc throw
-                            | Some descValue => 
-                              if_spec (to_uint32 runs S C descValue) (fun S newLen => 
-                                if_number (to_number runs S C descValue) (fun S newLenN =>
-                                  ifb ((JsNumber.of_int newLen) <> newLenN) then
-                                    run_error S native_error_range
-                                  else
-                                    'let newLenDesc := descriptor_with_value Desc (Some (value_prim (prim_number (JsNumber.of_int newLen)))) in
-                                    ifb (oldLen <= newLen) then
-                                      default S "length" newLenDesc throw
-                                    else
-                                      ifb (not (attributes_data_writable A)) then
-                                        reject S throw
-                                      else
-                                        'let newWritable := (match (descriptor_writable newLenDesc) with
-                                                            | Some false => false
-                                                            | _ => true
-                                                            end) in
-                                        'let newLenDesc := (ifb (not newWritable) then
-                                                             descriptor_with_writable newLenDesc (Some true)
-                                                           else
-                                                             newLenDesc) in
-                                        if_bool (default S "length" newLenDesc throw) (fun S succ =>
-                                          ifb (not succ) then
-                                            res_ter S false
-                                          else
-                                            object_define_own_prop_array_loop runs S C l newLen (Z.to_nat (oldLen - newLen)) newLenDesc newWritable default throw)))
-                            end)
-              | str => if_spec (to_uint32 runs S C x) (fun S ilen => 
-                         if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S slen =>
-                           ifb ((str = slen) /\ ilen <> (4294967295%Z)) then
-                             if_spec (to_uint32 runs S C x) (fun S index =>
-                               ifb (oldLen <= index /\ (not (attributes_data_writable A))) then
-                                 reject S throw
-                               else
-                                 if_bool (default S x Desc false) (fun S b =>
-                                   ifb (not b) then
-                                     reject S throw
-                                   else
-                                     ifb (oldLen <= index) then
-                                       let A := (descriptor_with_value A (Some (value_prim (JsNumber.of_int (index + 1))))) in
-                                       default S "length" A false
-                                     else
-                                       res_ter S true))
-                           else
-                             default S x Desc throw))
-              end)
+              ifb x = "length" then
+                match descValueOpt with
+                | None => default S "length" Desc throw
+                | Some descValue => 
+                  if_spec (to_uint32 runs S C descValue) (fun S newLen => 
+                    if_number (to_number runs S C descValue) (fun S newLenN =>
+                      ifb ((JsNumber.of_int newLen) <> newLenN) then
+                        run_error S native_error_range
+                      else
+                        'let newLenDesc := descriptor_with_value Desc (Some (value_prim (prim_number (JsNumber.of_int newLen)))) in
+                        ifb (oldLen <= newLen) then
+                          default S "length" newLenDesc throw
+                        else
+                          ifb (not (attributes_data_writable A)) then
+                            reject S throw
+                          else
+                            'let newWritable := (match (descriptor_writable newLenDesc) with
+                                                | Some false => false
+                                                | _ => true
+                                                end) in
+                            'let newLenDesc := (ifb (not newWritable) then
+                                                 descriptor_with_writable newLenDesc (Some true)
+                                               else
+                                                 newLenDesc) in
+                            if_bool (default S "length" newLenDesc throw) (fun S succ =>
+                              ifb (not succ) then
+                                res_ter S false
+                              else
+                                object_define_own_prop_array_loop runs S C l newLen (Z.to_nat (oldLen - newLen)) newLenDesc newWritable default throw)))
+                end
+              else
+                if_spec (to_uint32 runs S C x) (fun S ilen => 
+                  if_string (to_string runs S C (JsNumber.of_int ilen)) (fun S slen =>
+                    ifb ((x = slen) /\ ilen <> (4294967295%Z)) then
+                      if_spec (to_uint32 runs S C x) (fun S index =>
+                        ifb (oldLen <= index /\ (not (attributes_data_writable A))) then
+                          reject S throw
+                        else
+                          if_bool (default S x Desc false) (fun S b =>
+                            ifb (not b) then
+                              reject S throw
+                            else
+                              ifb (oldLen <= index) then
+                                let A := (descriptor_with_value A (Some (value_prim (JsNumber.of_int (index + 1))))) in
+                                default S "length" A false
+                              else
+                                res_ter S true))
+                    else
+                      default S x Desc throw))
             end)
           | _ => impossible_with_heap_because S "Array length property descriptor cannot be accessor."
           end)
