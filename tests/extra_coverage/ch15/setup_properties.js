@@ -90,7 +90,8 @@ var %FunctionSetLength = __functionSetLength;
 
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
 var InternalArray = __InternalArray;
-var InternalPackedArray = __InternalArray;
+var InternalPackedArray = {};
+InternalPackedArray.prototype = {};
 function %SpecialArrayFunctions() {
   return {push: Array.prototype.push, pop: Array.prototype.pop};
 }
@@ -1897,7 +1898,7 @@ SetUpArray();
 //********************************************************************
 })();
 })();
-delete __InternalArray;
-delete __removeConstructor;
-delete __functionSetLength;
-delete __getPrototype;
+delete this.__InternalArray;
+delete this.__removeConstructor;
+delete this.__functionSetLength;
+delete this.__getPrototype;
