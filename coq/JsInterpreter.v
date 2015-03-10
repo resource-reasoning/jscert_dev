@@ -612,6 +612,7 @@ Definition prim_new_object S w : result :=
       'let O1 := object_with_get_own_property O2 builtin_get_own_prop_string in
       'let O :=  object_with_primitive_value O1 s in
       let '(l, S1) := object_alloc S O in
+      (* This is probably not correct. *)
       if_some (pick_option (object_set_property S1 l "length" (attributes_data_intro_constant (String.length s)))) (fun S' => 
         res_ter S' l) 
       (* While the spec never explicitly says to do this, it specifies that it is the case immediately after creation *)
@@ -1805,16 +1806,16 @@ Fixpoint init_object runs S C l (pds : propdefs) {struct pds} : result :=
     match pb with
     | propbody_val e0 =>
       if_spec (run_expr_get_value runs S C e0) (fun S1 v0 =>
-        let A := descriptor_intro (Some v0) (Some true) None None (Some true) (Some true) in
-        follows S1 A)
+        let Desc := descriptor_intro (Some v0) (Some true) None None (Some true) (Some true) in
+        follows S1 Desc)
     | propbody_get bd =>
       if_value (create_new_function_in runs S C nil bd) (fun S1 v0 =>
-        let A := descriptor_intro None None (Some v0) None (Some true) (Some true) in
-        follows S1 A)
+        let Desc := descriptor_intro None None (Some v0) None (Some true) (Some true) in
+        follows S1 Desc)
     | propbody_set args bd =>
       if_value (create_new_function_in runs S C args bd) (fun S1 v0 =>
-        let A := descriptor_intro None None None (Some v0) (Some true) (Some true) in
-        follows S1 A)
+        let Desc := descriptor_intro None None None (Some v0) (Some true) (Some true) in
+        follows S1 Desc)
     end
   end.
 
@@ -2606,7 +2607,6 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
         res_ter S' l)
     | value_prim _ => run_error S native_error_type
     end
-
 
   | prealloc_object_define_prop =>
     'let o := get_arg 0 args in
