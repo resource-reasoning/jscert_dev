@@ -1508,15 +1508,20 @@ Inductive make_delete_event : state -> object_loc -> prop_name -> event -> Prop 
 (** ** Implementation Defined Object *)
 
 (** As stated in Section 2 of the ECMAScript specification, an
-  implementation can provide additionnal properties not descrbied in
+  implementation can provide additionnal properties not described in
   the specification. **)
 
-(** As we are only describing the core of JavaScrip here, this
-  inductive shall be empty.  But one can found in the other branches
-  of this developpment some examples of non-empty instantiation of
-  this predicate. **)
-
 Inductive implementation_prealloc : prealloc -> Prop :=
+  | implementation_prealloc_v8_internal_array :
+    implementation_prealloc prealloc_v8_internal_array
+  | implementation_prealloc_v8_internal_array_proto :
+    implementation_prealloc prealloc_v8_internal_array_proto
+  | implementation_prealloc_v8_remove_constructor :
+    implementation_prealloc prealloc_v8_remove_constructor
+  | implementation_prealloc_v8_function_set_length :
+    implementation_prealloc prealloc_v8_function_set_length
+  | implementation_prealloc_v8_get_prototype :
+    implementation_prealloc prealloc_v8_get_prototype
   .
 
 
