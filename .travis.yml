@@ -16,6 +16,11 @@ cache:
     - ~/.opam41
     - ~/.opam42
 
+branches:
+  except:
+    - condor
+    - conrad_v8_condor
+
 before_install:
   # Use an ubuntu ppa coq build to speed things up
   - sudo add-apt-repository -y ppa:grand-edgemaster/coq-$PPA
