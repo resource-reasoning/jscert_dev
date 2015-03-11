@@ -3331,12 +3331,12 @@ with red_expr : state -> execution_ctx -> ext_expr -> out -> Prop :=
       red_expr S C (spec_call_object_is_frozen_2 l (x::xs)) o
 
   | red_spec_call_object_is_frozen_3_desc_is_data : forall S0 S C A xs l o, (* Step 2.b, true *)
-      attributes_is_data A = true ->
+      attributes_is_data A ->
       red_expr S C (spec_call_object_is_frozen_4 l xs A) o ->
       red_expr S0 C (spec_call_object_is_frozen_3 l xs (dret S A)) o
 
   | red_spec_call_object_is_frozen_3_desc_is_not_data : forall S0 S C A xs l o, (* Step 2.b, false *)
-      attributes_is_data A = false ->
+      ~ attributes_is_data A ->
       red_expr S C (spec_call_object_is_frozen_5 l xs A) o ->
       red_expr S0 C (spec_call_object_is_frozen_3 l xs (dret S A)) o
 
@@ -4047,6 +4047,19 @@ with red_expr : state -> execution_ctx -> ext_expr -> out -> Prop :=
       red_expr S C (spec_build_error (prealloc_native_error_proto ne) v) o ->
       red_expr S C (spec_construct_prealloc (prealloc_native_error ne) args) o
 
+
+  (*------------------------------------------------------------*)
+  (** ** Implementation-defined locations (Section 2) **)
+
+  (** The effects of these locations are not specified. **)
+
+  | red_spec_construct_implementation  : forall S C B args o,
+      implementation_prealloc B ->
+      red_expr S C (spec_construct_prealloc B args) o
+
+  | red_spec_call_implementation  : forall S C B vthis args o,
+      implementation_prealloc B ->
+      red_expr S C (spec_call_prealloc B vthis args) o
 
 
 (**************************************************************)

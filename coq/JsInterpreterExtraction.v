@@ -200,11 +200,11 @@ Extract Constant object_prealloc_global_class => "(
 
 
 (* Parsing *)
-Extract Constant parse_pickable => "(fun s f ->
+Extract Constant parse_pickable => "(fun s strict ->
     let str = String.concat """" (List.map (String.make 1) s) in
     try
-      let parserExp = Parser_main.exp_from_string ~force_strict:f str in
-      Some (JsSyntaxInfos.add_infos_prog f
+      let parserExp = Parser_main.exp_from_string ~force_strict:strict str in
+      Some (JsSyntaxInfos.add_infos_prog strict
         (Translate_syntax.exp_to_prog parserExp))
     with
     (* | Translate_syntax.CoqSyntaxDoesNotSupport _ -> assert false (* Temporary *) *)
