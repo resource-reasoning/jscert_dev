@@ -2372,15 +2372,15 @@ Proof.
   (* prealloc_throw_type_error *)
   discriminate.
   (* prealloc_v8_internal_array *)
-  skip. (* TODO *)
+  apply* red_spec_construct_implementation. constructor*.
   (* prealloc_v8_internal_array_proto *)
-  discriminate.
+  apply* red_spec_construct_implementation. constructor*.
   (* prealloc_v8_remove_constructor *)
-  discriminate.
+  apply* red_spec_construct_implementation. constructor*.
   (* prealloc_v8_set_length *)
-  discriminate.
+  apply* red_spec_construct_implementation. constructor*.
   (* prealloc_v8_get_prototype *)
-  discriminate.
+  apply* red_spec_construct_implementation. constructor*.
 Admitted. (*faster*)
 
 Lemma run_construct_default_correct : forall runs S C l args o,
@@ -3882,15 +3882,15 @@ Proof.
   apply~ red_spec_call_throw_type_error.
   apply* run_error_correct.
   (* prealloc_v8_internal_array *)
-  discriminate.
+  apply* red_spec_call_implementation. constructor*.
   (* prealloc_v8_internal_array_proto *)
-  discriminate.
+  apply* red_spec_call_implementation. constructor*.
   (* prealloc_v8_remove_constructor *)
-  skip. (* TODO Conrad *)
+  apply* red_spec_call_implementation. constructor*.
   (* prealloc_v8_set_length *)
-  skip. (* TODO Conrad *)
+  apply* red_spec_call_implementation. constructor*.
   (* prealloc_v8_get_prototype *)
-  skip. (* TODO Conrad *)
+  apply* red_spec_call_implementation. constructor*.
 Admitted. (* faster *)
 
 Lemma run_call_correct : forall runs S C l v vs o,
