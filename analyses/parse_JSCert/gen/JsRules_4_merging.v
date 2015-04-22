@@ -85,7 +85,7 @@ Inductive pbs_ext_expr :=
   | pbs_expr_object_3_val : object_loc -> string -> (pbs_specret value) -> propdefs -> pbs_ext_expr
   | pbs_expr_object_3_get : object_loc -> string -> red_out -> propdefs -> pbs_ext_expr
   | pbs_expr_object_3_set : object_loc -> string -> red_out -> propdefs -> pbs_ext_expr
-  | pbs_expr_object_4 : object_loc -> string -> attributes -> propdefs -> pbs_ext_expr
+  | pbs_expr_object_4 : object_loc -> string -> descriptor -> propdefs -> pbs_ext_expr
   | pbs_expr_object_5 : object_loc -> propdefs -> red_out -> pbs_ext_expr
   | pbs_expr_function_1 : string -> (list string) -> funcbody -> env_loc -> lexical_env -> red_out -> pbs_ext_expr
   | pbs_expr_function_2 : string -> env_loc -> red_out -> pbs_ext_expr
@@ -416,6 +416,8 @@ Inductive pbs_ext_expr :=
   | pbs_spec_call_array_proto_push_4_nonempty_3 : object_loc -> (list value) -> int -> value -> red_out -> pbs_ext_expr
   | pbs_spec_call_array_proto_push_5 : object_loc -> value -> pbs_ext_expr
   | pbs_spec_call_array_proto_push_6 : value -> red_out -> pbs_ext_expr
+  | pbs_spec_construct_string_1 : value -> pbs_ext_expr
+  | pbs_spec_construct_string_2 : red_out -> pbs_ext_expr
   | pbs_spec_construct_bool_1 : red_out -> pbs_ext_expr
   | pbs_spec_call_bool_proto_to_string_1 : red_out -> pbs_ext_expr
   | pbs_spec_call_bool_proto_value_of_1 : value -> pbs_ext_expr
@@ -573,7 +575,7 @@ Definition pbs_out_of_specret :=
   .
 
 Definition pbs_out_of_ext_expr :=
-  (fun (e : pbs_ext_expr) => match e with (expr_basic _) => None | (expr_identifier_1 y) => (pbs_out_of_specret y) | (expr_object_0 o _) => (Some o) | (expr_object_1 _ _) => None | (expr_object_2 _ _ _ _) => None | (expr_object_3_val _ _ y _) => (pbs_out_of_specret y) | (expr_object_3_get _ _ o _) => (Some o) | (expr_object_3_set _ _ o _) => (Some o) | (expr_object_4 _ _ _ _) => None | (expr_object_5 _ _ o) => (Some o) | (expr_function_1 _ _ _ _ _ o) => (Some o) | (expr_function_2 _ _ o) => (Some o) | (expr_function_3 _ o) => (Some o) | (expr_access_1 y _) => (pbs_out_of_specret y) | (expr_access_2 _ y) => (pbs_out_of_specret y) | (expr_access_3 _ o _) => (Some o) | (expr_access_4 _ o) => (Some o) | (expr_new_1 y _) => (pbs_out_of_specret y) | (expr_new_2 _ y) => (pbs_out_of_specret y) | (expr_call_1 o _ _) => (Some o) | (expr_call_2 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_4 _ _ _ _) => None | (expr_call_5 _ _ _ o) => (Some o) | (spec_eval _ _ _) => None | (expr_unary_op_1 _ y) => (pbs_out_of_specret y) | (expr_unary_op_2 _ _) => None | (expr_delete_1 o) => (Some o) | (expr_delete_2 _) => None | (expr_delete_3 _ o) => (Some o) | (expr_delete_4 _ _) => None | (expr_typeof_1 o) => (Some o) | (expr_typeof_2 y) => (pbs_out_of_specret y) | (expr_prepost_1 _ o) => (Some o) | (expr_prepost_2 _ _ y) => (pbs_out_of_specret y) | (expr_prepost_3 _ _ o) => (Some o) | (expr_prepost_4 _ o) => (Some o) | (expr_unary_op_neg_1 o) => (Some o) | (expr_unary_op_bitwise_not_1 y) => (pbs_out_of_specret y) | (expr_unary_op_not_1 o) => (Some o) | (expr_conditional_1 y _ _) => (pbs_out_of_specret y) | (expr_conditional_1' o _ _) => None | (expr_conditional_2 y) => (pbs_out_of_specret y) | (expr_binary_op_1 _ y _) => (pbs_out_of_specret y) | (expr_binary_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_3 _ _ _) => None | (expr_binary_op_add_1 y) => (pbs_out_of_specret y) | (expr_binary_op_add_string_1 y) => (pbs_out_of_specret y) | (expr_puremath_op_1 _ y) => (pbs_out_of_specret y) | (expr_shift_op_1 _ y _) => (pbs_out_of_specret y) | (expr_shift_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_inequality_op_1 _ _ _ _) => None | (expr_inequality_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_in_1 _ o) => (Some o) | (expr_binary_op_disequal_1 o) => (Some o) | (spec_equal _ _) => None | (spec_equal_1 _ _ _ _) => None | (spec_equal_2 _) => None | (spec_equal_3 _ _ _) => None | (spec_equal_4 _ o) => (Some o) | (expr_bitwise_op_1 _ y _) => (pbs_out_of_specret y) | (expr_bitwise_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_lazy_op_1 _ y _) => (pbs_out_of_specret y) | (expr_lazy_op_2 _ _ o _) => (Some o) | (expr_lazy_op_2_1 y) => (pbs_out_of_specret y) | (expr_assign_1 o _ _) => (Some o) | (expr_assign_2 _ y _ _) => (pbs_out_of_specret y) | (expr_assign_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_assign_3' _ o) => (Some o) | (expr_assign_4 _ y) => (pbs_out_of_specret y) | (expr_assign_5 _ o) => (Some o) | (spec_to_primitive _ _) => None | (spec_to_boolean _) => None | (spec_to_number _) => None | (spec_to_number_1 o) => (Some o) | (spec_to_integer _) => None | (spec_to_integer_1 o) => (Some o) | (spec_to_string _) => None | (spec_to_string_1 o) => (Some o) | (spec_to_object _) => None | (spec_check_object_coercible _) => None | (spec_eq _ _) => None | (spec_eq0 _ _) => None | (spec_eq1 _ _) => None | (spec_eq2 _ _ _) => None | (spec_object_get _ _) => None | (spec_object_get_1 _ _ _ _) => None | (spec_object_get_2 _ y) => (pbs_out_of_specret y) | (spec_object_get_3 _ _) => None | (spec_object_can_put _ _) => None | (spec_object_can_put_1 _ _ _) => None | (spec_object_can_put_2 _ _ y) => (pbs_out_of_specret y) | (spec_object_can_put_4 _ _ _) => None | (spec_object_can_put_5 _ y) => (pbs_out_of_specret y) | (spec_object_can_put_6 _ _) => None | (spec_object_put _ _ _ _) => None | (spec_object_put_1 _ _ _ _ _ _) => None | (spec_object_put_2 _ _ _ _ _ o) => (Some o) | (spec_object_put_3 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_4 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_5 o) => (Some o) | (spec_object_has_prop _ _) => None | (spec_object_has_prop_1 _ _ _) => None | (spec_object_has_prop_2 y) => (pbs_out_of_specret y) | (spec_object_delete _ _ _) => None | (spec_object_delete_1 _ _ _ _) => None | (spec_object_delete_2 _ _ _ y) => (pbs_out_of_specret y) | (spec_object_delete_3 _ _ _ _) => None | (spec_object_default_value _ _) => None | (spec_object_default_value_1 _ _ _) => None | (spec_object_default_value_2 _ _ _) => None | (spec_object_default_value_3 _ _) => None | spec_object_default_value_4 => None | (spec_object_default_value_sub_1 _ _ _) => None | (spec_object_default_value_sub_2 _ o _) => (Some o) | (spec_object_default_value_sub_3 o _) => (Some o) | (spec_object_define_own_prop _ _ _ _) => None | (spec_object_define_own_prop_1 _ _ _ _ _) => None | (spec_object_define_own_prop_2 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_define_own_prop_3 _ _ _ _ _ _) => None | (spec_object_define_own_prop_4 _ _ _ _ _) => None | (spec_object_define_own_prop_5 _ _ _ _ _) => None | (spec_object_define_own_prop_6a _ _ _ _ _) => None | (spec_object_define_own_prop_6b _ _ _ _ _) => None | (spec_object_define_own_prop_6c _ _ _ _ _) => None | (spec_object_define_own_prop_reject _) => None | (spec_object_define_own_prop_write _ _ _ _ _) => None | (spec_prim_value_get _ _) => None | (spec_prim_value_get_1 _ _ o) => (Some o) | (spec_prim_value_put _ _ _ _) => None | (spec_prim_value_put_1 _ _ _ _ o) => (Some o) | (spec_put_value _ _) => None | (spec_env_record_has_binding _ _) => None | (spec_env_record_has_binding_1 _ _ _) => None | (spec_env_record_get_binding_value _ _ _) => None | (spec_env_record_get_binding_value_1 _ _ _ _) => None | (spec_env_record_get_binding_value_2 _ _ _ o) => (Some o) | (spec_env_record_create_immutable_binding _ _) => None | (spec_env_record_initialize_immutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding_1 _ _ _ _) => None | (spec_env_record_create_mutable_binding_2 _ _ _ _ o) => (Some o) | (spec_env_record_create_mutable_binding_3 o) => (Some o) | (spec_env_record_set_mutable_binding _ _ _ _) => None | (spec_env_record_set_mutable_binding_1 _ _ _ _ _) => None | (spec_env_record_delete_binding _ _) => None | (spec_env_record_delete_binding_1 _ _ _) => None | (spec_env_record_create_set_mutable_binding _ _ _ _ _) => None | (spec_env_record_create_set_mutable_binding_1 o _ _ _ _) => (Some o) | (spec_env_record_implicit_this_value _) => None | (spec_env_record_implicit_this_value_1 _ _) => None | (spec_from_descriptor y) => (pbs_out_of_specret y) | (spec_from_descriptor_1 _ o) => (Some o) | (spec_from_descriptor_2 _ _ o) => (Some o) | (spec_from_descriptor_3 _ _ o) => (Some o) | (spec_from_descriptor_4 _ _ o) => (Some o) | (spec_from_descriptor_5 _ _ o) => (Some o) | (spec_from_descriptor_6 _ o) => (Some o) | (spec_entering_eval_code _ _ _) => None | (spec_entering_eval_code_1 _ _ _) => None | (spec_entering_eval_code_2 o _) => (Some o) | (spec_call_global_eval _ _) => None | (spec_call_global_eval_1 _ _) => None | (spec_call_global_eval_2 _) => None | (spec_call_global_eval_3 o) => (Some o) | (spec_entering_func_code _ _ _ _) => None | (spec_entering_func_code_1 _ _ _ _ _ _) => None | (spec_entering_func_code_2 _ _ _ o _) => (Some o) | (spec_entering_func_code_3 _ _ _ _ _ _) => None | (spec_entering_func_code_4 o _) => (Some o) | (spec_binding_inst_formal_params _ _ _ _) => None | (spec_binding_inst_formal_params_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_3 _ _ _ _ _ _) => None | (spec_binding_inst_formal_params_4 _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls _ _ _ _ _) => None | (spec_binding_inst_function_decls_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_2 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_3 _ _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_binding_inst_function_decls_3a _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_6 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj object_loc _ _ _ _) => None | (spec_binding_inst_arg_obj_1 _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj_2 _ _ _ o) => (Some o) | (spec_binding_inst_var_decls _ _ _ _) => None | (spec_binding_inst_var_decls_1 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_var_decls_2 _ _ _ _ o) => (Some o) | (spec_binding_inst _ _ _ _) => None | (spec_binding_inst_1 _ _ _ _ _) => None | (spec_binding_inst_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_3 _ _ _ _ _ _) => None | (spec_binding_inst_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_6 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_7 _ _ _ o) => (Some o) | (spec_binding_inst_8 _ _ _) => None | (spec_make_arg_getter _ _) => None | (spec_make_arg_setter _ _) => None | (spec_args_obj_get_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_1 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_2 _ _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_3 _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_4 _ _ _ _ _) => None | (spec_args_obj_define_own_prop_5 o) => (Some o) | spec_args_obj_define_own_prop_6 => None | (spec_args_obj_delete_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_delete_2 _ _ _ _ _ o) => (Some o) | (spec_args_obj_delete_3 o) => (Some o) | (spec_args_obj_delete_4 _) => None | (spec_arguments_object_map _ _ _ _ _) => None | (spec_arguments_object_map_1 _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_2 _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_3 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_4 _ _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_5 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_6 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_7 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_8 _ _ _) => None | (spec_create_arguments_object _ _ _ _ _) => None | (spec_create_arguments_object_1 _ _ _ _ _ _ o) => (Some o) | (spec_create_arguments_object_2 _ _ _ o) => (Some o) | (spec_create_arguments_object_3 _ _ _ o) => (Some o) | (spec_create_arguments_object_4 _ o) => (Some o) | (spec_object_has_instance _ _) => None | (spec_object_has_instance_1 _ _ _) => None | (spec_function_has_instance_1 _ o) => (Some o) | (spec_function_has_instance_2 _ _) => None | (spec_function_has_instance_3 _ _) => None | (spec_function_get_1 _ _ o) => (Some o) | (spec_error _) => None | (spec_error_1 o) => (Some o) | (spec_error_or_cst _ _ _) => None | (spec_error_or_void _ _) => None | spec_init_throw_type_error => None | (spec_init_throw_type_error_1 o) => (Some o) | (spec_build_error _ _) => None | (spec_build_error_1 _ _) => None | (spec_build_error_2 _ o) => (Some o) | (spec_new_object _) => None | (spec_new_object_1 o _) => (Some o) | (spec_prim_new_object _) => None | (spec_creating_function_object_proto _) => None | (spec_creating_function_object_proto_1 _ o) => (Some o) | (spec_creating_function_object_proto_2 _ _ o) => (Some o) | (spec_creating_function_object _ _ _ _) => None | (spec_creating_function_object_1 _ _ o) => (Some o) | (spec_creating_function_object_2 _ _ o) => (Some o) | (spec_creating_function_object_3 _ o) => (Some o) | (spec_creating_function_object_4 _ o) => (Some o) | (spec_create_new_function_in execution_ctx _ _) => None | (spec_call _ _ _) => None | (spec_call_1 _ _ _ _) => None | (spec_call_prealloc _ _ _) => None | (spec_call_default _ _ _) => None | (spec_call_default_1 _) => None | (spec_call_default_2 _) => None | (spec_call_default_3 o) => (Some o) | (spec_construct _ _) => None | (spec_construct_1 _ _ _) => None | (spec_construct_prealloc _ _) => None | (spec_construct_default _ _) => None | (spec_construct_default_1 _ _ o) => (Some o) | (spec_construct_default_2 _ o) => (Some o) | (spec_construct_bool_1 o) => (Some o) | (spec_construct_number_1 o) => (Some o) | (spec_call_global_is_nan_1 o) => (Some o) | (spec_call_global_is_finite_1 o) => (Some o) | (spec_call_object_call_1 _) => None | (spec_call_object_new_1 _) => None | (spec_call_object_get_proto_of_1 _) => None | (spec_call_object_is_extensible_1 _) => None | (spec_call_object_define_props_1 _ _) => None | (spec_call_object_define_props_2 o _) => (Some o) | (spec_call_object_define_props_3 _ _ _ _) => None | (spec_call_object_define_props_4 o _ _ _ _ _) => (Some o) | (spec_call_object_define_props_5 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_call_object_define_props_6 _ _) => None | (spec_call_object_define_props_7 o _ _) => (Some o) | (spec_call_object_create_1 _ _) => None | (spec_call_object_create_2 o _ _) => (Some o) | (spec_call_object_create_3 _ _) => None | (spec_call_object_seal_1 _) => None | (spec_call_object_seal_2 _ _) => None | (spec_call_object_seal_3 _ _ _ _) => None | (spec_call_object_seal_4 _ _ o) => (Some o) | (spec_call_object_is_sealed_1 _) => None | (spec_call_object_is_sealed_2 _ _) => None | (spec_call_object_is_sealed_3 _ _ _) => None | (spec_call_object_freeze_1 _) => None | (spec_call_object_freeze_2 _ _) => None | (spec_call_object_freeze_3 _ _ _ _) => None | (spec_call_object_freeze_4 _ _ _ _) => None | (spec_call_object_freeze_5 _ _ o) => (Some o) | (spec_call_object_is_frozen_1 _) => None | (spec_call_object_is_frozen_2 _ _) => None | (spec_call_object_is_frozen_3 _ _ _) => None | (spec_call_object_is_frozen_4 _ _ _) => None | (spec_call_object_is_frozen_5 _ _ _) => None | (spec_call_object_prevent_extensions_1 _) => None | (spec_call_object_define_prop_1 _ _ _) => None | (spec_call_object_define_prop_2 _ o _) => (Some o) | (spec_call_object_define_prop_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_object_define_prop_4 _ o) => (Some o) | (spec_call_object_get_own_prop_descriptor_1 _ _) => None | (spec_call_object_get_own_prop_descriptor_2 _ o) => (Some o) | (spec_call_object_proto_to_string_1 _) => None | (spec_call_object_proto_to_string_2 o) => (Some o) | (spec_call_object_proto_has_own_prop_1 o _) => (Some o) | (spec_call_object_proto_has_own_prop_2 o _) => (Some o) | (spec_call_object_proto_has_own_prop_3 y) => (pbs_out_of_specret y) | (spec_call_object_proto_is_prototype_of_2_1 _ _) => None | (spec_call_object_proto_is_prototype_of_2_2 o _) => (Some o) | (spec_call_object_proto_is_prototype_of_2_3 _ _) => None | (spec_call_object_proto_is_prototype_of_2_4 _ _) => None | (spec_call_object_proto_prop_is_enumerable_1 _ _) => None | (spec_call_object_proto_prop_is_enumerable_2 _ o) => (Some o) | (spec_call_object_proto_prop_is_enumerable_3 o _) => (Some o) | (spec_call_object_proto_prop_is_enumerable_4 _) => None | (spec_call_array_new_1 _) => None | (spec_call_array_new_2 _ _ _) => None | (spec_call_array_proto_pop_1 o) => (Some o) | (spec_call_array_proto_pop_2 _ o) => (Some o) | (spec_call_array_proto_pop_3 _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_pop_3_empty_1 _) => None | (spec_call_array_proto_pop_3_empty_2 o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_1 _ _) => None | (spec_call_array_proto_pop_3_nonempty_2 _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_3 _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_4 _ _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_5 _ o) => (Some o) | (spec_call_array_proto_push_1 o _) => (Some o) | (spec_call_array_proto_push_2 _ _ o) => (Some o) | (spec_call_array_proto_push_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_push_4 _ _ _) => None | (spec_call_array_proto_push_4_nonempty_1 _ _ _ _) => None | (spec_call_array_proto_push_4_nonempty_2 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_4_nonempty_3 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_5 _ _) => None | (spec_call_array_proto_push_6 _ o) => (Some o) | (spec_call_bool_proto_to_string_1 o) => (Some o) | (spec_call_bool_proto_value_of_1 _) => None | (spec_call_bool_proto_value_of_2 _) => None | (spec_call_number_proto_to_string_1 _ _) => None | (spec_call_number_proto_to_string_2 _ o) => (Some o) | (spec_call_number_proto_value_of_1 _) => None | (spec_call_error_proto_to_string_1 _) => None | (spec_call_error_proto_to_string_2 _ o) => (Some o) | (spec_call_error_proto_to_string_3 _ o) => (Some o) | (spec_call_error_proto_to_string_4 _ _ o) => (Some o) | (spec_call_error_proto_to_string_5 _ _ o) => (Some o) | (spec_call_error_proto_to_string_6 _ _ o) => (Some o) | (spec_returns o) => (Some o) end)
+  (fun (e : pbs_ext_expr) => match e with (expr_basic _) => None | (expr_identifier_1 y) => (pbs_out_of_specret y) | (expr_object_0 o _) => (Some o) | (expr_object_1 _ _) => None | (expr_object_2 _ _ _ _) => None | (expr_object_3_val _ _ y _) => (pbs_out_of_specret y) | (expr_object_3_get _ _ o _) => (Some o) | (expr_object_3_set _ _ o _) => (Some o) | (expr_object_4 _ _ _ _) => None | (expr_object_5 _ _ o) => (Some o) | (expr_function_1 _ _ _ _ _ o) => (Some o) | (expr_function_2 _ _ o) => (Some o) | (expr_function_3 _ o) => (Some o) | (expr_access_1 y _) => (pbs_out_of_specret y) | (expr_access_2 _ y) => (pbs_out_of_specret y) | (expr_access_3 _ o _) => (Some o) | (expr_access_4 _ o) => (Some o) | (expr_new_1 y _) => (pbs_out_of_specret y) | (expr_new_2 _ y) => (pbs_out_of_specret y) | (expr_call_1 o _ _) => (Some o) | (expr_call_2 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_call_4 _ _ _ _) => None | (expr_call_5 _ _ _ o) => (Some o) | (spec_eval _ _ _) => None | (expr_unary_op_1 _ y) => (pbs_out_of_specret y) | (expr_unary_op_2 _ _) => None | (expr_delete_1 o) => (Some o) | (expr_delete_2 _) => None | (expr_delete_3 _ o) => (Some o) | (expr_delete_4 _ _) => None | (expr_typeof_1 o) => (Some o) | (expr_typeof_2 y) => (pbs_out_of_specret y) | (expr_prepost_1 _ o) => (Some o) | (expr_prepost_2 _ _ y) => (pbs_out_of_specret y) | (expr_prepost_3 _ _ o) => (Some o) | (expr_prepost_4 _ o) => (Some o) | (expr_unary_op_neg_1 o) => (Some o) | (expr_unary_op_bitwise_not_1 y) => (pbs_out_of_specret y) | (expr_unary_op_not_1 o) => (Some o) | (expr_conditional_1 y _ _) => (pbs_out_of_specret y) | (expr_conditional_1' o _ _) => None | (expr_conditional_2 y) => (pbs_out_of_specret y) | (expr_binary_op_1 _ y _) => (pbs_out_of_specret y) | (expr_binary_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_3 _ _ _) => None | (expr_binary_op_add_1 y) => (pbs_out_of_specret y) | (expr_binary_op_add_string_1 y) => (pbs_out_of_specret y) | (expr_puremath_op_1 _ y) => (pbs_out_of_specret y) | (expr_shift_op_1 _ y _) => (pbs_out_of_specret y) | (expr_shift_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_inequality_op_1 _ _ _ _) => None | (expr_inequality_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_binary_op_in_1 _ o) => (Some o) | (expr_binary_op_disequal_1 o) => (Some o) | (spec_equal _ _) => None | (spec_equal_1 _ _ _ _) => None | (spec_equal_2 _) => None | (spec_equal_3 _ _ _) => None | (spec_equal_4 _ o) => (Some o) | (expr_bitwise_op_1 _ y _) => (pbs_out_of_specret y) | (expr_bitwise_op_2 _ _ y) => (pbs_out_of_specret y) | (expr_lazy_op_1 _ y _) => (pbs_out_of_specret y) | (expr_lazy_op_2 _ _ o _) => (Some o) | (expr_lazy_op_2_1 y) => (pbs_out_of_specret y) | (expr_assign_1 o _ _) => (Some o) | (expr_assign_2 _ y _ _) => (pbs_out_of_specret y) | (expr_assign_3 _ _ _ y) => (pbs_out_of_specret y) | (expr_assign_3' _ o) => (Some o) | (expr_assign_4 _ y) => (pbs_out_of_specret y) | (expr_assign_5 _ o) => (Some o) | (spec_to_primitive _ _) => None | (spec_to_boolean _) => None | (spec_to_number _) => None | (spec_to_number_1 o) => (Some o) | (spec_to_integer _) => None | (spec_to_integer_1 o) => (Some o) | (spec_to_string _) => None | (spec_to_string_1 o) => (Some o) | (spec_to_object _) => None | (spec_check_object_coercible _) => None | (spec_eq _ _) => None | (spec_eq0 _ _) => None | (spec_eq1 _ _) => None | (spec_eq2 _ _ _) => None | (spec_object_get _ _) => None | (spec_object_get_1 _ _ _ _) => None | (spec_object_get_2 _ y) => (pbs_out_of_specret y) | (spec_object_get_3 _ _) => None | (spec_object_can_put _ _) => None | (spec_object_can_put_1 _ _ _) => None | (spec_object_can_put_2 _ _ y) => (pbs_out_of_specret y) | (spec_object_can_put_4 _ _ _) => None | (spec_object_can_put_5 _ y) => (pbs_out_of_specret y) | (spec_object_can_put_6 _ _) => None | (spec_object_put _ _ _ _) => None | (spec_object_put_1 _ _ _ _ _ _) => None | (spec_object_put_2 _ _ _ _ _ o) => (Some o) | (spec_object_put_3 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_4 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_put_5 o) => (Some o) | (spec_object_has_prop _ _) => None | (spec_object_has_prop_1 _ _ _) => None | (spec_object_has_prop_2 y) => (pbs_out_of_specret y) | (spec_object_delete _ _ _) => None | (spec_object_delete_1 _ _ _ _) => None | (spec_object_delete_2 _ _ _ y) => (pbs_out_of_specret y) | (spec_object_delete_3 _ _ _ _) => None | (spec_object_default_value _ _) => None | (spec_object_default_value_1 _ _ _) => None | (spec_object_default_value_2 _ _ _) => None | (spec_object_default_value_3 _ _) => None | spec_object_default_value_4 => None | (spec_object_default_value_sub_1 _ _ _) => None | (spec_object_default_value_sub_2 _ o _) => (Some o) | (spec_object_default_value_sub_3 o _) => (Some o) | (spec_object_define_own_prop _ _ _ _) => None | (spec_object_define_own_prop_1 _ _ _ _ _) => None | (spec_object_define_own_prop_2 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_object_define_own_prop_3 _ _ _ _ _ _) => None | (spec_object_define_own_prop_4 _ _ _ _ _) => None | (spec_object_define_own_prop_5 _ _ _ _ _) => None | (spec_object_define_own_prop_6a _ _ _ _ _) => None | (spec_object_define_own_prop_6b _ _ _ _ _) => None | (spec_object_define_own_prop_6c _ _ _ _ _) => None | (spec_object_define_own_prop_reject _) => None | (spec_object_define_own_prop_write _ _ _ _ _) => None | (spec_prim_value_get _ _) => None | (spec_prim_value_get_1 _ _ o) => (Some o) | (spec_prim_value_put _ _ _ _) => None | (spec_prim_value_put_1 _ _ _ _ o) => (Some o) | (spec_put_value _ _) => None | (spec_env_record_has_binding _ _) => None | (spec_env_record_has_binding_1 _ _ _) => None | (spec_env_record_get_binding_value _ _ _) => None | (spec_env_record_get_binding_value_1 _ _ _ _) => None | (spec_env_record_get_binding_value_2 _ _ _ o) => (Some o) | (spec_env_record_create_immutable_binding _ _) => None | (spec_env_record_initialize_immutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding _ _ _) => None | (spec_env_record_create_mutable_binding_1 _ _ _ _) => None | (spec_env_record_create_mutable_binding_2 _ _ _ _ o) => (Some o) | (spec_env_record_create_mutable_binding_3 o) => (Some o) | (spec_env_record_set_mutable_binding _ _ _ _) => None | (spec_env_record_set_mutable_binding_1 _ _ _ _ _) => None | (spec_env_record_delete_binding _ _) => None | (spec_env_record_delete_binding_1 _ _ _) => None | (spec_env_record_create_set_mutable_binding _ _ _ _ _) => None | (spec_env_record_create_set_mutable_binding_1 o _ _ _ _) => (Some o) | (spec_env_record_implicit_this_value _) => None | (spec_env_record_implicit_this_value_1 _ _) => None | (spec_from_descriptor y) => (pbs_out_of_specret y) | (spec_from_descriptor_1 _ o) => (Some o) | (spec_from_descriptor_2 _ _ o) => (Some o) | (spec_from_descriptor_3 _ _ o) => (Some o) | (spec_from_descriptor_4 _ _ o) => (Some o) | (spec_from_descriptor_5 _ _ o) => (Some o) | (spec_from_descriptor_6 _ o) => (Some o) | (spec_entering_eval_code _ _ _) => None | (spec_entering_eval_code_1 _ _ _) => None | (spec_entering_eval_code_2 o _) => (Some o) | (spec_call_global_eval _ _) => None | (spec_call_global_eval_1 _ _) => None | (spec_call_global_eval_2 _) => None | (spec_call_global_eval_3 o) => (Some o) | (spec_entering_func_code _ _ _ _) => None | (spec_entering_func_code_1 _ _ _ _ _ _) => None | (spec_entering_func_code_2 _ _ _ o _) => (Some o) | (spec_entering_func_code_3 _ _ _ _ _ _) => None | (spec_entering_func_code_4 o _) => (Some o) | (spec_binding_inst_formal_params _ _ _ _) => None | (spec_binding_inst_formal_params_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_formal_params_3 _ _ _ _ _ _) => None | (spec_binding_inst_formal_params_4 _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls _ _ _ _ _) => None | (spec_binding_inst_function_decls_1 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_2 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_3 _ _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_binding_inst_function_decls_3a _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_function_decls_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_function_decls_6 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj object_loc _ _ _ _) => None | (spec_binding_inst_arg_obj_1 _ _ _ o) => (Some o) | (spec_binding_inst_arg_obj_2 _ _ _ o) => (Some o) | (spec_binding_inst_var_decls _ _ _ _) => None | (spec_binding_inst_var_decls_1 _ _ _ _ _ o) => (Some o) | (spec_binding_inst_var_decls_2 _ _ _ _ o) => (Some o) | (spec_binding_inst _ _ _ _) => None | (spec_binding_inst_1 _ _ _ _ _) => None | (spec_binding_inst_2 _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_3 _ _ _ _ _ _) => None | (spec_binding_inst_4 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_5 _ _ _ _ _ _ _) => None | (spec_binding_inst_6 _ _ _ _ _ _ _ o) => (Some o) | (spec_binding_inst_7 _ _ _ o) => (Some o) | (spec_binding_inst_8 _ _ _) => None | (spec_make_arg_getter _ _) => None | (spec_make_arg_setter _ _) => None | (spec_args_obj_get_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_1 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_define_own_prop_2 _ _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_3 _ _ _ _ _ o) => (Some o) | (spec_args_obj_define_own_prop_4 _ _ _ _ _) => None | (spec_args_obj_define_own_prop_5 o) => (Some o) | spec_args_obj_define_own_prop_6 => None | (spec_args_obj_delete_1 _ _ _ _ y) => (pbs_out_of_specret y) | (spec_args_obj_delete_2 _ _ _ _ _ o) => (Some o) | (spec_args_obj_delete_3 o) => (Some o) | (spec_args_obj_delete_4 _) => None | (spec_arguments_object_map _ _ _ _ _) => None | (spec_arguments_object_map_1 _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_2 _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_3 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_4 _ _ _ _ _ _ _ _ _) => None | (spec_arguments_object_map_5 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_6 _ _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_7 _ _ _ _ _ _ _ _ o) => (Some o) | (spec_arguments_object_map_8 _ _ _) => None | (spec_create_arguments_object _ _ _ _ _) => None | (spec_create_arguments_object_1 _ _ _ _ _ _ o) => (Some o) | (spec_create_arguments_object_2 _ _ _ o) => (Some o) | (spec_create_arguments_object_3 _ _ _ o) => (Some o) | (spec_create_arguments_object_4 _ o) => (Some o) | (spec_object_has_instance _ _) => None | (spec_object_has_instance_1 _ _ _) => None | (spec_function_has_instance_1 _ o) => (Some o) | (spec_function_has_instance_2 _ _) => None | (spec_function_has_instance_3 _ _) => None | (spec_function_get_1 _ _ o) => (Some o) | (spec_error _) => None | (spec_error_1 o) => (Some o) | (spec_error_or_cst _ _ _) => None | (spec_error_or_void _ _) => None | spec_init_throw_type_error => None | (spec_init_throw_type_error_1 o) => (Some o) | (spec_build_error _ _) => None | (spec_build_error_1 _ _) => None | (spec_build_error_2 _ o) => (Some o) | (spec_new_object _) => None | (spec_new_object_1 o _) => (Some o) | (spec_prim_new_object _) => None | (spec_creating_function_object_proto _) => None | (spec_creating_function_object_proto_1 _ o) => (Some o) | (spec_creating_function_object_proto_2 _ _ o) => (Some o) | (spec_creating_function_object _ _ _ _) => None | (spec_creating_function_object_1 _ _ o) => (Some o) | (spec_creating_function_object_2 _ _ o) => (Some o) | (spec_creating_function_object_3 _ o) => (Some o) | (spec_creating_function_object_4 _ o) => (Some o) | (spec_create_new_function_in execution_ctx _ _) => None | (spec_call _ _ _) => None | (spec_call_1 _ _ _ _) => None | (spec_call_prealloc _ _ _) => None | (spec_call_default _ _ _) => None | (spec_call_default_1 _) => None | (spec_call_default_2 _) => None | (spec_call_default_3 o) => (Some o) | (spec_construct _ _) => None | (spec_construct_1 _ _ _) => None | (spec_construct_prealloc _ _) => None | (spec_construct_default _ _) => None | (spec_construct_default_1 _ _ o) => (Some o) | (spec_construct_default_2 _ o) => (Some o) | (spec_construct_bool_1 o) => (Some o) | (spec_construct_number_1 o) => (Some o) | (spec_call_global_is_nan_1 o) => (Some o) | (spec_call_global_is_finite_1 o) => (Some o) | (spec_call_object_call_1 _) => None | (spec_call_object_new_1 _) => None | (spec_call_object_get_proto_of_1 _) => None | (spec_call_object_is_extensible_1 _) => None | (spec_call_object_define_props_1 _ _) => None | (spec_call_object_define_props_2 o _) => (Some o) | (spec_call_object_define_props_3 _ _ _ _) => None | (spec_call_object_define_props_4 o _ _ _ _ _) => (Some o) | (spec_call_object_define_props_5 _ _ _ _ _ y) => (pbs_out_of_specret y) | (spec_call_object_define_props_6 _ _) => None | (spec_call_object_define_props_7 o _ _) => (Some o) | (spec_call_object_create_1 _ _) => None | (spec_call_object_create_2 o _ _) => (Some o) | (spec_call_object_create_3 _ _) => None | (spec_call_object_seal_1 _) => None | (spec_call_object_seal_2 _ _) => None | (spec_call_object_seal_3 _ _ _ y) => (pbs_out_of_specret y) | (spec_call_object_seal_4 _ _ o) => (Some o) | (spec_call_object_is_sealed_1 _) => None | (spec_call_object_is_sealed_2 _ _) => None | (spec_call_object_is_sealed_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_object_freeze_1 _) => None | (spec_call_object_freeze_2 _ _) => None | (spec_call_object_freeze_3 _ _ _ y) => (pbs_out_of_specret y) | (spec_call_object_freeze_4 _ _ _ _) => None | (spec_call_object_freeze_5 _ _ o) => (Some o) | (spec_call_object_is_frozen_1 _) => None | (spec_call_object_is_frozen_2 _ _) => None | (spec_call_object_is_frozen_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_object_is_frozen_4 _ _ _) => None | (spec_call_object_is_frozen_5 _ _ _) => None | (spec_call_object_prevent_extensions_1 _) => None | (spec_call_object_define_prop_1 _ _ _) => None | (spec_call_object_define_prop_2 _ o _) => (Some o) | (spec_call_object_define_prop_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_object_define_prop_4 _ o) => (Some o) | (spec_call_object_get_own_prop_descriptor_1 _ _) => None | (spec_call_object_get_own_prop_descriptor_2 _ o) => (Some o) | (spec_call_object_proto_to_string_1 _) => None | (spec_call_object_proto_to_string_2 o) => (Some o) | (spec_call_object_proto_has_own_prop_1 o _) => (Some o) | (spec_call_object_proto_has_own_prop_2 o _) => (Some o) | (spec_call_object_proto_has_own_prop_3 y) => (pbs_out_of_specret y) | (spec_call_object_proto_is_prototype_of_2_1 _ _) => None | (spec_call_object_proto_is_prototype_of_2_2 o _) => (Some o) | (spec_call_object_proto_is_prototype_of_2_3 _ _) => None | (spec_call_object_proto_is_prototype_of_2_4 _ _) => None | (spec_call_object_proto_prop_is_enumerable_1 _ _) => None | (spec_call_object_proto_prop_is_enumerable_2 _ o) => (Some o) | (spec_call_object_proto_prop_is_enumerable_3 o _) => (Some o) | (spec_call_object_proto_prop_is_enumerable_4 y) => (pbs_out_of_specret y) | (spec_call_array_new_1 _) => None | (spec_call_array_new_2 _ _ _) => None | (spec_call_array_proto_pop_1 o) => (Some o) | (spec_call_array_proto_pop_2 _ o) => (Some o) | (spec_call_array_proto_pop_3 _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_pop_3_empty_1 _) => None | (spec_call_array_proto_pop_3_empty_2 o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_1 _ _) => None | (spec_call_array_proto_pop_3_nonempty_2 _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_3 _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_4 _ _ _ o) => (Some o) | (spec_call_array_proto_pop_3_nonempty_5 _ o) => (Some o) | (spec_call_array_proto_push_1 o _) => (Some o) | (spec_call_array_proto_push_2 _ _ o) => (Some o) | (spec_call_array_proto_push_3 _ _ y) => (pbs_out_of_specret y) | (spec_call_array_proto_push_4 _ _ _) => None | (spec_call_array_proto_push_4_nonempty_1 _ _ _ _) => None | (spec_call_array_proto_push_4_nonempty_2 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_4_nonempty_3 _ _ _ _ o) => (Some o) | (spec_call_array_proto_push_5 _ _) => None | (spec_call_array_proto_push_6 _ o) => (Some o) | (spec_construct_string_1 _) => None | (spec_construct_string_2 o) => (Some o) | (spec_call_bool_proto_to_string_1 o) => (Some o) | (spec_call_bool_proto_value_of_1 _) => None | (spec_call_bool_proto_value_of_2 _) => None | (spec_call_number_proto_to_string_1 _ _) => None | (spec_call_number_proto_to_string_2 _ o) => (Some o) | (spec_call_number_proto_value_of_1 _) => None | (spec_call_error_proto_to_string_1 _) => None | (spec_call_error_proto_to_string_2 _ o) => (Some o) | (spec_call_error_proto_to_string_3 _ o) => (Some o) | (spec_call_error_proto_to_string_4 _ _ o) => (Some o) | (spec_call_error_proto_to_string_5 _ _ o) => (Some o) | (spec_call_error_proto_to_string_6 _ _ o) => (Some o) | (spec_returns o) => (Some o) end)
   .
 
 Definition pbs_out_of_ext_stat :=
@@ -617,7 +619,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (extp : ext_prog (* input *)) (o : out),
         ((out_of_ext_prog extp) = ((Some o) : (option out))) ->
         (abort o) ->
-        (abort_intercepted_prog extp) ->
+        (~ (abort_intercepted_prog extp)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_prog S C extp) (red_out_red_prog o))
@@ -667,7 +669,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (extt : ext_stat (* input *)) (o : out),
         ((out_of_ext_stat extt) = ((Some o) : (option out))) ->
         (abort o) ->
-        (abort_intercepted_stat extt) ->
+        (~ (abort_intercepted_stat extt)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_stat S C extt) (red_out_red_stat o))
@@ -839,7 +841,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_do_while_3_not_continue :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (t1 : stat (* input *)) (e2 : expr (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        (((res_type R) = restype_continue) /\ ((res_label_in R labs) : Prop)) ->
+        (~ (((res_type R) = restype_continue) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red (red_in_red_stat S C (stat_do_while_4 labs t1 e2 rv R)) (red_out_red_stat o)) ->
         (* ------------------------------------------ *)
@@ -854,7 +856,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_do_while_4_not_break :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (t1 : stat (* input *)) (e2 : expr (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        (((res_type R) = restype_break) /\ ((res_label_in R labs) : Prop)) ->
+        (~ (((res_type R) = restype_break) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red (red_in_red_stat S C (stat_do_while_5 labs t1 e2 rv R)) (red_out_red_stat o)) ->
         (* ------------------------------------------ *)
@@ -942,7 +944,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_while_4_not_continue :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (e1 : expr (* input *)) (t2 : stat (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        (((res_type R) = restype_continue) /\ ((res_label_in R labs) : Prop)) ->
+        (~ (((res_type R) = restype_continue) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red (red_in_red_stat S C (stat_while_5 labs e1 t2 rv R)) (red_out_red_stat o)) ->
         (* ------------------------------------------ *)
@@ -957,7 +959,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_while_5_not_break :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (e1 : expr (* input *)) (t2 : stat (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        (((res_type R) = restype_break) /\ ((res_label_in R labs) : Prop)) ->
+        (~ (((res_type R) = restype_break) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red (red_in_red_stat S C (stat_while_6 labs e1 t2 rv R)) (red_out_red_stat o)) ->
         (* ------------------------------------------ *)
@@ -1264,7 +1266,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_switch_nodefault_6_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (rv : resvalue (* input *)),
-        (res_is_normal R) ->
+        (abrupt_res R) ->
         ((res_type R) <> restype_throw) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -1337,7 +1339,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_switch_default_A_5_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (vi : value (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (scs2 : (list switchclause) (* input *)) (ts1 : (list stat) (* input *)),
-        (res_is_normal R) ->
+        (abrupt_res R) ->
         ((res_type R) <> restype_throw) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -1425,7 +1427,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_stat_switch_default_8_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (rv : resvalue (* input *)),
-        (res_is_normal R) ->
+        (abrupt_res R) ->
         ((res_type R) <> restype_throw) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -1547,7 +1549,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (exte : ext_expr (* input *)) (o : out),
         ((out_of_ext_expr exte) = ((Some o) : (option out))) ->
         (abort o) ->
-        (abort_intercepted_expr exte) ->
+        (~ (abort_intercepted_expr exte)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C exte) (red_out_red_expr o))
@@ -1617,7 +1619,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_expr_object_3_val :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (o : out) (pds : propdefs (* input *)),
         (* ========================================== *)
-        (red (red_in_red_expr S C (expr_object_4 l (x : string) (attributes_data_of (attributes_data_intro v true true true)) pds)) (red_out_red_expr o)) ->
+        (red (red_in_red_expr S C (expr_object_4 l (x : string) (descriptor_of_attributes (attributes_data_of (attributes_data_intro v true true true))) pds)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (expr_object_3_val l (x : string) ((specret_val S v) : (specret value)) pds)) (red_out_red_expr o))
 
@@ -1632,7 +1634,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_expr_object_3_get :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (pds : propdefs (* input *)) (o : out),
         (* ========================================== *)
-        (red (red_in_red_expr S C (expr_object_4 l (x : string) (attributes_accessor_of (attributes_accessor_intro v undef true true)) pds)) (red_out_red_expr o)) ->
+        (red (red_in_red_expr S C (expr_object_4 l (x : string) (descriptor_intro (None : (option value)) (None : (option bool)) ((Some v) : (option value)) (None : (option value)) ((Some true) : (option bool)) ((Some true) : (option bool))) pds)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (expr_object_3_get l (x : string) (out_ter S ((resvalue_value v) : res)) pds)) (red_out_red_expr o))
 
@@ -1647,17 +1649,17 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_expr_object_3_set :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (pds : propdefs (* input *)) (o : out),
         (* ========================================== *)
-        (red (red_in_red_expr S C (expr_object_4 l (x : string) (attributes_accessor_of (attributes_accessor_intro undef v true true)) pds)) (red_out_red_expr o)) ->
+        (red (red_in_red_expr S C (expr_object_4 l (x : string) (descriptor_intro (None : (option value)) (None : (option bool)) (None : (option value)) ((Some v) : (option value)) ((Some true) : (option bool)) ((Some true) : (option bool))) pds)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (expr_object_3_set l (x : string) (out_ter S ((resvalue_value v) : res)) pds)) (red_out_red_expr o))
 
   | red_expr_object_4 :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (pds : propdefs (* input *)) (o : out) (o1 : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (Desc : descriptor (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (pds : propdefs (* input *)) (o : out) (o1 : out),
         (* ========================================== *)
-        (red (red_in_red_expr S C (spec_object_define_own_prop l x (descriptor_of_attributes A) false)) (red_out_red_expr o1)) ->
+        (red (red_in_red_expr S C (spec_object_define_own_prop l x Desc false)) (red_out_red_expr o1)) ->
         (red (red_in_red_expr S C (expr_object_5 l pds o1)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
-        (red (red_in_red_expr S C (expr_object_4 l (x : string) A pds)) (red_out_red_expr o))
+        (red (red_in_red_expr S C (expr_object_4 l (x : string) Desc pds)) (red_out_red_expr o))
 
   | red_expr_object_5 :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)) (l : object_loc (* input *)) (pds : propdefs (* input *)) (o : out),
@@ -1936,7 +1938,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_expr_delete_1_not_ref :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)),
-        (resvalue_is_ref rv) ->
+        (~ (resvalue_is_ref rv)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (expr_delete_1 (out_ter S (rv : res)))) (red_out_red_expr (out_ter S ((resvalue_value (value_prim (prim_bool ((true : provide_this_flag) : bool)))) : res))))
@@ -2035,7 +2037,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_expr_typeof_1_ref_resolvable :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (r : ref (* input *)) (y1 : (specret value)) (o : out),
-        (ref_is_unresolvable r) ->
+        (~ (ref_is_unresolvable r)) ->
         (* ========================================== *)
         (red (red_in_red_spec S C (spec_get_value (resvalue_ref r))) (red_out_red_spec y1)) ->
         (red (red_in_red_expr S C (expr_typeof_2 y1)) (red_out_red_expr o)) ->
@@ -2146,7 +2148,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_expr_binary_op_add_1_number :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (v1 : value (* input *)) (v2 : value (* input *)) (y1 : (specret (value * value))) (o : out),
-        (((type_of v1) = type_string) \/ ((type_of v2) = type_string)) ->
+        (~ (((type_of v1) = type_string) \/ ((type_of v2) = type_string))) ->
         (* ========================================== *)
         (red (red_in_red_spec S C (spec_convert_twice (spec_to_number v1) (spec_to_number v2))) (red_out_red_spec y1)) ->
         (red (red_in_red_expr S C (expr_puremath_op_1 JsNumber.add y1)) (red_out_red_expr o)) ->
@@ -2592,7 +2594,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_to_object_prim :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (w : prim (* input *)) (o : out),
-        ((w = prim_undef) \/ (w = prim_null)) ->
+        (~ ((w = prim_undef) \/ (w = prim_null))) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_prim_new_object w)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -2614,7 +2616,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_check_object_coercible_return :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)),
-        ((v = prim_undef) \/ (v = prim_null)) ->
+        (~ ((v = prim_undef) \/ (v = prim_null))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_check_object_coercible v)) (red_out_red_expr (out_void S)))
@@ -3059,7 +3061,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_3_not_include :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out) (bext : bool (* input *)),
-        (descriptor_contains A Desc) ->
+        (~ (descriptor_contains A Desc)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_object_define_own_prop_4 l x A Desc throw)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3075,7 +3077,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_4_not_reject :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_enumerable_on_non_configurable A Desc) ->
+        (~ (attributes_change_enumerable_on_non_configurable A Desc)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_object_define_own_prop_5 l x A Desc throw)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3132,7 +3134,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_6b_false_accept :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Ad : attributes_data (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_data_on_non_configurable Ad Desc) ->
+        (~ (attributes_change_data_on_non_configurable Ad Desc)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_object_define_own_prop_write l x (attributes_data_of Ad) Desc throw)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3156,7 +3158,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_6c_2 :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Aa : attributes_accessor (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_accessor_on_non_configurable Aa Desc) ->
+        (~ (attributes_change_accessor_on_non_configurable Aa Desc)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_object_define_own_prop_write l x (attributes_accessor_of Aa) Desc throw)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3280,7 +3282,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_env_record_create_mutable_binding_1_decl_indom :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (deletable : bool (* input *)) (Ed : decl_env_record (* input *)),
-        (decl_env_record_indom Ed (x : string)) ->
+        (~ (decl_env_record_indom Ed (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_env_record_create_mutable_binding_1 L x deletable (env_record_decl Ed))) (red_out_red_expr (out_void ((env_record_write_decl_env S L x (mutability_of_bool deletable) undef) : state))))
@@ -3327,7 +3329,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_spec_env_record_set_mutable_binding_1_decl_non_mutable :
       forall (v_old : value) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
         (decl_env_record_binds Ed (x : string) mu v_old) ->
-        (mutability_is_mutable mu) ->
+        (~ (mutability_is_mutable mu)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_error_or_void (str : bool) native_error_type)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3405,7 +3407,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_env_record_delete_binding_1_decl_not_indom :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (Ed : decl_env_record (* input *)),
-        (decl_env_record_indom Ed (x : string)) ->
+        (~ (decl_env_record_indom Ed (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_env_record_delete_binding_1 L x (env_record_decl Ed))) (red_out_red_expr (out_ter S ((resvalue_value (value_prim (prim_bool ((true : provide_this_flag) : bool)))) : res))))
@@ -3440,7 +3442,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
   | red_spec_env_record_create_immutable_binding :
       forall (Ed : decl_env_record) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)),
         (env_record_binds S L (env_record_decl Ed)) ->
-        (decl_env_record_indom Ed (x : string)) ->
+        (~ (decl_env_record_indom Ed (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_env_record_create_immutable_binding L x)) (red_out_red_expr (out_void ((env_record_write_decl_env S L x mutability_uninitialized_immutable undef) : state))))
@@ -3677,7 +3679,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_binding_inst_function_decls_3a_no_error :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (args : (list value) (* input *)) (fd : funcdecl (* input *)) (fds : (list funcdecl) (* input *)) (str : strictness_flag (* input *)) (fo : object_loc (* input *)) (A : attributes (* input *)) (bconfig : bool (* input *)) (o : out),
-        (((descriptor_is_accessor A) \/ ((attributes_writable A) = false)) \/ ((attributes_enumerable A) = false)) ->
+        (~ (((descriptor_is_accessor A) \/ ((attributes_writable A) = false)) \/ ((attributes_enumerable A) = false))) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_binding_inst_function_decls_5 args env_loc_global_env_record fd fds str fo bconfig)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3846,7 +3848,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_binding_inst_6_no_arguments :
       forall (L : env_loc (* input *)) (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (ct : codetype (* input *)) (olf : (option object_loc) (* input *)) (code : prog (* input *)) (xs : (list prop_name) (* input *)) (args : (list value) (* input *)) (bconfig : bool (* input *)) (bdefined : res (* input *)) (o : out),
-        ((ct = codetype_func) /\ (bdefined = false)) ->
+        (~ ((ct = codetype_func) /\ (bdefined = false))) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_binding_inst_8 code bconfig L)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -3936,7 +3938,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_args_obj_2_true_not_acc_some :
       forall (v : value) (o1 : out) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (lmap : object_loc (* input *)) (A : attributes (* input *)) (S' : state (* input *)) (o : out),
-        (descriptor_is_accessor Desc) ->
+        (~ (descriptor_is_accessor Desc)) ->
         ((descriptor_value Desc) = ((Some v) : (option value))) ->
         (* ========================================== *)
         (red (red_in_red_expr S' C (spec_object_put (value_object lmap) x v throw)) (red_out_red_expr o1)) ->
@@ -3953,7 +3955,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_object_define_own_prop_args_obj_2_true_not_acc_none :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (lmap : object_loc (* input *)) (A : attributes (* input *)) (S' : state (* input *)) (o : out),
-        (descriptor_is_accessor Desc) ->
+        (~ (descriptor_is_accessor Desc)) ->
         ((descriptor_value Desc) = (None : (option value))) ->
         (* ========================================== *)
         (red (red_in_red_expr S' C (spec_args_obj_define_own_prop_4 l x Desc throw lmap)) (red_out_red_expr o)) ->
@@ -4286,7 +4288,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_call_default_2_body :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (bd : _ (* input *)) (o1 : out) (o : out),
-        (funcbody_empty bd) ->
+        (~ (funcbody_empty bd)) ->
         (* ========================================== *)
         (red (red_in_red_prog S C ((funcbody_prog bd) : ext_prog)) (red_out_red_prog o1)) ->
         (red (red_in_red_expr S C (spec_call_default_3 o1)) (red_out_red_expr o)) ->
@@ -4830,6 +4832,14 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_call_object_seal_2 l (x :: xs))) (red_out_red_expr o))
 
+  | red_spec_call_object_seal_3 :
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (xs : (list prop_name) (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (o1 : out) (o : out),
+        (* ========================================== *)
+        (red (red_in_red_expr S C (spec_object_define_own_prop l x ((descriptor_of_attributes (ifb (attributes_configurable A) then ((attributes_with_configurable A false) : attributes) else A)) : descriptor) (throw_true : bool))) (red_out_red_expr o1)) ->
+        (red (red_in_red_expr S C (spec_call_object_seal_4 l xs o1)) (red_out_red_expr o)) ->
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S0 C (spec_call_object_seal_3 l x xs ((specret_val S (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
+
   | red_spec_call_object_seal_4 :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (xs : (list prop_name) (* input *)) (b : bool (* input *)) (o : out),
         (* ========================================== *)
@@ -4881,7 +4891,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_call_object_freeze_4 l x xs (full_descriptor_some match A return attributes with (attributes_data_of Ad) => (attributes_data_of ((ifb (attributes_data_writable (Ad : attributes_data)) then ((attributes_data_with_writable Ad false) : attributes_data) else Ad) : attributes_data)) | (attributes_accessor_of Aa) => (attributes_accessor_of (Aa : attributes_accessor)) end))) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
-        (red (red_in_red_expr S C (spec_call_object_freeze_3 l x xs ((specret_val S0 (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
+        (red (red_in_red_expr S0 C (spec_call_object_freeze_3 l x xs ((specret_val S (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
 
   | red_spec_call_object_freeze_4 :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (o1 : out) (o : out),
@@ -4973,7 +4983,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_call_object_is_sealed_2 l xs)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
-        (red (red_in_red_expr S C (spec_call_object_is_sealed_3 l xs ((specret_val S0 (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
+        (red (red_in_red_expr S0 C (spec_call_object_is_sealed_3 l xs ((specret_val S (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
 
   | red_spec_call_object_is_sealed_2_nil :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (b : bool),
@@ -5016,19 +5026,19 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_call_object_is_frozen_3_desc_is_data :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (o : out),
-        ((attributes_is_data A) = (istrue ((((true : provide_this_flag) : bool) : strictness_flag) : bool))) ->
+        (attributes_is_data A) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_call_object_is_frozen_4 l xs (full_descriptor_some A))) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
-        (red (red_in_red_expr S C (spec_call_object_is_frozen_3 l xs ((specret_val S0 (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
+        (red (red_in_red_expr S0 C (spec_call_object_is_frozen_3 l xs ((specret_val S (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
 
   | red_spec_call_object_is_frozen_3_desc_is_not_data :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (o : out),
-        ((attributes_is_data A) = (istrue ((((false : provide_this_flag) : bool) : strictness_flag) : bool))) ->
+        (~ (attributes_is_data A)) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_call_object_is_frozen_5 l xs (full_descriptor_some A))) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
-        (red (red_in_red_expr S C (spec_call_object_is_frozen_3 l xs ((specret_val S0 (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
+        (red (red_in_red_expr S0 C (spec_call_object_is_frozen_3 l xs ((specret_val S (full_descriptor_some A)) : (specret full_descriptor)))) (red_out_red_expr o))
 
   | red_spec_call_object_is_frozen_4_prop_is_writable :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)),
@@ -5111,7 +5121,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_call_object_proto_to_string_1_other :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o : out) (o1 : out),
-        ((v = null) \/ (v = undef)) ->
+        (~ ((v = null) \/ (v = undef))) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_to_object v)) (red_out_red_expr o1)) ->
         (red (red_in_red_expr S C (spec_call_object_proto_to_string_2 o1)) (red_out_red_expr o)) ->
@@ -5295,7 +5305,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_function_get_1_normal :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)),
-        (spec_function_get_error_case S x v) ->
+        (~ (spec_function_get_error_case S x v)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (spec_function_get_1 l x (out_ter S ((resvalue_value v) : res)))) (red_out_red_expr (out_ter S ((resvalue_value v) : res))))
@@ -5567,6 +5577,42 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
         (* ------------------------------------------ *)
         (red (red_in_red_expr S0 C (spec_call_array_proto_push_6 vlen (out_ter S ((resvalue_ref r0) : res)))) (red_out_red_expr (out_ter S ((resvalue_value vlen) : res))))
 
+  | red_spec_construct_string_non_empty :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value) (args : (list value) (* input *)) (o : out),
+        (args <> nil) ->
+        (arguments_from args (v :: (nil : (list value)))) ->
+        (* ========================================== *)
+        (red (red_in_red_expr S C (spec_construct_string_1 v)) (red_out_red_expr o)) ->
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S C (spec_construct_prealloc prealloc_string args)) (red_out_red_expr o))
+
+  | red_spec_construct_string_empty :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value) (o : out),
+        (* ========================================== *)
+        (red (red_in_red_expr S C (spec_construct_string_2 (out_ter S ((resvalue_value (value_prim (prim_string (("")%string)))) : res)))) (red_out_red_expr o)) ->
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S C (spec_construct_prealloc prealloc_string (nil : (list value)))) (red_out_red_expr o))
+
+  | red_spec_construct_string_1 :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o' : out) (o : out),
+        (* ========================================== *)
+        (red (red_in_red_expr S C (spec_to_string v)) (red_out_red_expr o')) ->
+        (red (red_in_red_expr S C (spec_construct_string_2 o')) (red_out_red_expr o)) ->
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S C (spec_construct_string_1 v)) (red_out_red_expr o))
+
+  | red_spec_construct_string_2 :
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (s : string (* input *)) (O : object),
+        ((object_proto_ O) = (value_object (object_loc_prealloc prealloc_string_proto))) ->
+        ((object_class_ O) = ((((("String")%string) : prop_name) : string) : class_name)) ->
+        ((object_extensible_ O) = true) ->
+        ((object_prim_value_ O) = ((Some (value_prim (prim_string s))) : (option value))) ->
+        ((object_get_own_prop_ O) = builtin_get_own_prop_string) ->
+        (Heap.binds (object_properties_ O) ((("length")%string) : prop_name) (attributes_data_of (attributes_data_intro_constant (value_prim (prim_number (JsNumber.of_int (my_Z_of_nat (String.length s)))))))) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S0 C (spec_construct_string_2 (out_ter S ((resvalue_value (value_prim (prim_string s))) : res)))) (red_out_red_expr (out_ter ((snd ((object_alloc S O) : (object_loc * state))) : state) ((fst ((object_alloc S O) : (object_loc * state))) : res))))
+
   | red_spec_call_string_proto_to_string :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (vthis : value (* input *)) (args : (list value) (* input *)) (o : out),
         (* ========================================== *)
@@ -5590,7 +5636,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_call_string_proto_value_of_obj_other :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (args : (list value) (* input *)) (o : out),
-        (object_class S l (("String")%string)) ->
+        (~ (object_class S l (("String")%string))) ->
         (* ========================================== *)
         (red (red_in_red_expr S C (spec_error native_error_type)) (red_out_red_expr o)) ->
         (* ------------------------------------------ *)
@@ -5910,11 +5956,25 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
         (* ------------------------------------------ *)
         (red (red_in_red_expr S C (spec_construct_prealloc (prealloc_native_error ne) args)) (red_out_red_expr o))
 
+  | red_spec_construct_implementation :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (B : prealloc (* input *)) (args : (list value) (* input *)) (o : out),
+        (implementation_prealloc B) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S C (spec_construct_prealloc B args)) (red_out_red_expr o))
+
+  | red_spec_call_implementation :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (B : prealloc (* input *)) (vthis : value (* input *)) (args : (list value) (* input *)) (o : out),
+        (implementation_prealloc B) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red (red_in_red_expr S C (spec_call_prealloc B vthis args)) (red_out_red_expr o))
+
   | red_spec_abort :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (exts : ext_spec (* input *)) (T : _) (o : out),
         ((out_of_ext_spec exts) = ((Some o) : (option out))) ->
         (abort o) ->
-        (abort_intercepted_spec exts) ->
+        (~ (abort_intercepted_spec exts)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_spec S C exts) (red_out_red_spec (@specret_out T o)))
@@ -6187,7 +6247,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_to_descriptor_5c_ok :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (v : value (* input *)) (Desc : descriptor (* input *)) (y : (specret descriptor)),
-        (((is_callable S v) = false) /\ (v <> undef)) ->
+        (~ (((is_callable S v) = false) /\ (v <> undef))) ->
         (* ========================================== *)
         (red (red_in_red_spec S C (spec_to_descriptor_6a l ((descriptor_with_get Desc (Some v)) : descriptor))) (red_out_red_spec y)) ->
         (* ------------------------------------------ *)
@@ -6226,7 +6286,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_to_descriptor_6c_ok :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (v : value (* input *)) (Desc : descriptor (* input *)) (y : (specret descriptor)),
-        (((is_callable S v) = false) /\ (v <> undef)) ->
+        (~ (((is_callable S v) = false) /\ (v <> undef))) ->
         (* ========================================== *)
         (red (red_in_red_spec S C (spec_to_descriptor_7 l ((descriptor_with_set Desc (Some v)) : descriptor))) (red_out_red_spec y)) ->
         (* ------------------------------------------ *)
@@ -6242,7 +6302,7 @@ Inductive red : red_in (* input *) -> red_out -> Prop :=
 
   | red_spec_to_descriptor_7_ok :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (Desc : descriptor (* input *)),
-        (descriptor_inconsistent Desc) ->
+        (~ (descriptor_inconsistent Desc)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red (red_in_red_spec S C (spec_to_descriptor_7 l Desc)) (red_out_red_spec (ret S Desc)))

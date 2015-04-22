@@ -358,7 +358,7 @@ let rec type_expr location local : expr -> expr * ctype option = function
     | Unop (Not, e) ->
         let (e, _) = type_expr location local e in
         learn_type location local e Prop ;
-        (e, Some Prop)
+        (Unop (Not, e), Some Prop)
     | Couple (e1, e2) ->
         (match type_expr location local e1, type_expr location local e2 with
         | (e1, Some t1), (e2, Some t2) ->
