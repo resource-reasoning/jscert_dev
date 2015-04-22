@@ -80,7 +80,7 @@ with red_prog : state (* input *) -> execution_ctx (* input *) -> ext_prog (* in
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (extp : ext_prog (* input *)) (o : out),
         ((out_of_ext_prog (extp : ext_prog)) = ((Some o) : (option out))) ->
         (abort (o : out)) ->
-        (abort_intercepted_prog (extp : ext_prog)) ->
+        (~ (abort_intercepted_prog (extp : ext_prog))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_prog (S : state) (C : execution_ctx) (extp : ext_prog) (o : out))
@@ -133,7 +133,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (extt : ext_stat (* input *)) (o : out),
         ((out_of_ext_stat (extt : ext_stat)) = ((Some o) : (option out))) ->
         (abort (o : out)) ->
-        (abort_intercepted_stat (extt : ext_stat)) ->
+        (~ (abort_intercepted_stat (extt : ext_stat))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_stat (S : state) (C : execution_ctx) (extt : ext_stat) (o : out))
@@ -305,7 +305,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_do_while_3_not_continue :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (t1 : stat (* input *)) (e2 : expr (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        ((((res_type R) = restype_continue) : Prop) /\ ((res_label_in R labs) : Prop)) ->
+        (~ ((((res_type R) = restype_continue) : Prop) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red_stat (S : state) (C : execution_ctx) ((stat_do_while_4 (labs : label_set) (t1 : stat) (e2 : expr) (rv : resvalue) (R : res)) : ext_stat) (o : out)) ->
         (* ------------------------------------------ *)
@@ -320,7 +320,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_do_while_4_not_break :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (t1 : stat (* input *)) (e2 : expr (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        ((((res_type R) = restype_break) : Prop) /\ ((res_label_in R labs) : Prop)) ->
+        (~ ((((res_type R) = restype_break) : Prop) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red_stat (S : state) (C : execution_ctx) ((stat_do_while_5 (labs : label_set) (t1 : stat) (e2 : expr) (rv : resvalue) (R : res)) : ext_stat) (o : out)) ->
         (* ------------------------------------------ *)
@@ -408,7 +408,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_while_4_not_continue :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (e1 : expr (* input *)) (t2 : stat (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        ((((res_type R) = restype_continue) : Prop) /\ ((res_label_in R labs) : Prop)) ->
+        (~ ((((res_type R) = restype_continue) : Prop) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red_stat (S : state) (C : execution_ctx) ((stat_while_5 (labs : label_set) (e1 : expr) (t2 : stat) (rv : resvalue) (R : res)) : ext_stat) (o : out)) ->
         (* ------------------------------------------ *)
@@ -423,7 +423,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_while_5_not_break :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (labs : label_set (* input *)) (e1 : expr (* input *)) (t2 : stat (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (o : out),
-        ((((res_type R) = restype_break) : Prop) /\ ((res_label_in R labs) : Prop)) ->
+        (~ ((((res_type R) = restype_break) : Prop) /\ ((res_label_in R labs) : Prop))) ->
         (* ========================================== *)
         (red_stat (S : state) (C : execution_ctx) ((stat_while_6 (labs : label_set) (e1 : expr) (t2 : stat) (rv : resvalue) (R : res)) : ext_stat) (o : out)) ->
         (* ------------------------------------------ *)
@@ -730,7 +730,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_switch_nodefault_6_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (rv : resvalue (* input *)),
-        (res_is_normal (R : res)) ->
+        (abrupt_res (R : res)) ->
         ((res_type (R : res)) <> (restype_throw : restype)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -803,7 +803,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_switch_default_A_5_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (vi : value (* input *)) (rv : resvalue (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (scs2 : (list switchclause) (* input *)) (ts1 : (list stat) (* input *)),
-        (res_is_normal (R : res)) ->
+        (abrupt_res (R : res)) ->
         ((res_type (R : res)) <> (restype_throw : restype)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -891,7 +891,7 @@ with red_stat : state (* input *) -> execution_ctx (* input *) -> ext_stat (* in
 
   | red_stat_switch_default_8_abrupt :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (R : res (* input *)) (scs : (list switchclause) (* input *)) (rv : resvalue (* input *)),
-        (res_is_normal (R : res)) ->
+        (abrupt_res (R : res)) ->
         ((res_type (R : res)) <> (restype_throw : restype)) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
@@ -1016,7 +1016,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (exte : ext_expr (* input *)) (o : out),
         ((out_of_ext_expr (exte : ext_expr)) = ((Some o) : (option out))) ->
         (abort (o : out)) ->
-        (abort_intercepted_expr (exte : ext_expr)) ->
+        (~ (abort_intercepted_expr (exte : ext_expr))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) (exte : ext_expr) (o : out))
@@ -1086,7 +1086,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
   | red_expr_object_3_val :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (o : out) (pds : propdefs (* input *)),
         (* ========================================== *)
-        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((attributes_data_intro (v : value) (true : bool) (true : bool) (true : bool)) : attributes) : attributes) (pds : propdefs)) : ext_expr) (o : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((attributes_data_intro (v : value) (true : bool) (true : bool) (true : bool)) : attributes) : descriptor) (pds : propdefs)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((expr_object_3_val (l : object_loc) (x : string) ((specret_val S v) : (specret value)) (pds : propdefs)) : ext_expr) (o : out))
 
@@ -1101,7 +1101,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
   | red_expr_object_3_get :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (pds : propdefs (* input *)) (o : out),
         (* ========================================== *)
-        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((attributes_accessor_intro (v : value) (undef : value) (true : bool) (true : bool)) : attributes) : attributes) (pds : propdefs)) : ext_expr) (o : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((descriptor_intro (None : (option value)) (None : (option bool)) ((Some v) : (option value)) (None : (option value)) ((Some true) : (option bool)) ((Some true) : (option bool))) : descriptor) : descriptor) (pds : propdefs)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((expr_object_3_get (l : object_loc) (x : string) ((out_ter (S : state) (v : res)) : out) (pds : propdefs)) : ext_expr) (o : out))
 
@@ -1116,17 +1116,17 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
   | red_expr_object_3_set :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (pds : propdefs (* input *)) (o : out),
         (* ========================================== *)
-        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((attributes_accessor_intro (undef : value) (v : value) (true : bool) (true : bool)) : attributes) : attributes) (pds : propdefs)) : ext_expr) (o : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (((descriptor_intro (None : (option value)) (None : (option bool)) (None : (option value)) ((Some v) : (option value)) ((Some true) : (option bool)) ((Some true) : (option bool))) : descriptor) : descriptor) (pds : propdefs)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((expr_object_3_set (l : object_loc) (x : string) ((out_ter (S : state) (v : res)) : out) (pds : propdefs)) : ext_expr) (o : out))
 
   | red_expr_object_4 :
-      forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (pds : propdefs (* input *)) (o : out) (o1 : out),
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (Desc : descriptor (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (pds : propdefs (* input *)) (o : out) (o1 : out),
         (* ========================================== *)
-        (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop (l : object_loc) (x : prop_name) (A : descriptor) (false : bool)) : ext_expr) (o1 : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop (l : object_loc) (x : prop_name) (Desc : descriptor) (false : bool)) : ext_expr) (o1 : out)) ->
         (red_expr (S : state) (C : execution_ctx) ((expr_object_5 (l : object_loc) (pds : propdefs) (o1 : out)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
-        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (A : attributes) (pds : propdefs)) : ext_expr) (o : out))
+        (red_expr (S : state) (C : execution_ctx) ((expr_object_4 (l : object_loc) (x : string) (Desc : descriptor) (pds : propdefs)) : ext_expr) (o : out))
 
   | red_expr_object_5 :
       forall (S : state (* input *)) (S0 : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)) (l : object_loc (* input *)) (pds : propdefs (* input *)) (o : out),
@@ -1405,7 +1405,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_expr_delete_1_not_ref :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (rv : resvalue (* input *)),
-        (resvalue_is_ref (rv : resvalue)) ->
+        (~ (resvalue_is_ref (rv : resvalue))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((expr_delete_1 ((out_ter (S : state) (rv : res)) : out)) : ext_expr) ((out_ter (S : state) (true : res)) : out))
@@ -1504,7 +1504,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_expr_typeof_1_ref_resolvable :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (r : ref (* input *)) (y1 : (specret value)) (o : out),
-        (ref_is_unresolvable (r : ref)) ->
+        (~ (ref_is_unresolvable (r : ref))) ->
         (* ========================================== *)
         (red_spec S C (spec_get_value (r : resvalue)) y1) ->
         (red_expr (S : state) (C : execution_ctx) ((expr_typeof_2 (y1 : (specret value))) : ext_expr) (o : out)) ->
@@ -1615,7 +1615,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_expr_binary_op_add_1_number :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (v1 : value (* input *)) (v2 : value (* input *)) (y1 : (specret (value * value))) (o : out),
-        ((((type_of v1) = type_string) : Prop) \/ (((type_of v2) = type_string) : Prop)) ->
+        (~ ((((type_of v1) = type_string) : Prop) \/ (((type_of v2) = type_string) : Prop))) ->
         (* ========================================== *)
         (red_spec S C (spec_convert_twice ((spec_to_number (v1 : value)) : ext_expr) ((spec_to_number (v2 : value)) : ext_expr)) y1) ->
         (red_expr (S : state) (C : execution_ctx) ((expr_puremath_op_1 (JsNumber.add : (number -> (number -> number))) (y1 : (specret (value * value)))) : ext_expr) (o : out)) ->
@@ -2061,7 +2061,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_to_object_prim :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (w : prim (* input *)) (o : out),
-        (((w = prim_undef) : Prop) \/ ((w = prim_null) : Prop)) ->
+        (~ (((w = prim_undef) : Prop) \/ ((w = prim_null) : Prop))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_prim_new_object (w : prim)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2083,7 +2083,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_check_object_coercible_return :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)),
-        (((v = prim_undef) : Prop) \/ ((v = prim_null) : Prop)) ->
+        (~ (((v = prim_undef) : Prop) \/ ((v = prim_null) : Prop))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_check_object_coercible (v : value)) : ext_expr) ((out_void (S : state)) : out))
@@ -2528,7 +2528,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_3_not_include :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out) (bext : bool (* input *)),
-        (descriptor_contains A Desc) ->
+        (~ (descriptor_contains A Desc)) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop_4 (l : object_loc) (x : prop_name) (A : attributes) (Desc : descriptor) (throw : bool)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2544,7 +2544,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_4_not_reject :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_enumerable_on_non_configurable (A : attributes) (Desc : descriptor)) ->
+        (~ (attributes_change_enumerable_on_non_configurable (A : attributes) (Desc : descriptor))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop_5 (l : object_loc) (x : prop_name) (A : attributes) (Desc : descriptor) (throw : bool)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2601,7 +2601,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_6b_false_accept :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Ad : attributes_data (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_data_on_non_configurable (Ad : attributes_data) (Desc : descriptor)) ->
+        (~ (attributes_change_data_on_non_configurable (Ad : attributes_data) (Desc : descriptor))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop_write (l : object_loc) (x : prop_name) (Ad : attributes) (Desc : descriptor) (throw : bool)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2625,7 +2625,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_6c_2 :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Aa : attributes_accessor (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (o : out),
-        (attributes_change_accessor_on_non_configurable (Aa : attributes_accessor) (Desc : descriptor)) ->
+        (~ (attributes_change_accessor_on_non_configurable (Aa : attributes_accessor) (Desc : descriptor))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop_write (l : object_loc) (x : prop_name) (Aa : attributes) (Desc : descriptor) (throw : bool)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2749,7 +2749,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_env_record_create_mutable_binding_1_decl_indom :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (deletable : bool (* input *)) (Ed : decl_env_record (* input *)),
-        (decl_env_record_indom (Ed : decl_env_record) (x : string)) ->
+        (~ (decl_env_record_indom (Ed : decl_env_record) (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_env_record_create_mutable_binding_1 (L : env_loc) (x : prop_name) (deletable : bool) ((env_record_decl (Ed : decl_env_record)) : env_record)) : ext_expr) ((out_void (((env_record_write_decl_env S L x (mutability_of_bool (deletable : bool)) undef) : state) : state)) : out))
@@ -2796,7 +2796,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
   | red_spec_env_record_set_mutable_binding_1_decl_non_mutable :
       forall (v_old : value) (mu : mutability) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)) (str : strictness_flag (* input *)) (Ed : decl_env_record (* input *)) (o : out),
         (decl_env_record_binds (Ed : decl_env_record) (x : string) (mu : mutability) (v_old : value)) ->
-        (mutability_is_mutable (mu : mutability)) ->
+        (~ (mutability_is_mutable (mu : mutability))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_error_or_void (str : bool) (native_error_type : native_error)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -2874,7 +2874,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_env_record_delete_binding_1_decl_not_indom :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)) (Ed : decl_env_record (* input *)),
-        (decl_env_record_indom (Ed : decl_env_record) (x : string)) ->
+        (~ (decl_env_record_indom (Ed : decl_env_record) (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_env_record_delete_binding_1 (L : env_loc) (x : prop_name) ((env_record_decl (Ed : decl_env_record)) : env_record)) : ext_expr) ((out_ter (S : state) (true : res)) : out))
@@ -2909,7 +2909,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
   | red_spec_env_record_create_immutable_binding :
       forall (Ed : decl_env_record) (S : state (* input *)) (C : execution_ctx (* input *)) (L : env_loc (* input *)) (x : prop_name (* input *)),
         (env_record_binds (S : state) (L : env_loc) ((env_record_decl (Ed : decl_env_record)) : env_record)) ->
-        (decl_env_record_indom (Ed : decl_env_record) (x : string)) ->
+        (~ (decl_env_record_indom (Ed : decl_env_record) (x : string))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_env_record_create_immutable_binding (L : env_loc) (x : prop_name)) : ext_expr) ((out_void (((env_record_write_decl_env S L x mutability_uninitialized_immutable undef) : state) : state)) : out))
@@ -3146,7 +3146,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_binding_inst_function_decls_3a_no_error :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (args : (list value) (* input *)) (fd : funcdecl (* input *)) (fds : (list funcdecl) (* input *)) (str : strictness_flag (* input *)) (fo : object_loc (* input *)) (A : attributes (* input *)) (bconfig : bool (* input *)) (o : out),
-        ((((descriptor_is_accessor A) \/ ((attributes_writable A) = false)) : Prop) \/ (((attributes_enumerable A) = false) : Prop)) ->
+        (~ ((((descriptor_is_accessor A) \/ ((attributes_writable A) = false)) : Prop) \/ (((attributes_enumerable A) = false) : Prop))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_binding_inst_function_decls_5 (args : (list value)) (env_loc_global_env_record : env_loc) (fd : funcdecl) (fds : (list funcdecl)) (str : strictness_flag) (fo : object_loc) (bconfig : bool)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -3315,7 +3315,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_binding_inst_6_no_arguments :
       forall (L : env_loc (* input *)) (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (ct : codetype (* input *)) (olf : (option object_loc) (* input *)) (code : prog (* input *)) (xs : (list prop_name) (* input *)) (args : (list value) (* input *)) (bconfig : bool (* input *)) (bdefined : res (* input *)) (o : out),
-        (((ct = codetype_func) : Prop) /\ ((bdefined = false) : Prop)) ->
+        (~ (((ct = codetype_func) : Prop) /\ ((bdefined = false) : Prop))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_binding_inst_8 (code : prog) (bconfig : bool) (L : env_loc)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -3405,7 +3405,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_args_obj_2_true_not_acc_some :
       forall (v : value) (o1 : out) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (lmap : object_loc (* input *)) (A : attributes (* input *)) (S' : state (* input *)) (o : out),
-        (descriptor_is_accessor (Desc : descriptor)) ->
+        (~ (descriptor_is_accessor (Desc : descriptor))) ->
         ((descriptor_value (Desc : descriptor)) = ((Some v) : (option value))) ->
         (* ========================================== *)
         (red_expr (S' : state) (C : execution_ctx) ((spec_object_put ((value_object (lmap : object_loc)) : value) (x : prop_name) (v : value) (throw : bool)) : ext_expr) (o1 : out)) ->
@@ -3422,7 +3422,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_object_define_own_prop_args_obj_2_true_not_acc_none :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (Desc : descriptor (* input *)) (throw : bool (* input *)) (lmap : object_loc (* input *)) (A : attributes (* input *)) (S' : state (* input *)) (o : out),
-        (descriptor_is_accessor (Desc : descriptor)) ->
+        (~ (descriptor_is_accessor (Desc : descriptor))) ->
         ((descriptor_value (Desc : descriptor)) = (None : (option value))) ->
         (* ========================================== *)
         (red_expr (S' : state) (C : execution_ctx) ((spec_args_obj_define_own_prop_4 (l : object_loc) (x : prop_name) (Desc : descriptor) (throw : bool) (lmap : object_loc)) : ext_expr) (o : out)) ->
@@ -3755,7 +3755,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_default_2_body :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (bd : _ (* input *)) (o1 : out) (o : out),
-        (funcbody_empty bd) ->
+        (~ (funcbody_empty bd)) ->
         (* ========================================== *)
         (red_prog (S : state) (C : execution_ctx) ((funcbody_prog bd) : ext_prog) (o1 : out)) ->
         (red_expr (S : state) (C : execution_ctx) ((spec_call_default_3 (o1 : out)) : ext_expr) (o : out)) ->
@@ -4299,6 +4299,14 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_seal_2 (l : object_loc) ((x :: (xs : (list prop_name))) : (list prop_name))) : ext_expr) (o : out))
 
+  | red_spec_call_object_seal_3 :
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (xs : (list prop_name) (* input *)) (x : prop_name (* input *)) (A : attributes (* input *)) (o1 : out) (o : out),
+        (* ========================================== *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_object_define_own_prop (l : object_loc) (x : prop_name) ((descriptor_of_attributes ((ifb (attributes_configurable (A : attributes)) then ((attributes_with_configurable A false) : attributes) else A) : attributes)) : descriptor) (throw_true : bool)) : ext_expr) (o1 : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((spec_call_object_seal_4 (l : object_loc) (xs : (list prop_name)) (o1 : out)) : ext_expr) (o : out)) ->
+        (* ------------------------------------------ *)
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_call_object_seal_3 (l : object_loc) (x : prop_name) (xs : (list prop_name)) ((specret_val (S : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
+
   | red_spec_call_object_seal_4 :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (xs : (list prop_name) (* input *)) (b : bool (* input *)) (o : out),
         (* ========================================== *)
@@ -4350,7 +4358,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_freeze_4 (l : object_loc) (x : prop_name) (xs : (list prop_name)) (match A return attributes with (attributes_data_of Ad) => (attributes_data_of ((ifb (attributes_data_writable (Ad : attributes_data)) then ((attributes_data_with_writable Ad false) : attributes_data) else Ad) : attributes_data)) | (attributes_accessor_of Aa) => (attributes_accessor_of (Aa : attributes_accessor)) end : full_descriptor)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
-        (red_expr (S : state) (C : execution_ctx) ((spec_call_object_freeze_3 (l : object_loc) (x : prop_name) (xs : (list prop_name)) ((specret_val (S0 : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_call_object_freeze_3 (l : object_loc) (x : prop_name) (xs : (list prop_name)) ((specret_val (S : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
 
   | red_spec_call_object_freeze_4 :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (o1 : out) (o : out),
@@ -4442,7 +4450,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_sealed_2 (l : object_loc) (xs : (list prop_name))) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
-        (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_sealed_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S0 : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_call_object_is_sealed_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
 
   | red_spec_call_object_is_sealed_2_nil :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (b : bool),
@@ -4485,19 +4493,19 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_object_is_frozen_3_desc_is_data :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (o : out),
-        ((attributes_is_data (A : attributes)) = (true : Prop)) ->
+        (attributes_is_data (A : attributes)) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_frozen_4 (l : object_loc) (xs : (list prop_name)) (A : full_descriptor)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
-        (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_frozen_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S0 : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_call_object_is_frozen_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
 
   | red_spec_call_object_is_frozen_3_desc_is_not_data :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)) (o : out),
-        ((attributes_is_data (A : attributes)) = (false : Prop)) ->
+        (~ (attributes_is_data (A : attributes))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_frozen_5 (l : object_loc) (xs : (list prop_name)) (A : full_descriptor)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
-        (red_expr (S : state) (C : execution_ctx) ((spec_call_object_is_frozen_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S0 : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_call_object_is_frozen_3 (l : object_loc) (xs : (list prop_name)) ((specret_val (S : state) (A : full_descriptor)) : (specret full_descriptor))) : ext_expr) (o : out))
 
   | red_spec_call_object_is_frozen_4_prop_is_writable :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (A : attributes (* input *)) (xs : (list prop_name) (* input *)) (l : object_loc (* input *)),
@@ -4580,7 +4588,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_object_proto_to_string_1_other :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o : out) (o1 : out),
-        (((v = null) : Prop) \/ ((v = undef) : Prop)) ->
+        (~ (((v = null) : Prop) \/ ((v = undef) : Prop))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_to_object (v : value)) : ext_expr) (o1 : out)) ->
         (red_expr (S : state) (C : execution_ctx) ((spec_call_object_proto_to_string_2 (o1 : out)) : ext_expr) (o : out)) ->
@@ -4764,7 +4772,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_function_get_1_normal :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (x : prop_name (* input *)) (v : value (* input *)),
-        (spec_function_get_error_case (S : state) (x : prop_name) (v : value)) ->
+        (~ (spec_function_get_error_case (S : state) (x : prop_name) (v : value))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((spec_function_get_1 (l : object_loc) (x : prop_name) ((out_ter (S : state) (v : res)) : out)) : ext_expr) ((out_ter (S : state) (v : res)) : out))
@@ -5036,6 +5044,42 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (* ------------------------------------------ *)
         (red_expr (S0 : state) (C : execution_ctx) ((spec_call_array_proto_push_6 (vlen : value) ((out_ter (S : state) (r0 : res)) : out)) : ext_expr) ((out_ter (S : state) (vlen : res)) : out))
 
+  | red_spec_construct_string_non_empty :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value) (args : (list value) (* input *)) (o : out),
+        (args <> nil) ->
+        (arguments_from (args : (list value)) ((v :: (nil : (list value))) : (list value))) ->
+        (* ========================================== *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_string_1 (v : value)) : ext_expr) (o : out)) ->
+        (* ------------------------------------------ *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_prealloc (prealloc_string : prealloc) (args : (list value))) : ext_expr) (o : out))
+
+  | red_spec_construct_string_empty :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value) (o : out),
+        (* ========================================== *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_string_2 ((out_ter (S : state) ((("")%string) : res)) : out)) : ext_expr) (o : out)) ->
+        (* ------------------------------------------ *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_prealloc (prealloc_string : prealloc) (nil : (list value))) : ext_expr) (o : out))
+
+  | red_spec_construct_string_1 :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (v : value (* input *)) (o' : out) (o : out),
+        (* ========================================== *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_to_string (v : value)) : ext_expr) (o' : out)) ->
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_string_2 (o' : out)) : ext_expr) (o : out)) ->
+        (* ------------------------------------------ *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_string_1 (v : value)) : ext_expr) (o : out))
+
+  | red_spec_construct_string_2 :
+      forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (s : string (* input *)) (O : object),
+        ((object_proto_ (O : object)) = (prealloc_string_proto : value)) ->
+        ((object_class_ (O : object)) = ((("String")%string) : class_name)) ->
+        ((object_extensible_ (O : object)) = (true : bool)) ->
+        ((object_prim_value_ (O : object)) = ((Some (s : value)) : (option value))) ->
+        ((object_get_own_prop_ (O : object)) = (builtin_get_own_prop_string : builtin_get_own_prop)) ->
+        (Heap.binds ((object_properties_ (O : object)) : object_properties_type) ((("length")%string) : prop_name) (((attributes_data_intro_constant ((String.length s) : value)) : attributes) : attributes)) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red_expr (S0 : state) (C : execution_ctx) ((spec_construct_string_2 ((out_ter (S : state) (s : res)) : out)) : ext_expr) ((out_ter ((snd ((object_alloc S O) : (object_loc * state))) : state) ((fst ((object_alloc S O) : (object_loc * state))) : res)) : out))
+
   | red_spec_call_string_proto_to_string :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (vthis : value (* input *)) (args : (list value) (* input *)) (o : out),
         (* ========================================== *)
@@ -5059,7 +5103,7 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
 
   | red_spec_call_string_proto_value_of_obj_other :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (args : (list value) (* input *)) (o : out),
-        (object_class (S : state) (l : object_loc) ((("String")%string) : string)) ->
+        (~ (object_class (S : state) (l : object_loc) ((("String")%string) : string))) ->
         (* ========================================== *)
         (red_expr (S : state) (C : execution_ctx) ((spec_error (native_error_type : native_error)) : ext_expr) (o : out)) ->
         (* ------------------------------------------ *)
@@ -5379,6 +5423,20 @@ with red_expr : state (* input *) -> execution_ctx (* input *) -> ext_expr (* in
         (* ------------------------------------------ *)
         (red_expr (S : state) (C : execution_ctx) ((spec_construct_prealloc ((prealloc_native_error (ne : native_error)) : prealloc) (args : (list value))) : ext_expr) (o : out))
 
+  | red_spec_construct_implementation :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (B : prealloc (* input *)) (args : (list value) (* input *)) (o : out),
+        (implementation_prealloc (B : prealloc)) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_construct_prealloc (B : prealloc) (args : (list value))) : ext_expr) (o : out))
+
+  | red_spec_call_implementation :
+      forall (S : state (* input *)) (C : execution_ctx (* input *)) (B : prealloc (* input *)) (vthis : value (* input *)) (args : (list value) (* input *)) (o : out),
+        (implementation_prealloc (B : prealloc)) ->
+        (* ========================================== *)
+        (* ------------------------------------------ *)
+        (red_expr (S : state) (C : execution_ctx) ((spec_call_prealloc (B : prealloc) (vthis : value) (args : (list value))) : ext_expr) (o : out))
+
 
 with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *) -> ext_spec (* input *) -> (specret T) -> Prop :=
 
@@ -5386,7 +5444,7 @@ with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (exts : ext_spec (* input *)) (T : _) (o : out),
         ((out_of_ext_spec (exts : ext_spec)) = ((Some o) : (option out))) ->
         (abort (o : out)) ->
-        (abort_intercepted_spec (exts : ext_spec)) ->
+        (~ (abort_intercepted_spec (exts : ext_spec))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_spec S C exts (@specret_out T o))
@@ -5659,7 +5717,7 @@ with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *
 
   | red_spec_to_descriptor_5c_ok :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (v : value (* input *)) (Desc : descriptor (* input *)) (y : (specret descriptor)),
-        ((((is_callable S v) = false) : Prop) /\ ((v <> undef) : Prop)) ->
+        (~ ((((is_callable S v) = false) : Prop) /\ ((v <> undef) : Prop))) ->
         (* ========================================== *)
         (red_spec S C (spec_to_descriptor_6a (l : object_loc) (((descriptor_with_get Desc (Some v)) : descriptor) : descriptor)) y) ->
         (* ------------------------------------------ *)
@@ -5698,7 +5756,7 @@ with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *
 
   | red_spec_to_descriptor_6c_ok :
       forall (S0 : state (* input *)) (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (v : value (* input *)) (Desc : descriptor (* input *)) (y : (specret descriptor)),
-        ((((is_callable S v) = false) : Prop) /\ ((v <> undef) : Prop)) ->
+        (~ ((((is_callable S v) = false) : Prop) /\ ((v <> undef) : Prop))) ->
         (* ========================================== *)
         (red_spec S C (spec_to_descriptor_7 (l : object_loc) (((descriptor_with_set Desc (Some v)) : descriptor) : descriptor)) y) ->
         (* ------------------------------------------ *)
@@ -5714,7 +5772,7 @@ with red_spec : forall {T : Type}, state (* input *) -> execution_ctx (* input *
 
   | red_spec_to_descriptor_7_ok :
       forall (S : state (* input *)) (C : execution_ctx (* input *)) (l : object_loc (* input *)) (Desc : descriptor (* input *)),
-        (descriptor_inconsistent (Desc : descriptor)) ->
+        (~ (descriptor_inconsistent (Desc : descriptor))) ->
         (* ========================================== *)
         (* ------------------------------------------ *)
         (red_spec S C (spec_to_descriptor_7 (l : object_loc) (Desc : descriptor)) (ret S Desc))
