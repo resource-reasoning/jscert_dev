@@ -90,6 +90,7 @@ var %FunctionSetLength = __functionSetLength;
 
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
 var InternalArray = __InternalArray;
+InternalArray.prototype.hasOwnProperty = Object.prototype.hasOwnProperty;
 var InternalPackedArray = {};
 InternalPackedArray.prototype = {};
 function %SpecialArrayFunctions() {
