@@ -10,9 +10,6 @@
 (*                                                                     *)
 (***********************************************************************)
 
-(* ARTHUR *) (*: For compilation using older versions of CAML *)
-type bytes = string
-
 
 (* Miscellaneous useful types and functions *)
 
