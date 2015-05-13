@@ -12,7 +12,9 @@ OCAMLBUILD := ocamlbuild -r -j 4 -classic-display \
 
 all: main.byte
 
-main.byte:
+force:
+
+main.byte: force
 	$(OCAMLBUILD) main.byte
 
 native:
