@@ -384,7 +384,7 @@ def jsRefArgBuilder(filename):
     arglist.append("-test_prelude")
     arglist.append(os.path.join("interp","test_prelude.js"))
     arglist.append("-test_prelude") #CONRAD
-    arglist.append("tests/new_extra_coverage/ch15/setup_properties.js")
+    arglist.append("tests/extra_coverage/ch15/setup_properties.js")
     if filename.startswith(os.path.join(os.getcwd(),"tests/LambdaS5/unit-tests/")):
         arglist.append("-test_prelude")
         arglist.append("tests/LambdaS5/lambda-pre.js")
