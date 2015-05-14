@@ -89,6 +89,7 @@ var %GetPrototype = __getPrototype;
 var %FunctionSetLength = __functionSetLength;
 
 var ObjectGetOwnPropDesc = Object.getOwnPropertyDescriptor;
+var ObjectDefineProperty = Object.defineProperty;
 var InternalArray = __InternalArray;
 InternalArray.prototype.hasOwnProperty = Object.prototype.hasOwnProperty;
 var InternalPackedArray = {};
@@ -279,12 +280,20 @@ function %PushIfAbsent(list, elem) {
 function %MoveArrayContents(old_array, array) {
   var len = old_array.length;
   for(var i = 0; i < len; i++) {
-    array[i] = old_array[i];
+    try {
+      ObjectDefineProperty(array, i, {
+        value: old_array[i], writable: true, enumerable: true, configurable: true
+      });
+    } catch(e) {}
   }
   var j = len;
 //  while(ObjectProtoHasOwnProp(old_array,String(j))) {
   while(old_array.hasOwnProperty(String(j))) {
-    array[j] = old_array[j];
+    try {
+      ObjectDefineProperty(array, j, {
+        value: old_array[j], writable: true, enumerable: true, configurable: true
+      });
+    } catch(e) {}
     j++;
   }
 }
