@@ -235,7 +235,7 @@ function TO_UINT32(x) {
   if(num >= 0) {
     return num;
   }
-  return 4294967296 - num;
+  return 4294967296 + num;
 }
 
 function ToUint32(x) {
