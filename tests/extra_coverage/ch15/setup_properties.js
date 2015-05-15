@@ -797,7 +797,7 @@ function ArrayJoin(separator) {
   if (IS_UNDEFINED(separator)) {
     separator = ',';
   } else if (!IS_STRING(separator)) {
-    separator = NonStringToString(separator);
+    separator = %ToString(separator);
   }
 
   var result = %_FastAsciiArrayJoin(array, separator);
