@@ -154,6 +154,32 @@ function %DefaultToString(x) {
   return String(x);
 }
 
+// Returns if the given x is a primitive value - not an object or a
+// function.
+function %IsPrimitive(x) {
+  // Even though the type of null is "object", null is still
+  // considered a primitive value. IS_SPEC_OBJECT handles this correctly
+  // (i.e., it will return false if x is null).
+  return !IS_SPEC_OBJECT(x);
+}
+
+function %DefaultString(x) {
+  //if (!IS_SYMBOL_WRAPPER(x)) { // ES6
+    var toString = x.toString;
+    if (IS_SPEC_FUNCTION(toString)) {
+      var s = %_CallFunction(x, toString);
+      if (%IsPrimitive(s)) return s;
+    }
+
+    var valueOf = x.valueOf;
+    if (IS_SPEC_FUNCTION(valueOf)) {
+      var v = %_CallFunction(x, valueOf);
+      if (%IsPrimitive(v)) return v;
+    }
+  //}
+  throw MakeTypeError("%DefaultString: cannot convert to primitive");
+}
+
 function %ToString(x) {
   return String(x);
 }
