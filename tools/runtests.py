@@ -1,6 +1,6 @@
 #!/usr/bin/env python2
 
-from main import Runtests
+from runtest.main import Runtests
 
 if __name__ == "__main__":
     Runtests().main()
