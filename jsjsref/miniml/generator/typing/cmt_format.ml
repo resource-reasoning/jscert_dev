@@ -19,8 +19,6 @@ open Typedtree
    integrated in Typerex).
 *)
 
-
-
 let read_magic_number ic =
   let len_magic_number = String.length Config.cmt_magic_number in
   really_input_string ic len_magic_number
