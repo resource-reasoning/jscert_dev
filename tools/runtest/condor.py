@@ -88,7 +88,7 @@ class Condor(Executor):
             c['log'] = "job_%s_condor_$(Cluster).log" % job._dbid
 
         jobstr = '\n'.join('%s = %s\n' % (k, v) for (k, v) in c.iteritems())
-        jobstr.append('\nqueue %s' % n)
+        jobstr += '\nqueue %s' % n
 
         return jobstr
 
