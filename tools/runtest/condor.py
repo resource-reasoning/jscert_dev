@@ -126,8 +126,8 @@ class Condor(Executor):
                 arguments.append("--%s" % arg)
                 if not isinstance(val, bool):
                     # Condor is picky about quote types
-                    val = val.replace("'", "''")
-                    arguments.append("'%s'" % val)
+                    v = str(val).replace("'", "''")
+                    arguments.append("'%s'" % v)
 
         # Executor to use for batches
         arguments.append("-x")
