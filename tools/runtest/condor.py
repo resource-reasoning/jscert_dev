@@ -100,9 +100,10 @@ class Condor(Executor):
         p = subprocess.Popen(['condor_submit', '-'], stdin=subprocess.PIPE,
                              stdout=subprocess.PIPE, stderr=sys.stderr)
         (out, err) = p.communicate(jobstr)
+        print(out)
         match = re.search(r'\d+ job\(s\) submitted to cluster (\d+)\.', out)
         if match:
-            return match.groups(0)
+            return match.group(1)
         return 0
 
     def build_arguments(self, job):
