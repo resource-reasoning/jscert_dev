@@ -97,11 +97,11 @@ class Condor(Executor):
             f.writelines(jobstr)
 
     def submit_job(self, jobstr):
-        p = subprocess.Popen(['condor_submit', '-'], stdin=subprocess.PIPE,
-                             stdout=subprocess.PIPE, stderr=sys.stderr)
+        p = subprocess.Popen(['condor_submit', '-terse', '-'],
+                             stdin=subprocess.PIPE, stdout=subprocess.PIPE,
+                             stderr=sys.stderr)
         (out, err) = p.communicate(jobstr)
-        print(out)
-        match = re.search(r'\d+ job\(s\) submitted to cluster (\d+)\.', out)
+        match = re.search(r'(\d+)\.\d+ - \d+\.\d+', out)
         if match:
             return match.group(1)
         return 0
