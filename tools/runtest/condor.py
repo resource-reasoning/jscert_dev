@@ -54,7 +54,7 @@ class Condor(Executor):
             self.write_cmd(jobstr)
             job.condor_scheduler = "condor.cmd file"
         else:
-            job.condor_cluster = self.sub_exec(jobstr)
+            job.condor_cluster = self.submit_job(jobstr)
             job.condor_scheduler = os.uname()[1]
 
         print("Submitted %s batches as cluster %s on %s. Test job id: %s" %
