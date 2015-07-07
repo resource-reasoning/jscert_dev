@@ -1,6 +1,9 @@
 """Condor scheduler support for test running"""
 from __future__ import print_function
 import logging
+import os
+import re
+import subprocess
 import sys
 
 from .db import DBManager
@@ -43,20 +46,28 @@ class Condor(Executor):
 
     def run_job(self, job):
         # Submit job to Condor?
+        jobstr = self.build_job(job)
+
         print("Submitting to Condor Scheduler")
-        n = self.condor_submit(job)
+
+        if False:
+            self.write_cmd(jobstr)
+            job.condor_scheduler = "condor.cmd file"
+        else:
+            job.condor_cluster = self.sub_exec(jobstr)
+            job.condor_scheduler = os.uname()[1]
+
         print("Submitted %s batches as cluster %s on %s. Test job id: %s" %
-              (n, job.condor_cluster, job.condor_scheduler, job._dbid))
+              (len(job.batches), job.condor_cluster, job.condor_scheduler, job._dbid))
 
         if self.__dbmanager__:
             self.__dbmanager__.update_object(job)
             self.__dbmanager__.disconnect()
         exit(0)
 
-    def condor_submit(self, job):
+    def build_job(self, job):
         # Batch and testcase information :: What to run
-        batches = job.batches
-        n = len(batches)
+        n = len(job.batches)
 
         c = {
             'universe': 'vanilla',
@@ -76,15 +87,23 @@ class Condor(Executor):
         if self.log_job:
             c['log'] = "job_%s_condor_$(Cluster).log" % job._dbid
 
-        # Submit
+        jobstr = '\n'.join('%s = %s\n' % (k, v) for (k, v) in c.iteritems())
+        jobstr.append('\nqueue %s' % n)
+
+        return jobstr
+
+    def write_cmd(self, jobstr):
         with open('condor.cmd', 'w') as f:
-            f.writelines('%s = %s\n' % (k,v) for (k,v) in c.iteritems())
-            f.write('queue %s' % n)
+            f.writelines(jobstr)
 
-        job.condor_scheduler = ""
-        job.condor_cluster = 0 #TODO: parse from output
-
-        return n
+    def submit_job(self, jobstr):
+        p = subprocess.Popen(['condor_submit', '-'], stdin=subprocess.PIPE,
+                             stdout=subprocess.PIPE, stderr=sys.stderr)
+        (out, err) = p.communicate(jobstr)
+        match = re.search(r'\d+ job\(s\) submitted to cluster (\d+)\.', out)
+        if match:
+            return match.groups(0)
+        return 0
 
     def build_arguments(self, job):
         # Build argument string
