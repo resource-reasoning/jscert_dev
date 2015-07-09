@@ -3181,7 +3181,6 @@ Qed.
 Lemma red_expr_array_3_object_loc_eq : forall ElementList S S' C l l' k,
   red_expr S C (expr_array_3 l ElementList k) (out_ter S' l') -> l = l'.
 Proof.
-(*
   induction ElementList using (measure_induction length).
   destruct ElementList; introv Hyp.
 
@@ -3204,8 +3203,7 @@ Proof.
         rewrite H3. rew_length.
         destruct Elision. rewrite app_nil_l in H3.
         inverts H3. rew_length; nat_math.
-*)
-Admitted. 
+Admitted. (*faster*)
 
 Lemma run_array_element_list_correct : forall runs S C l oes o k,
   runs_type_correct runs ->
@@ -5145,7 +5143,7 @@ Proof.
   let_name. applys* red_spec_call_array_is_array_prep_1.
   applys* get_arg_correct_0.
   destruct arg. 
-    inverts HR. applys* red_spec_call_array_is_array_1. 
+    inverts HR. apply red_spec_call_array_is_array_1 with (l := object_loc_normal 0). 
     rewrite <- EQarg. discriminate.
     run. apply run_object_method_correct in E. 
     applys* red_spec_call_array_is_array_prep_2_3.
