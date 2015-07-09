@@ -70,6 +70,32 @@ Inductive ext_expr :=
   | expr_object_4 : object_loc -> string -> descriptor -> propdefs -> ext_expr
   | expr_object_5 : object_loc -> propdefs -> out -> ext_expr
 
+
+
+
+
+  (* _ARRAYS_ : support for array intermediate forms *)
+  | expr_array_0 : out -> list (option expr) -> ext_expr
+  | expr_array_1 : object_loc -> list (option expr) -> ext_expr
+  | expr_array_2 : object_loc -> list (option expr) -> int -> ext_expr
+  | expr_array_3 : object_loc -> list (option expr) -> int -> ext_expr
+  | expr_array_3_1 : object_loc -> specret value -> list (option expr) -> int -> ext_expr
+  | expr_array_3_2 : object_loc -> value -> out -> list (option expr) -> int -> ext_expr
+  | expr_array_3_3 : object_loc -> value -> specret int -> list (option expr) -> int -> ext_expr
+  | expr_array_3_4 : object_loc -> value -> out -> list (option expr) -> ext_expr
+  | expr_array_3_5 : object_loc -> out -> list (option expr) -> ext_expr
+
+  | expr_array_add_length   : object_loc -> int -> out -> ext_expr
+  | expr_array_add_length_0 : object_loc -> int -> ext_expr
+  | expr_array_add_length_1 : object_loc -> int -> out -> ext_expr
+  | expr_array_add_length_2 : object_loc -> specret int -> int -> ext_expr
+  | expr_array_add_length_3 : object_loc -> specret int -> ext_expr
+  | expr_array_add_length_4 : object_loc -> out -> ext_expr
+
+
+
+
+
   | expr_function_1 : string -> list string -> funcbody -> env_loc -> lexical_env -> out -> ext_expr
   | expr_function_2 : string -> env_loc -> out -> ext_expr
   | expr_function_3 : object_loc -> out -> ext_expr
@@ -216,6 +242,34 @@ Inductive ext_expr :=
   | spec_prim_value_put : value -> prop_name -> value -> bool -> ext_expr
   | spec_prim_value_put_1 : prim -> prop_name -> value -> bool -> out -> ext_expr
 
+  (* ARRAYS *)
+  | spec_object_define_own_prop_array_2 : object_loc -> prop_name -> descriptor -> bool -> (specret full_descriptor) -> ext_expr
+  | spec_object_define_own_prop_array_2_1 : object_loc -> prop_name -> descriptor -> bool -> descriptor -> value -> ext_expr
+  | spec_object_define_own_prop_array_branch_3_4 : object_loc -> prop_name -> descriptor -> bool -> descriptor -> (specret int) -> ext_expr
+  | spec_object_define_own_prop_array_branch_4_5   : object_loc -> prop_name -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_branch_4_5_a : object_loc -> prop_name -> (specret int) -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_branch_4_5_b : object_loc -> prop_name -> int -> out -> descriptor -> bool -> descriptor -> int -> ext_expr 
+  | spec_object_define_own_prop_array_4a : object_loc -> prop_name -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_4b : object_loc -> prop_name -> (specret int) -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_4c : object_loc -> int -> descriptor -> bool -> int -> descriptor -> out -> ext_expr
+  | spec_object_define_own_prop_array_5  : object_loc -> prop_name -> descriptor -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3 : object_loc -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_3c : object_loc -> value -> (specret int) -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_3d_e : object_loc -> out -> int -> descriptor -> bool -> descriptor -> int -> ext_expr
+  | spec_object_define_own_prop_array_3f_g : object_loc -> int -> int -> descriptor -> bool -> descriptor -> ext_expr
+  | spec_object_define_own_prop_array_3h_i : object_loc -> int -> int -> descriptor -> bool -> descriptor -> ext_expr
+  | spec_object_define_own_prop_array_3j : object_loc -> int -> int -> descriptor -> bool -> bool -> descriptor -> ext_expr
+  | spec_object_define_own_prop_array_3k_l : object_loc -> out -> int -> int -> descriptor -> bool -> bool -> descriptor -> ext_expr
+  | spec_object_define_own_prop_array_3l : object_loc -> int -> int -> descriptor -> bool -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3l_ii : object_loc -> int -> int -> descriptor -> bool -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3l_ii_1 : object_loc -> int -> int -> descriptor -> bool -> bool -> out -> ext_expr
+  | spec_object_define_own_prop_array_3l_ii_2 : object_loc -> int -> int -> descriptor -> bool -> bool -> out -> ext_expr
+  | spec_object_define_own_prop_array_3l_iii_1 : object_loc -> int -> descriptor -> bool -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3l_iii_2 : object_loc -> descriptor -> bool -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3l_iii_3 : object_loc -> descriptor -> bool -> ext_expr
+  | spec_object_define_own_prop_array_3l_iii_4 : object_loc -> bool -> out -> ext_expr
+  | spec_object_define_own_prop_array_3m_n : object_loc -> bool -> ext_expr
+
   (** Extended expressions for operations on references *)
   | spec_put_value : resvalue -> value -> ext_expr
 
@@ -347,7 +401,27 @@ Inductive ext_expr :=
   | spec_function_has_instance_2 : object_loc -> object_loc -> ext_expr
   | spec_function_has_instance_3 : object_loc -> value -> ext_expr
 
+  | spec_function_has_instance_after_bind_1 : object_loc -> value -> ext_expr
+  | spec_function_has_instance_after_bind_2 : object_loc -> value  -> ext_expr
+
   | spec_function_get_1 : object_loc -> prop_name -> out -> ext_expr
+
+  (* Function.prototype.apply *)
+
+  | spec_function_proto_apply   : object_loc -> value -> value -> ext_expr
+  | spec_function_proto_apply_1 : object_loc -> value -> object_loc -> out -> ext_expr   
+  | spec_function_proto_apply_2 : object_loc -> value -> object_loc -> specret int -> ext_expr
+  | spec_function_proto_apply_3 : object_loc -> value -> specret (list value) -> ext_expr 
+
+  (* Function.prototype.bind *)
+
+  | spec_function_proto_bind_1 : object_loc -> value -> list value -> ext_expr
+  | spec_function_proto_bind_2 : object_loc -> value -> list value -> ext_expr
+  | spec_function_proto_bind_3 : object_loc -> specret int -> ext_expr
+  | spec_function_proto_bind_4 : object_loc -> int -> ext_expr
+  | spec_function_proto_bind_5 : object_loc -> ext_expr
+  | spec_function_proto_bind_6 : object_loc -> out -> ext_expr
+  | spec_function_proto_bind_7 : object_loc -> out -> ext_expr
 
   (* Throwing of errors *)
 
@@ -396,7 +470,7 @@ Inductive ext_expr :=
   | spec_call_default_1 : object_loc -> ext_expr
   | spec_call_default_2 : option funcbody -> ext_expr
   | spec_call_default_3 : out -> ext_expr
-
+ 
   | spec_construct : object_loc -> list value -> ext_expr
   | spec_construct_1 : construct -> object_loc -> list value -> ext_expr
 
@@ -405,6 +479,8 @@ Inductive ext_expr :=
   | spec_construct_default : object_loc -> list value -> ext_expr
   | spec_construct_default_1 : object_loc -> list value -> out -> ext_expr
   | spec_construct_default_2 : object_loc -> out -> ext_expr
+
+  | spec_construct_1_after_bind : object_loc -> list value -> object_loc -> ext_expr
 
   (** Extended expressions for calling global object builtin functions *)
   (* LATER: rename all the spec_call into spec_builtin *)
@@ -480,7 +556,30 @@ Inductive ext_expr :=
   | spec_call_object_proto_prop_is_enumerable_4 : specret full_descriptor -> ext_expr
 
   | spec_call_array_new_1 : list value -> ext_expr
-  | spec_call_array_new_2 : object_loc -> list value -> int -> ext_expr
+  | spec_call_array_new_2 : object_loc -> list value -> ext_expr
+  | spec_call_array_new_3 : object_loc -> list value -> int -> ext_expr
+
+  | spec_call_array_new_single_1 : value -> ext_expr
+  | spec_call_array_new_single_2 : object_loc -> value -> ext_expr
+  | spec_call_array_new_single_3 : object_loc -> number -> specret int -> ext_expr
+  | spec_call_array_new_single_4 : object_loc -> int -> ext_expr
+
+  | spec_call_array_is_array_1 : value -> ext_expr
+  | spec_call_array_is_array_2_3 : class_name -> ext_expr
+
+  | spec_call_array_proto_to_string : out -> ext_expr
+  | spec_call_array_proto_to_string_1 : object_loc -> out -> ext_expr
+
+  | spec_call_array_proto_join   : out -> list value -> ext_expr 
+  | spec_call_array_proto_join_1 : object_loc -> out -> list value -> ext_expr 
+  | spec_call_array_proto_join_2 : object_loc -> specret int -> list value -> ext_expr
+  | spec_call_array_proto_join_3 : object_loc -> int -> value -> ext_expr
+  | spec_call_array_proto_join_4 : object_loc -> int -> out -> ext_expr
+  | spec_call_array_proto_join_5 : object_loc -> int -> string -> specret string -> ext_expr
+
+  | spec_call_array_proto_join_elements : object_loc -> int -> int -> string -> string -> ext_expr
+  | spec_call_array_proto_join_elements_1 : object_loc -> int -> int -> string -> string -> ext_expr
+  | spec_call_array_proto_join_elements_2 : object_loc -> int -> int -> string -> string -> specret string -> ext_expr
 
   | spec_call_array_proto_pop_1 : out -> ext_expr
   | spec_call_array_proto_pop_2 : object_loc -> out -> ext_expr
@@ -726,8 +825,28 @@ with ext_spec :=
   | spec_string_get_own_prop_4 : prop_name -> string -> ext_spec
   | spec_string_get_own_prop_5 : string -> (specret int) -> ext_spec
   | spec_string_get_own_prop_6 : string -> int -> int -> ext_spec
-.
 
+  (* Argumenst for Function.prototype.apply *)
+
+  | spec_function_proto_apply_get_args   : object_loc -> int -> int -> ext_spec
+  | spec_function_proto_apply_get_args_1 : object_loc -> int -> int -> out -> ext_spec
+  | spec_function_proto_apply_get_args_2 : object_loc -> int -> int -> out -> ext_spec
+  | spec_function_proto_apply_get_args_3 : value -> specret (list value) -> ext_spec 
+
+  (* Length for Function.prototype.bind *)
+
+  | spec_function_proto_bind_length   : object_loc -> list value -> ext_spec
+  | spec_function_proto_bind_length_1 : object_loc -> list value -> ext_spec
+  | spec_function_proto_bind_length_2 : list value -> out -> ext_spec
+  | spec_function_proto_bind_length_3 : specret int -> list value -> ext_spec
+
+  (* Conversion for Array.prototype.join *)
+
+  | spec_call_array_proto_join_vtsfj : object_loc -> int -> ext_spec
+  | spec_call_array_proto_join_vtsfj_1 : object_loc -> out -> ext_spec
+  | spec_call_array_proto_join_vtsfj_2 : object_loc -> out -> ext_spec
+  | spec_call_array_proto_join_vtsfj_3 : out -> ext_spec
+.
 
 (** Coercions *)
 
@@ -770,6 +889,32 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | expr_object_3_set _ _ o _ => Some o
   | expr_object_4 _ _ _ _ => None
   | expr_object_5 _ _ o => Some o
+
+
+
+
+  (* _ARRAYS_ : support for array intermediate forms - CHECK!*)
+  | expr_array_0 o _ => Some o
+  | expr_array_1 _ _ => None
+  | expr_array_2 _ _ _ => None
+  | expr_array_3 _ _ _ => None
+  | expr_array_3_1 _ y _ _ => out_of_specret y
+  | expr_array_3_2 _ _ o _ _ => Some o
+  | expr_array_3_3 _ _ y _ _ => out_of_specret y
+  | expr_array_3_4 _ _ o _ => Some o
+  | expr_array_3_5 _ o _ => Some o
+  
+
+  | expr_array_add_length   _ _ o => Some o
+  | expr_array_add_length_0 _ _ => None
+  | expr_array_add_length_1 _ _ o => Some o 
+  | expr_array_add_length_2 _ y _ => out_of_specret y
+  | expr_array_add_length_3 _ y => out_of_specret y
+  | expr_array_add_length_4 _ o => Some o
+
+
+
+
 
   | expr_function_1 _ _ _ _ _ o => Some o
   | expr_function_2 _ _ o => Some o
@@ -909,6 +1054,36 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | spec_object_define_own_prop_reject _ => None
   | spec_object_define_own_prop_write _ _ _ _ _ => None
 
+
+
+  (* ARRAYS *)
+  | spec_object_define_own_prop_array_2 _ _ _ _ y => out_of_specret y
+  | spec_object_define_own_prop_array_2_1 _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_branch_3_4 _ _ _ _ _ y => out_of_specret y
+  | spec_object_define_own_prop_array_branch_4_5 _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_branch_4_5_a _ _ y _ _ _ _ => out_of_specret y
+  | spec_object_define_own_prop_array_branch_4_5_b _ _ _ o _ _ _ _ => Some o
+  | spec_object_define_own_prop_array_4a _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_4b _ _ y _ _ _ _ => out_of_specret y
+  | spec_object_define_own_prop_array_4c _ _ _ _ _ _ o => Some o
+  | spec_object_define_own_prop_array_5 _ _ _ _ => None
+  | spec_object_define_own_prop_array_3 _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3c _ _ y _ _ _ _ => out_of_specret y
+  | spec_object_define_own_prop_array_3d_e _ o _ _ _ _ _ => Some o
+  | spec_object_define_own_prop_array_3f_g _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3h_i _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3j _ _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3k_l _ o _ _ _ _ _ _ => Some o
+  | spec_object_define_own_prop_array_3l _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3l_ii _ _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3l_ii_1 _ _ _ _ _ _ o => Some o
+  | spec_object_define_own_prop_array_3l_ii_2 _ _ _ _ _ _ o => Some o
+  | spec_object_define_own_prop_array_3l_iii_1 _ _ _ _ _ => None
+  | spec_object_define_own_prop_array_3l_iii_2 _ _ _ _ => None
+  | spec_object_define_own_prop_array_3l_iii_3 _ _ _ => None
+  | spec_object_define_own_prop_array_3l_iii_4 _ _ o => Some o
+  | spec_object_define_own_prop_array_3m_n _ _ => None
+
   | spec_prim_value_get _ _ => None
   | spec_prim_value_get_1 _ _ o => Some o
 
@@ -1034,6 +1209,8 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | spec_function_has_instance_1 _ o => Some o
   | spec_function_has_instance_2 _ _ => None
   | spec_function_has_instance_3 _ _ => None
+  | spec_function_has_instance_after_bind_1 _ _ => None
+  | spec_function_has_instance_after_bind_2 _ _ => None 
 
   | spec_function_get_1 _ _ o => Some o
 
@@ -1064,6 +1241,19 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | spec_creating_function_object_3 _ o => Some o
   | spec_creating_function_object_4 _ o => Some o
 
+  | spec_function_proto_apply _ _ _ => None
+  | spec_function_proto_apply_1 _ _ _ o => Some o  
+  | spec_function_proto_apply_2 _ _ _ y => out_of_specret y
+  | spec_function_proto_apply_3 _ _ y => out_of_specret y
+
+  | spec_function_proto_bind_1 _ _ _ => None 
+  | spec_function_proto_bind_2 _ _ _ => None 
+  | spec_function_proto_bind_3 _ y => out_of_specret y 
+  | spec_function_proto_bind_4 _ _ => None 
+  | spec_function_proto_bind_5 _ => None
+  | spec_function_proto_bind_6 _ o => Some o 
+  | spec_function_proto_bind_7 _ o => Some o
+
   | spec_create_new_function_in  execution_ctx _ _ => None
 
   | spec_call _ _ _ => None
@@ -1084,6 +1274,8 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | spec_construct_default _ _ => None
   | spec_construct_default_1 _ _ o => Some o
   | spec_construct_default_2 _ o => Some o
+
+  | spec_construct_1_after_bind _ _ _ => None
 
   | spec_construct_bool_1 o => Some o
 
@@ -1159,8 +1351,31 @@ Definition out_of_ext_expr (e : ext_expr) : option out :=
   | spec_call_object_proto_prop_is_enumerable_4 y => out_of_specret y
 
   | spec_call_array_new_1 _ => None
-  | spec_call_array_new_2 _ _ _ => None
+  | spec_call_array_new_2 _ _ => None
+  | spec_call_array_new_3 _ _ _ => None
+
+  | spec_call_array_new_single_1 _ => None
+  | spec_call_array_new_single_2 _ _ => None
+  | spec_call_array_new_single_3 _ _ y => out_of_specret y
+  | spec_call_array_new_single_4 _ _ => None
   
+  | spec_call_array_is_array_1 _ => None
+  | spec_call_array_is_array_2_3 _ => None
+
+  | spec_call_array_proto_join   o _ => Some o 
+  | spec_call_array_proto_join_1 _ o _ => Some o 
+  | spec_call_array_proto_join_2 _ y _ => out_of_specret y
+  | spec_call_array_proto_join_3 _ _ _ => None
+  | spec_call_array_proto_join_4 _ _ o => Some o
+  | spec_call_array_proto_join_5 _ _ _ y => out_of_specret y
+
+  | spec_call_array_proto_join_elements _ _ _ _ _ => None
+  | spec_call_array_proto_join_elements_1 _ _ _ _ _ => None
+  | spec_call_array_proto_join_elements_2 _ _ _ _ _ y => out_of_specret y
+
+  | spec_call_array_proto_to_string o => Some o
+  | spec_call_array_proto_to_string_1 _ o => Some o
+
   | spec_call_array_proto_pop_1 o => Some o
   | spec_call_array_proto_pop_2 _ o => Some o
   | spec_call_array_proto_pop_3 _ y  => out_of_specret y
@@ -1358,6 +1573,18 @@ Definition out_of_ext_spec (es : ext_spec) : option out :=
   | spec_string_get_own_prop_4 _ _ => None
   | spec_string_get_own_prop_5 _ y => out_of_specret y
   | spec_string_get_own_prop_6 _ _ _ => None
+  | spec_function_proto_apply_get_args _ _ _ => None
+  | spec_function_proto_apply_get_args_1 _ _ _ o => Some o 
+  | spec_function_proto_apply_get_args_2 _ _ _ o => Some o 
+  | spec_function_proto_apply_get_args_3 _ y => out_of_specret y
+  | spec_function_proto_bind_length _ _ => None
+  | spec_function_proto_bind_length_1 _ _ => None
+  | spec_function_proto_bind_length_2 _ o => Some o
+  | spec_function_proto_bind_length_3 y _ => out_of_specret y
+  | spec_call_array_proto_join_vtsfj _ _ => None
+  | spec_call_array_proto_join_vtsfj_1 _ o => Some o 
+  | spec_call_array_proto_join_vtsfj_2 _ o => Some o 
+  | spec_call_array_proto_join_vtsfj_3 o => Some o 
   end.
 
 
@@ -1467,6 +1694,12 @@ Inductive arguments_from : list value -> list value -> Prop :=
       arguments_from Vs1 Vs2 ->
       arguments_from (v::Vs1) (v::Vs2).
 
+Inductive arguments_first_and_rest : list value -> (value * list value) -> Prop :=
+ | arguments_f_a_r_from_nil  : arguments_first_and_rest nil (undef, nil)
+ | arguments_f_a_r_from_cons : forall v lv, 
+     arguments_first_and_rest (v :: lv) (v, lv).
+
+Hint Constructors arguments_first_and_rest.
 
 (**************************************************************)
 (** ** Rules for delete_events. *)

@@ -59,10 +59,11 @@ Proof.
   destruct x; destruct y; simpls~; typeclass.
 Qed.
 
-Lemma if_some_value_then_same_self : forall vo,
-  if_some_value_then_same vo vo.
+Global Instance same_value_dec : forall v1 v2,
+  Decidable (same_value v1 v2).
 Proof.
-  introv. unfolds. unfolds. destruct~ vo. reflexivity.
+  introv. unfold same_value. case_if. typeclass.
+  destruct (type_of v1) eqn:H1; repeat cases_if; try typeclass.
 Qed.
 
 Lemma if_some_bool_then_same_self : forall bo,

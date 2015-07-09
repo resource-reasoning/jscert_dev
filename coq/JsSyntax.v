@@ -121,6 +121,10 @@ Inductive expr :=
   | expr_identifier : string -> expr
   | expr_literal : literal -> expr
   | expr_object : list (propname * propbody) -> expr
+
+  (* _ARRAYS_ : support for processing arrays, based on parser_syntax.ml *)
+  | expr_array : list (option expr) -> expr
+
   | expr_function : option string -> list string -> funcbody -> expr
   | expr_access : expr -> expr -> expr
   | expr_member : expr -> string -> expr
@@ -274,7 +278,8 @@ Inductive prealloc :=
   | prealloc_array
   | prealloc_array_is_array
   | prealloc_array_proto
-  | prealloc_array_proto_to_string (* LATER: support *)
+  | prealloc_array_proto_to_string 
+  | prealloc_array_proto_join
   | prealloc_array_proto_pop
   | prealloc_array_proto_push
   | prealloc_string
@@ -312,7 +317,7 @@ Coercion prealloc_native_error : native_error >-> prealloc.
 
 Inductive construct := (* Note: could be named [builtin_construct] *)
   | construct_default (* 13.2.2 *)
-  | construct_after_bind (* 15.3.4.5.2 *) (* LATER: support *)
+  | construct_after_bind (* 15.3.4.5.2 *) 
   | construct_prealloc : prealloc -> construct.
     (* only the ones below are actually used by construct_prealloc
       | construct_object
@@ -392,9 +397,10 @@ Inductive builtin_default_value :=
 
 Inductive builtin_define_own_prop :=
   | builtin_define_own_prop_default
+  (* ARRAYS *)
   | builtin_define_own_prop_array
   | builtin_define_own_prop_args_obj.
-  (* LATER: string and array *)
+  (* LATER: string *)
 
 
 (**************************************************************)

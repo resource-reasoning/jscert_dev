@@ -65,7 +65,7 @@ Definition attrib_constant v :=
   attributes_data_intro v false false false.
 
 (** Shorthand notation for building a property attributes
-    that is non writable, non configurable and non enumerable. *)
+    that is writable, non configurable and enumerable. *)
 
 Notation "'attrib_native'" := prop_attributes_for_global_object.
 
@@ -292,22 +292,27 @@ Definition object_prealloc_function_proto :=
   let P := Heap.empty in
   let P := write_native P "constructor" prealloc_function in
   let P := Heap.write P "length" (attrib_constant 0) in (* todo: can we use write_constant? *)
-  (* let P := write_native P "toString" prealloc_function_proto_to_string in *) (* LATER *)
-  let P := write_native P "apply" prealloc_function_proto_apply in
-  let P := write_native P "call" prealloc_function_proto_call in
-  (* let P := write_native P "bind" prealloc_function_proto_bind in *) (* LATER *)
-  (* LATER: complete list *)
+  let P := write_native P "toString" prealloc_function_proto_to_string in (* !!! Implementation dependent !!! *)
+  let P := write_native P "apply" prealloc_function_proto_apply in 
+  let P := write_native P "call" prealloc_function_proto_call in 
+  let P := write_native P "bind" prealloc_function_proto_bind in 
 
   (* LATER: why this construct here and not the usual (see other builtins), i.e. just 
      [object_create_builtin prealloc_object_proto "Function" P]? *)
   let O := object_create_builtin prealloc_object_proto "Function" P in
   object_with_invokation O None (Some (call_prealloc prealloc_function_proto)) None.
 
-Definition function_proto_apply_function_object :=
-  object_create_prealloc_call prealloc_function_proto_apply 2 Heap.empty.
+Definition function_proto_to_string_function_object :=
+  object_create_prealloc_call prealloc_function_proto_to_string 0 Heap.empty.
 
 Definition function_proto_call_function_object :=
   object_create_prealloc_call prealloc_function_proto_call 1 Heap.empty.
+  
+Definition function_proto_bind_function_object :=
+  object_create_prealloc_call prealloc_function_proto_bind 1 Heap.empty.
+
+Definition function_proto_apply_function_object :=
+  object_create_prealloc_call prealloc_function_proto_apply 2 Heap.empty.
 
 (**************************************************************)
 (** Number object *)
@@ -359,10 +364,14 @@ Definition number_proto_value_of_function_object :=
 Definition object_prealloc_array :=
   let P := Heap.empty in
   let P := write_constant P "prototype" prealloc_array_proto in
-  let P := write_constant P "length" 1 in (* LATER:  Implement the full specification given in the paragraph starting Section 15.4 instead of his dummy object. *)
+  let P := write_native   P "isArray" prealloc_array_is_array in
+  let P := write_constant P "length" 1 in 
+  (* LATER:  Implement the full specification given in the paragraph starting Section 15.4 instead of his dummy object. *)
   (* LATER *)
   object_create_prealloc_constructor prealloc_array 1 P.
 
+Definition array_is_array_function_object :=
+  object_create_prealloc_call prealloc_array_is_array 1 Heap.empty.
 
 (**************************************************************)
 (** Array prototype object *)
@@ -371,8 +380,12 @@ Definition object_prealloc_array :=
 
 Definition object_prealloc_array_proto :=
   let P := Heap.empty in
+  let P := write_native P "constructor" prealloc_array in
+  let P := write_native P "toString" prealloc_array_proto_to_string in
+  let P := write_native P "join" prealloc_array_proto_join in
   let P := write_native P "pop" prealloc_array_proto_pop in
   let P := write_native P "push" prealloc_array_proto_push in
+  let P := write_constant P "length" 0 in
   let P := write_constant P "length" 0 in
   (* LATER *)
   object_create_builtin prealloc_object_proto "Array" P.
@@ -381,7 +394,13 @@ Definition array_proto_pop_function_object :=
   object_create_prealloc_call prealloc_array_proto_pop 0 Heap.empty.
 
 Definition array_proto_push_function_object :=
-  object_create_prealloc_call prealloc_array_proto_push 0 Heap.empty.
+  object_create_prealloc_call prealloc_array_proto_push 1 Heap.empty.
+
+Definition array_proto_to_string_function_object :=
+  object_create_prealloc_call prealloc_array_proto_to_string 0 Heap.empty.
+
+Definition array_proto_join_function_object :=
+  object_create_prealloc_call prealloc_array_proto_join 1 Heap.empty.
 
 (**************************************************************)
 (** String object *)
@@ -595,10 +614,17 @@ Definition object_heap_initial_function_objects_3 (h : Heap.heap object_loc obje
   let h := Heap.write h prealloc_object_proto_prop_is_enumerable object_proto_prop_is_enumerable_function_object in
 
   (* Function objects of Function.prototype *)
-  let h := Heap.write h prealloc_function_proto_apply function_proto_apply_function_object in
+  let h := Heap.write h prealloc_function_proto_to_string function_proto_to_string_function_object in
   let h := Heap.write h prealloc_function_proto_call function_proto_call_function_object in
+  let h := Heap.write h prealloc_function_proto_bind function_proto_bind_function_object in
+  let h := Heap.write h prealloc_function_proto_apply function_proto_apply_function_object in h.
 
+Definition object_heap_initial_function_objects_4 (h : Heap.heap object_loc object) :=
+  let h := object_heap_initial_function_objects_3 h in 
   (* Function objects of Array.prototype *)
+  let h := Heap.write h prealloc_array_is_array array_is_array_function_object in
+  let h := Heap.write h prealloc_array_proto_to_string array_proto_to_string_function_object in
+  let h := Heap.write h prealloc_array_proto_join array_proto_join_function_object in
   let h := Heap.write h prealloc_array_proto_pop array_proto_pop_function_object in
   let h := Heap.write h prealloc_array_proto_push array_proto_push_function_object in
 
@@ -611,7 +637,7 @@ Definition object_heap_initial_function_objects_3 (h : Heap.heap object_loc obje
   let h := Heap.write h prealloc_bool_proto_value_of bool_proto_value_of_function_object in h.
 
 Definition object_heap_initial_function_objects (h : Heap.heap object_loc object) :=
-  let h := object_heap_initial_function_objects_3 h in 
+  let h := object_heap_initial_function_objects_4 h in 
   (* Function objects of Number.prototype *)
   let h := Heap.write h prealloc_number_proto_to_string number_proto_to_string_function_object in
   let h := Heap.write h prealloc_number_proto_value_of number_proto_value_of_function_object in 

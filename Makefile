@@ -105,7 +105,7 @@ default: coq interpreter tags
 all: default interp/run_jsbisect interp/run_jstrace
 
 debug: OCAMLBUILDFLAGS+=-tag debug
-debug: default
+debug: default interp/run_js.byte interp/prtest.cmo
 
 report:
 	bisect-report -html report bisect*.out
@@ -238,7 +238,11 @@ extract_interpreter: interp/src/extract/.patched
 vpath %.ml interp/src interp/top_level
 
 # interp/_tags contains OCaml-specific build rules for all interpreter variants
-interp/%.native interp/%.byte: extract_interpreter %.ml
+interp/%.byte: extract_interpreter %.ml
+	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
+interp/%.native: extract_interpreter %.ml
+	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
+interp/%.cmo: %.ml
 	cd interp && $(OCAMLBUILD) -use-ocamlfind $(OCAMLBUILDFLAGS) $(@F)
 
 .PRECIOUS: interp/%.native

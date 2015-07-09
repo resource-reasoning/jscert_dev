@@ -85,6 +85,8 @@ Implicit Arguments result_bottom [[T]].
   where it has been proven impossible to get it under normal condition.
   See [JsCorrectness.v] for more details. *)
 
+Definition not_yet_implemented_because {T} s : resultof T := result_not_yet_implemented.
+
 Definition impossible_because {T} s : resultof T := result_impossible.
 
 Definition impossible_with_heap_because {T} S s : resultof T := result_impossible.
@@ -149,6 +151,12 @@ Section InterpreterEliminations.
 (** Generic constructions *)
 
 Definition get_arg := nth_def undef.
+
+Definition get_arg_first_and_rest (lv : list value) :=
+ (get_arg 0 lv, match lv with
+                 | nil => nil
+                 | _ :: rest => rest
+                end).        
 
 Definition destr_list (A B : Type) (l : list A) (d : B) f :=
   match l with
