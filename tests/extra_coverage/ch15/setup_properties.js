@@ -81,9 +81,9 @@ var ArgsToArray = function(args_obj) {
   return ret;
 };
 
-//var ObjectProtoHasOwnProp = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
-//var ObjectProtoToString = Function.prototype.call.bind(Object.prototype.toString);
-//var FunctionProtoApply = Function.prototype.call.bind(Function.prototype.apply);
+var ObjectProtoHasOwnProp = Function.prototype.call.bind(Object.prototype.hasOwnProperty);
+var ObjectProtoToString = Function.prototype.call.bind(Object.prototype.toString);
+var FunctionProtoApply = Function.prototype.call.bind(Function.prototype.apply);
 
 var %GetPrototype = __getPrototype;
 var %FunctionSetLength = __functionSetLength;
@@ -95,7 +95,12 @@ InternalArray.prototype.hasOwnProperty = Object.prototype.hasOwnProperty;
 var InternalPackedArray = {};
 InternalPackedArray.prototype = {};
 function %SpecialArrayFunctions() {
-  return {push: Array.prototype.push, pop: Array.prototype.pop};
+  return {
+    push: Array.prototype.push,
+    pop: Array.prototype.pop,
+    toString: Array.prototype.toString,
+    join: Array.prototype.join
+  };
 }
 
 function %_CallFunction() {
@@ -104,14 +109,12 @@ function %_CallFunction() {
   var args_array = new InternalArray(arguments.length - 2);
   var i = 1;
   while(i < arguments.length - 1) {
-//if(ObjectProtoHasOwnProp(i)) {
-    if(arguments.hasOwnProperty(i)) {
+    if(ObjectProtoHasOwnProp(i)) {
       args_array[i - 1] = arguments[i];
     }
     i++;
   }
-//  FunctionProtoApply(f, this_v, args_array);
-  return Function.prototype.apply.call(f, this_v, args_array);
+  return FunctionProtoApply(f, this_v, args_array);
 }
 
 function MakeTypeError(arg1, arg2) {
@@ -220,8 +223,7 @@ function IS_BOOLEAN(x) {
 }
 
 function IS_ARRAY(x) { // TODO: BROKEN???? YES
-  //var ret = ObjectProtoToString(x) === "[object Array]";
-  return Object.prototype.toString.call(x) === "[object Array]";
+  return ObjectProtoToString(x) === "[object Array]";
 }
 
 function %IsSloppyModeFunction(arg1) {
@@ -313,8 +315,7 @@ function %MoveArrayContents(old_array, array) {
     } catch(e) {}
   }
   var j = len;
-//  while(ObjectProtoHasOwnProp(old_array,String(j))) {
-  while(old_array.hasOwnProperty(String(j))) {
+  while(ObjectProtoHasOwnProp(old_array,String(j))) {
     try {
       ObjectDefineProperty(array, j, {
         value: old_array[j], writable: true, enumerable: true, configurable: true
@@ -1859,12 +1860,12 @@ function SetUpArray() {
   // Set up non-enumerable constructor property on the Array.prototype
   // object.
 
-  %AddNamedProperty($Array.prototype, "constructor", $Array, DONT_ENUM);
+  //%AddNamedProperty($Array.prototype, "constructor", $Array, DONT_ENUM);
 
   // Set up non-enumerable functions on the Array object.
-  InstallFunctions($Array, DONT_ENUM, $Array(
-    "isArray", ArrayIsArray
-  ));
+  //InstallFunctions($Array, DONT_ENUM, $Array(
+  //  "isArray", ArrayIsArray
+  //));
 
   var specialFunctions = %SpecialArrayFunctions();
 
