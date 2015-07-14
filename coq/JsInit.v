@@ -146,12 +146,16 @@ Definition object_prealloc_global_properties :=
   let P := write_native P "String" prealloc_string in
   let P := write_native P "Boolean" prealloc_bool in
   let P := write_native P "Number" prealloc_number in
+  let P := write_native P "Math" prealloc_math in
+  let P := write_native P "Date" prealloc_date in 
+  let P := write_native P "RegExp" prealloc_regexp in 
   let P := write_native P "Error" prealloc_error in
   let P := write_native P "EvalError" native_error_eval in
   let P := write_native P "RangeError" native_error_range in
   let P := write_native P "ReferenceError" native_error_ref in
   let P := write_native P "SyntaxError" native_error_syntax in
   let P := write_native P "TypeError" native_error_type in
+  let P := write_native P "JSON" prealloc_json in
   (* V8 helpers *)
   let P := write_native P "__InternalArray" prealloc_v8_internal_array in
   let P := write_native P "__removeConstructor" prealloc_v8_remove_constructor in
@@ -465,13 +469,18 @@ Definition bool_proto_value_of_function_object :=
 (**************************************************************)
 (** Math object *)
 
-(* LATER *)
+Definition object_prealloc_math :=
+  let P := Heap.empty in
+  object_create_prealloc_constructor prealloc_math 1 P.
 
 
 (**************************************************************)
 (** Date object *)
 
-(* LATER *)
+Definition object_prealloc_date :=
+  let P := Heap.empty in
+  (* let P := write_constant P "prototype" prealloc_date_proto in *)
+  object_create_prealloc_constructor prealloc_date 1 P.
 
 (**************************************************************)
 (** Date prototype *)
@@ -481,7 +490,10 @@ Definition bool_proto_value_of_function_object :=
 (**************************************************************)
 (** RegExp object *)
 
-(* LATER *)
+Definition object_prealloc_regexp :=
+  let P := Heap.empty in
+  (* let P := write_constant P "prototype" prealloc_regexp_proto in *)
+  object_create_prealloc_constructor prealloc_regexp 1 P.
 
 (**************************************************************)
 (** RegExp prototype object *)
@@ -528,13 +540,16 @@ Definition object_prealloc_native_error_proto ne :=
   let P := Heap.empty in
   let P := write_native P "constructor" (prealloc_native_error ne) in
   let P := write_native P "name" (string_of_native_error ne) in   
-  let P := write_native P "message" (prim_string "") in   
-  object_create_builtin prealloc_error_proto "Error" P. 
+  let P := write_native P "message" (prim_string "") in 
+  object_create_builtin (prealloc_native_error_proto ne) "Error" P. 
 
 
 (**************************************************************)
 (** JSON object *)
 
+Definition object_prealloc_json :=
+  let P := Heap.empty in
+  object_create_prealloc_constructor prealloc_json 1 P.
 
 (**************************************************************)
 (** The [[ThrowTypeError]] Function Object  (13.2.3) *)
@@ -660,6 +675,9 @@ Definition object_heap_initial :=
   let h := Heap.write h prealloc_array_proto object_prealloc_array_proto in
   let h := Heap.write h prealloc_string object_prealloc_string in
   let h := Heap.write h prealloc_string_proto object_prealloc_string_proto in
+  let h := Heap.write h prealloc_math object_prealloc_math in
+  let h := Heap.write h prealloc_date object_prealloc_date in
+  let h := Heap.write h prealloc_regexp object_prealloc_regexp in
   let h := Heap.write h prealloc_error_proto object_prealloc_error_proto in
   let h := Heap.write h (prealloc_native_error_proto native_error_eval) (object_prealloc_native_error_proto native_error_eval) in
   let h := Heap.write h (prealloc_native_error_proto native_error_range) (object_prealloc_native_error_proto native_error_range) in
@@ -672,6 +690,7 @@ Definition object_heap_initial :=
   let h := Heap.write h native_error_ref (object_prealloc_native_error native_error_ref) in
   let h := Heap.write h native_error_syntax (object_prealloc_native_error native_error_syntax) in
   let h := Heap.write h native_error_type (object_prealloc_native_error native_error_type) in
+  let h := Heap.write h prealloc_json object_prealloc_json in
   (* V8 *)
   let h := Heap.write h prealloc_v8_internal_array object_prealloc_v8_internal_array in
   let h := Heap.write h prealloc_v8_internal_array_proto object_prealloc_v8_internal_array_proto in

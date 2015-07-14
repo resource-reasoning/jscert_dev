@@ -71,6 +71,8 @@ let prprealloc = function
   | Coq_prealloc_string_proto_char_code_at -> "Coq_prealloc_string_proto_char_code_at"
   | Coq_prealloc_math -> "Coq_prealloc_math"
   | Coq_prealloc_mathop -> "Coq_prealloc_mathop"
+  | Coq_prealloc_date -> "Coq_prealloc_date"
+  | Coq_prealloc_regexp -> "Coq_prealloc_regexp"
   | Coq_prealloc_error -> "Coq_prealloc_error"
   | Coq_prealloc_native_error Coq_native_error_eval -> "Coq_prealloc_native_error_eval"
   | Coq_prealloc_native_error Coq_native_error_range -> "Coq_prealloc_native_error_range"
@@ -85,11 +87,13 @@ let prprealloc = function
   | Coq_prealloc_throw_type_error -> "Coq_prealloc_throw_type_error"
   | Coq_prealloc_error_proto -> "Coq_prealloc_error_proto"
   | Coq_prealloc_error_proto_to_string -> "Coq_prealloc_error_proto_to_string"
+  | Coq_prealloc_json -> "Coq_prealloc_json"
   | Coq_prealloc_v8_internal_array -> "Coq_prealloc_v8_internal_array"
   | Coq_prealloc_v8_internal_array_proto -> "Coq_prealloc_v8_internal_array_proto"
   | Coq_prealloc_v8_remove_constructor -> "Coq_prealloc_v8_remove_constructor"
   | Coq_prealloc_v8_function_set_length -> "Coq_prealloc_v8_function_set_length"
   | Coq_prealloc_v8_get_prototype -> "Coq_prealloc_v8_function_get_prototype"
+
 
 let prcall = function
   | Coq_call_default -> "Coq_call_default"
