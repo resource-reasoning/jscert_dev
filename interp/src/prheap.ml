@@ -42,7 +42,6 @@ let prprealloc = function
   | Coq_prealloc_function_proto -> "Coq_prealloc_function_proto"
   | Coq_prealloc_function_proto_to_string -> "Coq_prealloc_function_proto_to_string"
   | Coq_prealloc_function_proto_apply -> "Coq_prealloc_function_proto_apply"
-  | Coq_prealloc_function_proto_call -> "Coq_prealloc_function_proto_call"
   | Coq_prealloc_function_proto_bind -> "Coq_prealloc_function_proto_bind"
   | Coq_prealloc_function_proto_call -> "Coq_prealloc_function_proto_call"
   | Coq_prealloc_bool -> "Coq_prealloc_bool"
