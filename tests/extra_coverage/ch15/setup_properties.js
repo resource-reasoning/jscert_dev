@@ -109,7 +109,7 @@ function %_CallFunction() {
   var args_array = new InternalArray(arguments.length - 2);
   var i = 1;
   while(i < arguments.length - 1) {
-    if(ObjectProtoHasOwnProp(i)) {
+    if(ObjectProtoHasOwnProp(arguments, i)) {
       args_array[i - 1] = arguments[i];
     }
     i++;
