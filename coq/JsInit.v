@@ -138,8 +138,14 @@ Definition object_prealloc_global_properties :=
   let P := write_constant P "Infinity" JsNumber.infinity in
   let P := write_constant P "undefined" undef in
   let P := write_native P "eval" prealloc_global_eval in
+  let P := write_native P "parseInt" prealloc_global_parse_int in
+  let P := write_native P "parseFloat" prealloc_global_parse_float in
   let P := write_native P "isNaN" prealloc_global_is_nan in
   let P := write_native P "isFinite" prealloc_global_is_finite in
+  let P := write_native P "decodeURI" prealloc_global_decode_uri in
+  let P := write_native P "decodeURIComponent" prealloc_global_decode_uri_component in
+  let P := write_native P "encodeURI" prealloc_global_encode_uri in
+  let P := write_native P "encodeURIComponent" prealloc_global_encode_uri_component in
   let P := write_native P "Object" prealloc_object in
   let P := write_native P "Function" prealloc_function in
   let P := write_native P "Array" prealloc_array in
@@ -155,6 +161,7 @@ Definition object_prealloc_global_properties :=
   let P := write_native P "ReferenceError" native_error_ref in
   let P := write_native P "SyntaxError" native_error_syntax in
   let P := write_native P "TypeError" native_error_type in
+  let P := write_native P "URIError" native_error_uri in
   let P := write_native P "JSON" prealloc_json in
   (* V8 helpers *)
   let P := write_native P "__InternalArray" prealloc_v8_internal_array in
@@ -162,14 +169,6 @@ Definition object_prealloc_global_properties :=
   let P := write_native P "__functionSetLength" prealloc_v8_function_set_length in
   let P := write_native P "__getPrototype" prealloc_v8_get_prototype in
   P.
-
-  (* LATER: let P := write_native P "parse_int" prealloc_parse_int in *)
-  (* LATER: let P := write_native P "parse_float" prealloc_parse_float in *)
-  (* LATER: 15.1.3 URI Handling Function Properties *)
-  (* LATER: let P := write_native P "Math" prealloc_math in *)
-  (* LATER: let P := write_native P "Date" prealloc_date in *)
-  (* LATER: let P := write_native P "RegExp" prealloc_regexp in *)
-  (* LATER: let P := write_native P "URI_error" prealloc_uri_error in *)
 
 
 (** Definition of the global object *)
@@ -183,14 +182,29 @@ Definition object_prealloc_global :=
 Definition global_eval_function_object :=
   object_create_prealloc_call prealloc_global_eval 1 Heap.empty.
 
+Definition global_parse_int_function_object :=
+  object_create_prealloc_call prealloc_global_parse_int 2 Heap.empty.
+
+Definition global_parse_float_function_object :=
+  object_create_prealloc_call prealloc_global_parse_float 1 Heap.empty.
+
 Definition global_is_nan_function_object := 
   object_create_prealloc_call prealloc_global_is_nan 1 Heap.empty.
   
 Definition global_is_finite_function_object :=
   object_create_prealloc_call prealloc_global_is_finite 1 Heap.empty.
 
-(* LATER: need to add something similar for constructors
-   (basically everything which is after 'isFinite')? *)
+Definition global_decode_uri_function_object :=
+  object_create_prealloc_call prealloc_global_decode_uri 1 Heap.empty.
+
+Definition global_decode_uri_component_function_object :=
+  object_create_prealloc_call prealloc_global_decode_uri_component 1 Heap.empty.
+
+Definition global_encode_uri_function_object :=
+  object_create_prealloc_call prealloc_global_encode_uri 1 Heap.empty.
+
+Definition global_encode_uri_component_function_object :=
+  object_create_prealloc_call prealloc_global_encode_uri_component 1 Heap.empty.
 
 (**************************************************************)
 (** Object object *)
@@ -602,8 +616,14 @@ Definition object_heap_initial_function_objects_1 (h : Heap.heap object_loc obje
 
   (* Function objects of Global object *)
   let h := Heap.write h prealloc_global_eval global_eval_function_object in
+  let h := Heap.write h prealloc_global_parse_int global_parse_int_function_object in
+  let h := Heap.write h prealloc_global_parse_float global_parse_float_function_object in
   let h := Heap.write h prealloc_global_is_nan global_is_nan_function_object in
-  let h := Heap.write h prealloc_global_is_finite global_is_finite_function_object in h.
+  let h := Heap.write h prealloc_global_is_finite global_is_finite_function_object in
+  let h := Heap.write h prealloc_global_decode_uri global_decode_uri_function_object in
+  let h := Heap.write h prealloc_global_decode_uri_component global_decode_uri_component_function_object in
+  let h := Heap.write h prealloc_global_encode_uri global_encode_uri_function_object in
+  let h := Heap.write h prealloc_global_encode_uri_component global_encode_uri_component_function_object in h.
 
 Definition object_heap_initial_function_objects_2 (h : Heap.heap object_loc object) :=
   let h := object_heap_initial_function_objects_1 h in 
@@ -686,6 +706,7 @@ Definition object_heap_initial :=
   let h := Heap.write h (prealloc_native_error_proto native_error_ref) (object_prealloc_native_error_proto native_error_ref) in
   let h := Heap.write h (prealloc_native_error_proto native_error_syntax) (object_prealloc_native_error_proto native_error_syntax) in
   let h := Heap.write h (prealloc_native_error_proto native_error_type) (object_prealloc_native_error_proto native_error_type) in
+  let h := Heap.write h (prealloc_native_error_proto native_error_uri) (object_prealloc_native_error_proto native_error_uri) in
   let h := Heap.write h prealloc_error object_prealloc_error in
   let h := Heap.write h native_error_eval (object_prealloc_native_error native_error_eval) in
   let h := Heap.write h native_error_range (object_prealloc_native_error native_error_range) in

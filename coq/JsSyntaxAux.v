@@ -201,6 +201,7 @@ Definition native_error_compare ne1 ne2 :=
   | native_error_ref, native_error_ref => true
   | native_error_syntax, native_error_syntax => true
   | native_error_type, native_error_type => true
+  | native_error_uri, native_error_uri => true
   | _, _ => false
   end.
 
@@ -223,10 +224,14 @@ Definition prealloc_compare bl1 bl2 :=
   match bl1, bl2 with
   | prealloc_global, prealloc_global => true
   | prealloc_global_eval, prealloc_global_eval => true
+  | prealloc_global_parse_int, prealloc_global_parse_int => true
+  | prealloc_global_parse_float, prealloc_global_parse_float => true
   | prealloc_global_is_finite, prealloc_global_is_finite => true
   | prealloc_global_is_nan, prealloc_global_is_nan => true
-  | prealloc_global_parse_float, prealloc_global_parse_float => true
-  | prealloc_global_parse_int, prealloc_global_parse_int => true
+  | prealloc_global_decode_uri, prealloc_global_decode_uri => true
+  | prealloc_global_decode_uri_component, prealloc_global_decode_uri_component => true
+  | prealloc_global_encode_uri, prealloc_global_encode_uri => true
+  | prealloc_global_encode_uri_component, prealloc_global_encode_uri_component => true
   | prealloc_object, prealloc_object => true
   | prealloc_object_get_proto_of, prealloc_object_get_proto_of => true
   | prealloc_object_get_own_prop_descriptor , prealloc_object_get_own_prop_descriptor  => true

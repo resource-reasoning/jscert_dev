@@ -226,17 +226,22 @@ Inductive native_error :=
   | native_error_range
   | native_error_ref
   | native_error_syntax
-  | native_error_type.
+  | native_error_type
+  | native_error_uri.
 
 (** Identifiers for objects pre-allocated in the initial heap *)
 
 Inductive prealloc :=
   | prealloc_global (* not callable *)
   | prealloc_global_eval
+  | prealloc_global_parse_int
+  | prealloc_global_parse_float
   | prealloc_global_is_finite
   | prealloc_global_is_nan
-  | prealloc_global_parse_float
-  | prealloc_global_parse_int
+  | prealloc_global_decode_uri
+  | prealloc_global_decode_uri_component
+  | prealloc_global_encode_uri
+  | prealloc_global_encode_uri_component
   | prealloc_object
   | prealloc_object_get_proto_of      (* location to getPrototypeOf function object *)
   | prealloc_object_get_own_prop_descriptor
