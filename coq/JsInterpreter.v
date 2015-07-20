@@ -2524,17 +2524,6 @@ Definition run_prog runs S C p : result :=
 
 (**************************************************************)
 
-Fixpoint apply_arg_loop runs S C argArray ilen argList (rem:nat): specres (list value) :=
-  (* 15.3.4.3_8 loop *)
-  'let index := ilen - rem in
-  match rem with
-  | O => res_spec S (rev argList)
-  | S rem' =>
-    if_string (to_string runs S C (JsNumber.of_int index)) (fun S indexName =>
-      if_value (run_object_get runs S C argArray indexName) (fun S nextArg =>
-        apply_arg_loop runs S C argArray ilen (nextArg :: argList) rem'))
-  end.
-
 Fixpoint push runs S C l args ilen {struct args} : result :=
   (* Corresponds to the construction [spec_call_array_proto_push_3] of the specification. *)
   'let vlen := JsNumber.of_int ilen
