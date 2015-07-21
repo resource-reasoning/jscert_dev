@@ -303,7 +303,7 @@ Inductive prealloc :=
   | prealloc_native_error_proto : native_error -> prealloc (* 15.11.7.7 *)
   | prealloc_error_proto_to_string
   | prealloc_throw_type_error (* 13.2.3 *)
-  | prealloc_json
+  | prealloc_json (* not callable *)
   | prealloc_v8_internal_array (* V8 helper *)
   | prealloc_v8_internal_array_proto (* V8 helper *)
   | prealloc_v8_remove_constructor (* V8 helper *)
