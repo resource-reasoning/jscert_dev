@@ -305,6 +305,10 @@ function %PushIfAbsent(list, elem) {
   return true;
 }
 
+function %AddElement(array, index, value) {
+  ObjectDefineProperty(array, index, {value: value, writable: true, enumerable: true, configurable: true});
+}
+
 function %MoveArrayContents(old_array, array) {
   var len = old_array.length;
   for(var i = 0; i < len; i++) {
@@ -636,7 +640,7 @@ function SmartSlice(array, start_i, del_count, len, deleted_elements) {
     for (var i = start_i; i < limit; ++i) {
       var current = array[i];
       if (!IS_UNDEFINED(current) || i in array) {
-        deleted_elements[i - start_i] = current;
+        %AddElement(deleted_elements, i - start_i, current);
       }
     }
   } else {
@@ -647,7 +651,7 @@ function SmartSlice(array, start_i, del_count, len, deleted_elements) {
         if (key >= start_i) {
           var current = array[key];
           if (!IS_UNDEFINED(current) || key in array) {
-            deleted_elements[key - start_i] = current;
+            %AddElement(deleted_elements, key - start_i, current);
           }
         }
       }
@@ -712,7 +716,9 @@ function SimpleSlice(array, start_i, del_count, len, deleted_elements) {
     // prototype.
     var current = array[index];
     if (!IS_UNDEFINED(current) || index in array) {
-      deleted_elements[i] = current;
+      // The spec requires [[DefineOwnProperty]] here, %AddElement is close
+      // enough (in that it ignores the prototype).
+      %AddElement(deleted_elements, i, current);
     }
   }
 }
