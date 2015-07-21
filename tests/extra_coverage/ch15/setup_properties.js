@@ -340,15 +340,15 @@ function %ArrayConcat(arrays) {
     if(IS_ARRAY(E)) {
       var k = 0;
       while (k < E.length) {
-        if(E[k] !== undefined) {
-          A[n] = E[k];
+        if(k in E) {
+          %AddElement(A, n, E[k]);
         }
         n++;
         k++;
       }
     }
     else {
-      A[n] = E;
+      %AddElement(A, n, E);
       n++;
     }
   }
