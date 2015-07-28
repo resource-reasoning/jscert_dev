@@ -1162,12 +1162,8 @@ Definition run_construct_prealloc runs S C B (args : list value) : result :=
 
   | prealloc_native_error ne =>
     'let v := get_arg 0 args in
-    build_error S (prealloc_native_error ne) v
+    build_error S (prealloc_native_error_proto ne) v
 
-  | prealloc_native_error_proto ne =>
-    'let v := get_arg 0 args in
-    build_error S B v
-  
   | prealloc_v8_internal_array =>
     'let O := object_new prealloc_v8_internal_array_proto "InternalArray" in
     'let p := object_alloc S O in
@@ -2909,9 +2905,9 @@ Definition run_call_prealloc runs S C B vthis (args : list value) : result :=
     'let v := get_arg 0 args in
     build_error S prealloc_error_proto v
 
-  | prealloc_native_error_proto ne =>
+  | prealloc_native_error ne =>
     'let v := get_arg 0 args in
-    build_error S B v
+    build_error S (prealloc_native_error_proto ne) v
 
   | prealloc_throw_type_error =>
     run_error S native_error_type
