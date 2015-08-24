@@ -281,5 +281,8 @@ filename using the @ character.
 
         exit(cli.get_exit_code())
 
-if __name__ == "__main__":
+def main():
     Runtests().main()
+
+if __name__ == "__main__":
+    main()
