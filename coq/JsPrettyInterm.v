@@ -745,7 +745,6 @@ with ext_prog :=
   | prog_1 : out -> element -> ext_prog
   | prog_2 : resvalue -> out -> ext_prog
 
-
 (** Grammar of extended forms for specification functions *)
 
 with ext_spec :=
@@ -1513,7 +1512,6 @@ Definition out_of_ext_prog (p : ext_prog) : option out :=
   | javascript_1 o _ => Some o
   | prog_1 o _ => Some o
   | prog_2 _ o => Some o
-
   end.
 
 Definition out_of_ext_spec (es : ext_spec) : option out :=

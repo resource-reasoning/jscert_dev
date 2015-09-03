@@ -72,8 +72,8 @@ JS_SRC=\
 	coq/JsPrettyInterm.v \
 	coq/JsPrettyIntermAux.v \
 	coq/JsPrettyRules.v \
-	coq/JsCorrectness.v
-
+	coq/JsCorrectness.v \
+        coq/JsSublanguages.v
 
 JS_VO=$(JS_SRC:.v=.vo)
 
