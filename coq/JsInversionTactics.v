@@ -2,7 +2,7 @@ Set Implicit Arguments.
 Require Import Shared.
 Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
 Require Import JsPrettyInterm JsPrettyRules.
-Require Export  (* JsInversionPrinciplesSpec JsInversionPrinciplesExpr JsInversionPrinciplesStat *) JsInversionPrinciplesProg.
+Require Export JsInversionPrinciplesSpec (* JsInversionPrinciplesExpr *) JsInversionPrinciplesStat JsInversionPrinciplesProg.
 
 (**************************************************************)
 (** ** Speeding up inversion                                  *)
@@ -10,22 +10,28 @@ Require Export  (* JsInversionPrinciplesSpec JsInversionPrinciplesExpr JsInversi
 Ltac inverts_tactic_general T H :=
   let rec go :=
     match goal with
-    | |- (ltac_Mark -> _) => intros _
-    | |- (?x = ?y -> _) => let H := fresh in intro H;
-                           first [ subst x | subst y | injects H ];
-                           go 
-    | |- (existT ?P ?p ?x = existT ?P ?p ?y -> _) =>
+     | H : ?x = ?x |- _ => clear H; go
+     | |- (ltac_Mark -> _) => intros _
+     | |- (existT ?P ?p ?x = existT ?P ?p ?y -> _) =>
          let H := fresh in intro H;
          generalize (@inj_pair2 _ P p x y H);
          clear H; go 
-    | |- (?P -> ?Q) => intro; go 
-    | |- (forall _, _) => intro; go 
+     | |- (?x = ?y -> _) => let H := fresh in intro H;
+                           first [ subst x | subst y | injects H ];
+                           go 
+     | |- (?P -> ?Q) => intro; go 
+     | |- (forall _, _) => intro; go      
     end in
   generalize ltac_mark; T H; go;
   unfold eq' in *.
 
 (**************************************************************)
 (** ** HNF for extended expressions                           *)
+
+Ltac red_spec_hnf e := 
+match (eval hnf in e) with
+  | ?e1 => constr:e1
+end.
 
 Ltac red_expr_hnf e := 
 match (eval hnf in e) with
@@ -52,6 +58,195 @@ match (eval hnf in e) with
 end.
 
 (**************************************************************)
+(** ** Inversion for specs                                    *)
+
+Tactic Notation "invert" "keep" "red_spec" hyp(H) := 
+match type of H with
+  | red_spec ?S ?C (?e) ?oo => 
+    let eh := red_spec_hnf e in
+    try (asserts_rewrite (e = eh) in H; [reflexivity | idtac]); 
+    match eh with
+      | spec_to_int32 _ => inversion H using inv_red_spec_spec_to_int32
+      | spec_to_int32_1 _ => inversion H using inv_red_spec_spec_to_int32_1
+      | spec_to_uint32 _ => inversion H using inv_red_spec_spec_to_uint32
+      | spec_to_uint32_1 _ => inversion H using inv_red_spec_spec_to_uint32_1
+      | spec_expr_get_value_conv _ _ => inversion H using inv_red_spec_spec_expr_get_value_conv
+      | spec_expr_get_value_conv_1 _ _ => inversion H using inv_red_spec_spec_expr_get_value_conv_1
+      | spec_expr_get_value_conv_2 _ => inversion H using inv_red_spec_spec_expr_get_value_conv_2
+      | spec_convert_twice _ _ => inversion H using inv_red_spec_spec_convert_twice
+      | spec_convert_twice_1 _ _ => inversion H using inv_red_spec_spec_convert_twice_1
+      | spec_convert_twice_2 _ _ => inversion H using inv_red_spec_spec_convert_twice_2
+      | spec_list_expr _ => inversion H using inv_red_spec_spec_list_expr
+      | spec_list_expr_1 _ _ => inversion H using inv_red_spec_spec_list_expr_1
+      | spec_list_expr_2 _ _ _ => inversion H using inv_red_spec_spec_list_expr_2
+      | spec_to_descriptor _ => inversion H using inv_red_spec_spec_to_descriptor
+      | spec_to_descriptor_1a _ _ => inversion H using inv_red_spec_spec_to_descriptor_1a
+      | spec_to_descriptor_1b _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_1b
+      | spec_to_descriptor_1c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_1c
+      | spec_to_descriptor_2a _ _ => inversion H using inv_red_spec_spec_to_descriptor_2a
+      | spec_to_descriptor_2b _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_2b
+      | spec_to_descriptor_2c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_2c
+      | spec_to_descriptor_3a _ _ => inversion H using inv_red_spec_spec_to_descriptor_3a
+      | spec_to_descriptor_3b _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_3b
+      | spec_to_descriptor_3c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_3c
+      | spec_to_descriptor_4a _ _ => inversion H using inv_red_spec_spec_to_descriptor_4a
+      | spec_to_descriptor_4b _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_4b
+      | spec_to_descriptor_4c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_4c
+      | spec_to_descriptor_5a _ _ => inversion H using inv_red_spec_spec_to_descriptor_5a
+      | spec_to_descriptor_5b _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_5b
+      | spec_to_descriptor_5c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_5c
+      | spec_to_descriptor_6a _ _ => inversion H using inv_red_spec_spec_to_descriptor_6a
+      | spec_to_descriptor_6b _ _ _=> inversion H using inv_red_spec_spec_to_descriptor_6b
+      | spec_to_descriptor_6c _ _ _ => inversion H using inv_red_spec_spec_to_descriptor_6c
+      | spec_to_descriptor_7 _ _ => inversion H using inv_red_spec_spec_to_descriptor_7
+      | spec_object_get_own_prop _ _ => inversion H using inv_red_spec_spec_object_get_own_prop
+      | spec_object_get_own_prop_1 _ _ _ => inversion H using inv_red_spec_spec_object_get_own_prop_1
+      | spec_object_get_own_prop_2 _ _ _ => inversion H using inv_red_spec_spec_object_get_own_prop_2
+      | spec_object_get_prop _ _ => inversion H using inv_red_spec_spec_object_get_prop
+      | spec_object_get_prop_1 _ _ _ => inversion H using inv_red_spec_spec_object_get_prop_1
+      | spec_object_get_prop_2 _ _ _ => inversion H using inv_red_spec_spec_object_get_prop_2
+      | spec_object_get_prop_3 _ _ _ => inversion H using inv_red_spec_spec_object_get_prop_3
+      | spec_get_value _ => inversion H using inv_red_spec_spec_get_value
+      | spec_get_value_ref_b_1 _ => inversion H using inv_red_spec_spec_get_value_ref_b_1
+      | spec_get_value_ref_c_1 _ => inversion H using inv_red_spec_spec_get_value_ref_c_1
+      | spec_expr_get_value _ => inversion H using inv_red_spec_spec_expr_get_value
+      | spec_expr_get_value_1 _ => inversion H using inv_red_spec_spec_expr_get_value_1
+      | spec_lexical_env_get_identifier_ref _ _ _ => inversion H using inv_red_spec_spec_lexical_env_get_identifier_ref
+      | spec_lexical_env_get_identifier_ref_1 _ _ _ _ => inversion H using inv_red_spec_spec_lexical_env_get_identifier_ref_1
+      | spec_lexical_env_get_identifier_ref_2 _ _ _ _ _ => inversion H using inv_red_spec_spec_lexical_env_get_identifier_ref_2
+      | spec_error_spec _ => inversion H using inv_red_spec_spec_error_spec
+      | spec_error_spec_1 _ => inversion H using inv_red_spec_spec_error_spec_1
+      | spec_args_obj_get_own_prop_1 _ _ _ => inversion H using inv_red_spec_spec_args_obj_get_own_prop_1
+      | spec_args_obj_get_own_prop_2 _ _ _ _ _ => inversion H using inv_red_spec_spec_args_obj_get_own_prop_2
+      | spec_args_obj_get_own_prop_3 _ _ => inversion H using inv_red_spec_spec_args_obj_get_own_prop_3
+      | spec_args_obj_get_own_prop_4 _ => inversion H using inv_red_spec_spec_args_obj_get_own_prop_4
+      | spec_string_get_own_prop_1 _ _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_1
+      | spec_string_get_own_prop_2 _ _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_2
+      | spec_string_get_own_prop_3 _ _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_3
+      | spec_string_get_own_prop_4 _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_4
+      | spec_string_get_own_prop_5 _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_5
+      | spec_string_get_own_prop_6 _ _ _ => inversion H using inv_red_spec_spec_string_get_own_prop_6
+      | spec_function_proto_apply_get_args _ _ _ => inversion H using inv_red_spec_spec_function_proto_apply_get_args
+      | spec_function_proto_apply_get_args_1 _ _ _ _ => inversion H using inv_red_spec_spec_function_proto_apply_get_args_1
+      | spec_function_proto_apply_get_args_2 _ _ _ _ => inversion H using inv_red_spec_spec_function_proto_apply_get_args_2
+      | spec_function_proto_apply_get_args_3 _ _ => inversion H using inv_red_spec_spec_function_proto_apply_get_args_3
+      | spec_function_proto_bind_length _ _ => inversion H using inv_red_spec_spec_function_proto_bind_length
+      | spec_function_proto_bind_length_1 _ _ => inversion H using inv_red_spec_spec_function_proto_bind_length_1
+      | spec_function_proto_bind_length_2 _ _ => inversion H using inv_red_spec_spec_function_proto_bind_length_2
+      | spec_function_proto_bind_length_3 _ _ => inversion H using inv_red_spec_spec_function_proto_bind_length_3
+      | spec_call_array_proto_join_vtsfj _ _ => inversion H using inv_red_spec_spec_call_array_proto_join_vtsfj
+      | spec_call_array_proto_join_vtsfj_1 _ _ => inversion H using inv_red_spec_spec_call_array_proto_join_vtsfj_1
+      | spec_call_array_proto_join_vtsfj_2 _ _ => inversion H using inv_red_spec_spec_call_array_proto_join_vtsfj_2
+      | spec_call_array_proto_join_vtsfj_3 _ => inversion H using inv_red_spec_spec_call_array_proto_join_vtsfj_3
+    end
+end; tryfalse; clear H; intro H.
+
+Tactic Notation "inverts" "keep" "red_spec" hyp(H) := 
+  inverts_tactic_general ltac:(fun H => invert keep red_spec H) H. 
+
+Tactic Notation "inverts" "red_spec" hyp(H) := 
+  inverts keep red_spec H; clear H.
+
+(**************************************************************)
+(** ** Inversion for programs                                 *)
+
+Tactic Notation "invert" "keep" "red_stat" hyp(H) := 
+match type of H with
+  | red_stat ?S ?C (?e) ?oo => 
+    let eh := red_stat_hnf e in
+    try (asserts_rewrite (e = eh) in H; [reflexivity | idtac]); 
+    match eh with
+      | stat_basic (stat_expr _) => inversion H using inv_red_stat_expr
+      | stat_basic (stat_label _ _) => inversion H using inv_red_stat_label
+      | stat_basic (stat_block _) => inversion H using inv_red_stat_block
+      | stat_basic (stat_var_decl _) => inversion H using inv_red_stat_var_decl
+      | stat_basic (stat_if _ _ _) => inversion H using inv_red_stat_if
+      | stat_basic (stat_do_while _ _ _) => inversion H using inv_red_stat_do_while
+      | stat_basic (stat_with _ _) => inversion H using inv_red_stat_with
+      | stat_basic (stat_throw _) => inversion H using inv_red_stat_throw
+      | stat_basic (stat_return _) => inversion H using inv_red_stat_return
+      | stat_basic (stat_break _) => inversion H using inv_red_stat_break
+      | stat_basic (stat_continue _) => inversion H using inv_red_stat_continue
+      | stat_basic (stat_try _ _ _) => inversion H using inv_red_stat_try
+      | stat_basic (stat_for _ _ _ _ _) => inversion H using inv_red_stat_for
+      | stat_basic (stat_for_var _ _ _ _ _) => inversion H using inv_red_stat_for_var
+      | stat_basic (stat_for_in _ _ _ _) => inversion H using inv_red_stat_for_in
+      | stat_basic (stat_for_in_var _ _ _ _ _) => inversion H using inv_red_stat_for_in_var
+      | stat_basic (stat_debugger) => inversion H using inv_red_stat_debugger
+      | stat_basic (stat_switch _ _ _) => inversion H using inv_red_stat_switch
+      | stat_expr_1 _ => inversion H using inv_red_stat_stat_expr_1
+      | stat_block_1 _ _ => inversion H using inv_red_stat_stat_block_1
+      | stat_block_2 _ _ => inversion H using inv_red_stat_stat_block_2
+      | stat_label_1 _ _ => inversion H using inv_red_stat_stat_label_1
+      | stat_var_decl_1 _ _ => inversion H using inv_red_stat_stat_var_decl_1
+      | stat_var_decl_item _ => inversion H using inv_red_stat_stat_var_decl_item
+      | stat_var_decl_item_1 _ _ _ => inversion H using inv_red_stat_stat_var_decl_item_1
+      | stat_var_decl_item_2 _ _ _ => inversion H using inv_red_stat_stat_var_decl_item_2
+      | stat_var_decl_item_3 _ _ => inversion H using inv_red_stat_stat_var_decl_item_3
+      | stat_if_1 _ _ _ => inversion H using inv_red_stat_stat_if_1
+      | stat_while_1 _ _ _ _ => inversion H using inv_red_stat_stat_while_1
+      | stat_while_2 _ _ _ _ _ => inversion H using inv_red_stat_stat_while_2
+      | stat_while_3 _ _ _ _ _ => inversion H using inv_red_stat_stat_while_3
+      | stat_while_4 _ _ _ _ _ => inversion H using inv_red_stat_stat_while_4
+      | stat_while_5 _ _ _ _ _ => inversion H using inv_red_stat_stat_while_5
+      | stat_while_6 _ _ _ _ _ => inversion H using inv_red_stat_stat_while_6
+      | stat_do_while_1 _ _ _ _ => inversion H using inv_red_stat_stat_do_while_1
+      | stat_do_while_2 _ _ _ _ _ => inversion H using inv_red_stat_stat_do_while_2
+      | stat_do_while_3 _ _ _ _ _ => inversion H using inv_red_stat_stat_do_while_3
+      | stat_do_while_4 _ _ _ _ _ => inversion H using inv_red_stat_stat_do_while_4
+      | stat_do_while_5 _ _ _ _ _ => inversion H using inv_red_stat_stat_do_while_5
+      | stat_do_while_6 _ _ _ _ => inversion H using inv_red_stat_stat_do_while_6
+      | stat_do_while_7 _ _ _ _ _ => inversion H using inv_red_stat_stat_do_while_7
+      | stat_for_1 _ _ _ _ _ => inversion H using inv_red_stat_stat_for_1
+      | stat_for_2 _ _ _ _ _ => inversion H using inv_red_stat_stat_for_2
+      | stat_for_3 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_for_3
+      | stat_for_4 _ _ _ _ _ => inversion H using inv_red_stat_stat_for_4
+      | stat_for_5 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_for_5
+      | stat_for_6 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_for_6
+      | stat_for_7 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_for_7
+      | stat_for_8 _ _ _ _ _ => inversion H using inv_red_stat_stat_for_8
+      | stat_for_9 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_for_9
+      | stat_for_var_1 _ _ _ _ _ => inversion H using inv_red_stat_stat_for_var_1
+      | stat_with_1 _ _ => inversion H using inv_red_stat_stat_with_1
+      | stat_throw_1 _ => inversion H using inv_red_stat_stat_throw_1
+      | stat_return_1 _ => inversion H using inv_red_stat_stat_return_1
+      | stat_try_1 _ _ _ => inversion H using inv_red_stat_stat_try_1
+      | stat_try_2 _ _ _ _ => inversion H using inv_red_stat_stat_try_2
+      | stat_try_3 _ _ => inversion H using inv_red_stat_stat_try_3
+      | stat_try_4 _ _ => inversion H using inv_red_stat_stat_try_4
+      | stat_try_5 _ _ => inversion H using inv_red_stat_stat_try_5
+      | stat_switch_1 _ _ _ => inversion H using inv_red_stat_stat_switch_1
+      | stat_switch_2 _ _ => inversion H using inv_red_stat_stat_switch_2
+      | stat_switch_nodefault_1 _ _ _=> inversion H using inv_red_stat_stat_switch_nodefault_1
+      | stat_switch_nodefault_2 _ _ _ _ _  => inversion H using inv_red_stat_stat_switch_nodefault_2
+      | stat_switch_nodefault_3 _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_nodefault_3
+      | stat_switch_nodefault_4 _ _ => inversion H using inv_red_stat_stat_switch_nodefault_4
+      | stat_switch_nodefault_5 _ _ => inversion H using inv_red_stat_stat_switch_nodefault_5
+      | stat_switch_nodefault_6 _ _ _ => inversion H using inv_red_stat_stat_switch_nodefault_6
+      | stat_switch_default_1 _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_1
+      | stat_switch_default_A_1 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_A_1
+      | stat_switch_default_A_2 _ _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_A_2
+      | stat_switch_default_A_3 _ _ _ _ _ _ _  => inversion H using inv_red_stat_stat_switch_default_A_3
+      | stat_switch_default_A_4 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_A_4
+      | stat_switch_default_A_5 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_A_5
+      | stat_switch_default_B_1 _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_B_1
+      | stat_switch_default_B_2 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_B_2
+      | stat_switch_default_B_3 _ _ _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_B_3
+      | stat_switch_default_B_4 _ _ _ => inversion H using inv_red_stat_stat_switch_default_B_4
+      | stat_switch_default_5 _ _ _ _ => inversion H using inv_red_stat_stat_switch_default_5
+      | stat_switch_default_6 _ _ => inversion H using inv_red_stat_stat_switch_default_6
+      | stat_switch_default_7 _ _  => inversion H using inv_red_stat_stat_switch_default_7
+      | stat_switch_default_8 _ _ _ => inversion H using inv_red_stat_stat_switch_default_8
+    end
+end; tryfalse; clear H; intro H.
+
+Tactic Notation "inverts" "keep" "red_stat" hyp(H) := 
+  inverts_tactic_general ltac:(fun H => invert keep red_stat H) H.
+
+Tactic Notation "inverts" "red_stat" hyp(H) := 
+  inverts keep red_stat H; clear H.
+
+(**************************************************************)
 (** ** Inversion for programs                                 *)
 
 Tactic Notation "invert" "keep" "red_prog" hyp(H) := 
@@ -68,7 +263,7 @@ match type of H with
 end; tryfalse; clear H; intro H.
 
 Tactic Notation "inverts" "keep" "red_prog" hyp(H) := 
-  inverts_tactic_general ltac:(fun H => invert keep red_prog H) H. (* tryfalse. *)
+  inverts_tactic_general ltac:(fun H => invert keep red_prog H) H.
 
 Tactic Notation "inverts" "red_prog" hyp(H) := 
   inverts keep red_prog H; clear H.
@@ -562,40 +757,69 @@ try match goal with
    try solve [simpls; inverts H; try match goal with
                                   | H : abort _ |- _ => inverts H; false*
                                  end]
+
+ | H : abort (out_ter _ _) |- _ => try solve [inverts H; false*]
 end.
+
+(**************************************************************)
+(** ** Additional automation tactics                          *)
+
+(* Discharging goals with types of binary operators *)
+Ltac clear_binop :=
+repeat match goal with
+ | H : regular_binary_op _     |- _ => inverts H
+ | H : lazy_op           _ _   |- _ => inverts H
+ | H : puremath_op       _ _   |- _ => inverts H
+ | H : shift_op          _ _ _ |- _ => inverts H
+ | H : inequality_op     _ _ _ |- _ => inverts H
+ | H : bitwise_op        _ _   |- _ => inverts H
+end.
+
+Ltac clear_nonsense :=
+try match goal with
+ | r : ref |- _ => match goal with
+                    | H : (resvalue_ref r) = _ |- _ => try solve [inverts* H]
+                   end
+ | H : context[type_of _ = _] |- _ => try solve [inverts H; tryfalse]
+end.
+
+Ltac clean_up := false_exception; clear_binop; clear_nonsense.
 
 (**************************************************************)
 (** ** Auxiliary inversions on the semantics                  *)
 
 Lemma red_stat_expr_literal : forall S C (l : literal) o,
   red_stat S C (expr_literal l) o -> o = out_ter S (convert_literal_to_prim l).
-Proof with false_exception.
-  introv Hr. inverts Hr...
-  inverts H0... inverts H2...
-  inverts H6... inverts H5... 
-  inverts~ H3...
-Admitted. (* Faster *)
+Proof with clean_up; auto.
+  introv Hr. 
+  inverts red_stat Hr...
+  inverts red_spec H1... 
+  inverts* H6...
+  inverts red_spec H7...
+  inverts red_spec H5... 
+  inverts red_stat H4... 
+Admitted.
 
 Lemma red_expr_expr_literal : forall S C (l : literal) o,
   red_expr S C (expr_literal l) o -> o = out_ter S (convert_literal_to_prim l).
-Proof with false_exception.
+Proof with clean_up.
   introv Hr. inverts~ Hr...
 Admitted. (* Faster *)
 
 Lemma red_spec_spec_to_primitive_auto_prim : forall S C (p : prim) o,
   red_expr S C (spec_to_primitive_auto p) o -> o = out_ter S p.
-Proof with false_exception.
+Proof with clean_up.
   introv Hr; inverts~ Hr...
 Admitted. (* Faster *)
 
 Lemma red_expr_spec_to_number_number : forall S C n o,
   red_expr S C (spec_to_number n) o -> o = out_ter S n.
-Proof with false_exception.
+Proof with clean_up.
   introv Hr. inverts~ Hr...
 Admitted. (* Faster *)
 
 (**************************************************************)
-(** ** Additional automation tactics                          *)
+(** ** Final automation tactics                               *)
 
 (* Auxiliary inversions *)
 Ltac invert_jscert :=
@@ -610,25 +834,14 @@ match goal with
    lets Hsubst : red_expr_spec_to_number_number (rm H); subst o
 end.
 
-(* Discharging goals with types of binary operators *)
-Ltac clear_binop :=
-repeat match goal with
- | H : regular_binary_op _     |- _ => inverts H
- | H : lazy_op           _ _   |- _ => inverts H
- | H : puremath_op       _ _   |- _ => inverts H
- | H : shift_op          _ _ _ |- _ => inverts H
- | H : inequality_op     _ _ _ |- _ => inverts H
- | H : bitwise_op        _ _   |- _ => inverts H
-end.
-
 (* Main inversion tactic *)
 Ltac invert_jscert_on Hyp :=
 match type of Hyp with
- | red_spec _ _ _ _ => inverts* Hyp
+ | red_spec _ _ _ _ => inverts red_spec Hyp
  | red_expr _ _ _ _ => inverts* Hyp
- | red_stat _ _ _ _ => inverts* Hyp
+ | red_stat _ _ _ _ => inverts red_stat Hyp
  | red_prog _ _ _ _ => inverts red_prog Hyp
-end; jauto; false_exception; clear_binop; repeat invert_jscert.
+end; jauto; clean_up; repeat invert_jscert.
 
 (* Wrap-up *)
 Ltac inversion_jscert :=

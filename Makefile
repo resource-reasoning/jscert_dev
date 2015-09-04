@@ -73,6 +73,8 @@ JS_SRC=\
 	coq/JsPrettyIntermAux.v \
 	coq/JsPrettyRules.v \
 	coq/JsCorrectness.v \
+        coq/JsInversionPrinciplesSpec.v \
+        coq/JsInversionPrinciplesStat.v \
         coq/JsInversionPrinciplesProg.v \
         coq/JsInversionTactics.v \
         coq/JsSublanguages.v
