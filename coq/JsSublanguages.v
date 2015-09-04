@@ -2,6 +2,7 @@ Set Implicit Arguments.
 Require Import Shared.
 Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
 Require Import JsPrettyInterm JsPrettyRules.
+Require Import JsInversionTactics.
 
 (**************************************************************)
 (** ** Implicit Types -- copied from JsPreliminary *)
@@ -50,158 +51,6 @@ Implicit Type t : stat.
 Implicit Type T : Type.
 
 (**************************************************************)
-(** ** Speeding up inversion                                  *)
-
-Ltac inverts_tactic_general T H :=
-  let rec go :=
-    match goal with
-    | |- (ltac_Mark -> _) => intros _
-    | |- (?x = ?y -> _) => let H := fresh in intro H;
-                           first [ subst x | subst y | injects H ];
-                           go 
-    | |- (existT ?P ?p ?x = existT ?P ?p ?y -> _) =>
-         let H := fresh in intro H;
-         generalize (@inj_pair2 _ P p x y H);
-         clear H; go 
-    | |- (?P -> ?Q) => intro; go 
-    | |- (forall _, _) => intro; go 
-    end in
-  generalize ltac_mark; T H; go;
-  unfold eq' in *.
-
-Ltac red_prog_hnf e := 
-match (eval hnf in e) with
-  | prog_basic ?e1 =>
-      let e1' := (eval hnf in e1) in
-      constr:(prog_basic e1')
-  | ?e1 => constr:e1
-end.
-
-Derive Inversion inv_red_prog_intro      with (forall S C str els oo, red_prog S C (prog_intro str els) oo) Sort Prop.
-Derive Inversion inv_red_prog_javascript with (forall S C o1  p   oo, red_prog S C (javascript_1 o1 p)  oo) Sort Prop.
-Derive Inversion inv_red_prog_prog_1     with (forall S C el      oo, red_prog S C (prog_1 oo el)       oo) Sort Prop.
-Derive Inversion inv_red_prog_prog_2     with (forall S C o1  rv  oo, red_prog S C (prog_2 rv o1)       oo) Sort Prop.
-
-Tactic Notation "invert" "keep" "red_prog" hyp(H) := 
-match type of H with
-  | red_prog ?S ?C (?e) ?oo => 
-    let eh := red_prog_hnf e in
-    try (asserts_rewrite (e = eh) in H; [reflexivity | idtac]); 
-    match eh with
-      | prog_basic (prog_intro _ _) => inversion H using inv_red_prog_intro
-      | javascript_1 _ _ => inversion H using inv_red_prog_javascript
-      | prog_1 _ _ => inversion H using inv_red_prog_prog_1
-      | prog_2 _ _ => inversion H using inv_red_prog_prog_2
-    end
-end; tryfalse; clear H; intro H.
-
-Tactic Notation "inverts" "keep" "red_prog" hyp(H) := 
-  inverts_tactic_general ltac:(fun H => invert keep red_prog H) H. (* tryfalse. *)
-
-Tactic Notation "inverts" "red_prog" hyp(H) := 
-  inverts keep red_prog H; clear H.
-
-(**************************************************************)
-(** ** Discharging exception difficulties                     *)
-
-Ltac false_exception := 
-try match goal with 
- | H : out_of_ext_prog _ = _ |- _ => 
-   try solve [simpls; inverts* H]; 
-   try solve [simpls; inverts H; try match goal with
-                                  | H : abort _ |- _ => inverts H; false*
-                                 end]
- | H : out_of_ext_stat _ = _ |- _ => 
-   try solve [simpls; inverts* H];
-   try solve [simpls; inverts H; try match goal with
-                                  | H : abort _ |- _ => inverts H; false*
-                                 end]
-
- | H : out_of_ext_spec _ = _ |- _ => 
-   try solve [simpls; inverts* H];
-   try solve [simpls; inverts H; try match goal with
-                                  | H : abort _ |- _ => inverts H; false*
-                                 end]
-
- | H : out_of_ext_expr _ = _ |- _ => 
-   try solve [simpls; inverts* H];
-   try solve [simpls; inverts H; try match goal with
-                                  | H : abort _ |- _ => inverts H; false*
-                                 end]
-end.
-
-(**************************************************************)
-(** ** Auxiliary inversions on the semantics                  *)
-
-Lemma red_stat_expr_literal : forall S C (l : literal) o,
-  red_stat S C (expr_literal l) o -> o = out_ter S (convert_literal_to_prim l).
-Proof with false_exception.
-  introv Hr. inverts Hr...
-  inverts H0... inverts H2...
-  inverts H6... inverts H5... 
-  inverts~ H3...
-Admitted. (* Faster *)
-
-Lemma red_expr_expr_literal : forall S C (l : literal) o,
-  red_expr S C (expr_literal l) o -> o = out_ter S (convert_literal_to_prim l).
-Proof with false_exception.
-  introv Hr. inverts~ Hr...
-Admitted. (* Faster *)
-
-Lemma red_spec_spec_to_primitive_auto_prim : forall S C (p : prim) o,
-  red_expr S C (spec_to_primitive_auto p) o -> o = out_ter S p.
-Proof with false_exception.
-  introv Hr; inverts~ Hr...
-Admitted. (* Faster *)
-
-Lemma red_expr_spec_to_number_number : forall S C n o,
-  red_expr S C (spec_to_number n) o -> o = out_ter S n.
-Proof with false_exception.
-  introv Hr. inverts~ Hr...
-Admitted. (* Faster *)
-
-Ltac invert_jscert :=
-match goal with
- | H : red_stat _ _ (stat_basic (stat_expr (expr_literal _))) ?o |- _ => 
-   lets Hsubst : red_stat_expr_literal (rm H); subst o
- | H : red_expr _ _ (expr_basic (expr_literal _)) ?o |- _ => 
-   lets Hsubst : red_expr_expr_literal (rm H); subst o
- | H : red_expr _ _ (spec_to_primitive_auto (value_prim _)) ?o |- _ => 
-   lets Hsubst : red_spec_spec_to_primitive_auto_prim (rm H); subst o
- | H : red_expr _ _ (spec_to_number (value_prim (prim_number _))) ?o |- _ => 
-   lets Hsubst : red_expr_spec_to_number_number (rm H); subst o
-end.
-
-Ltac clear_binop :=
-repeat match goal with
- | H : regular_binary_op _     |- _ => inverts H
- | H : lazy_op           _ _   |- _ => inverts H
- | H : puremath_op       _ _   |- _ => inverts H
- | H : shift_op          _ _ _ |- _ => inverts H
- | H : inequality_op     _ _ _ |- _ => inverts H
- | H : bitwise_op        _ _   |- _ => inverts H
-end.
-
-Ltac invert_jscert_on_two Hyp :=
-match type of Hyp with
- | red_spec _ _ _ _ => inverts* Hyp
- | red_expr _ _ _ _ => inverts* Hyp
- | red_stat _ _ _ _ => inverts* Hyp
- | red_prog _ _ _ _ => inverts red_prog Hyp
-end; jauto; false_exception; clear_binop; repeat invert_jscert.
-
-Ltac invert_jscert_on Hyp :=
- inverts* Hyp; false_exception; clear_binop; repeat invert_jscert.
-
-Ltac JesusTakeTheWheel :=
-try match goal with 
- | H : red_spec _ _ _ _ |- _ => (invert_jscert_on H; [idtac]; JesusTakeTheWheel) || (invert_jscert_on H; fail)
- | H : red_expr _ _ _ _ |- _ => (invert_jscert_on H; [idtac]; JesusTakeTheWheel) || (invert_jscert_on H; fail)
- | H : red_stat _ _ _ _ |- _ => (invert_jscert_on H; [idtac]; JesusTakeTheWheel) || (invert_jscert_on H; fail)
- | H : red_prog _ _ _ _ |- _ => (invert_jscert_on H; [idtac]; JesusTakeTheWheel) || (invert_jscert_on H; fail)
-end.
-
-(**************************************************************)
 (** ** Toy sublanguage #1 - just numbers                      *)
 
 Definition sub_numbers_elem (e : element) : Prop := 
@@ -232,15 +81,15 @@ Theorem sub_numbers_characterization :
     red_prog S C p o -> 
     sub_numbers_prog p -> 
     exists S' n, o = (out_ter S' n).
-Proof with JesusTakeTheWheel.
+Proof with inversion_jscert.
   destruct p as (s & le). gen s.
   induction le using list_ind_last; introv Hr Hs...
 
-  + apply last_eq_nil_inv in H0. false~.
+  + apply last_eq_nil_inv in H1. false~.
 
-  + apply last_eq_last_inv in H0; destruct H0; subst.
+  + apply last_eq_last_inv in H1; destruct H1; subst.
     apply Forall_last_inv in Hs. destruct Hs as (Hs & Ha).
-    specializes IHle (rm H3) (rm Hs).
+    specializes IHle (rm H4) (rm Hs).
     destruct a; try solve [false*].
     destruct s0; try solve [false*].
     destruct e; try solve [false*].
@@ -284,7 +133,7 @@ end.
 Lemma red_sub_numplus_expr : forall (e : expr),
   sub_numplus_expr e -> forall S C o, 
     red_expr S C e o -> exists (n : number), o = out_ter S n.
-Proof with JesusTakeTheWheel.
+Proof with inversion_jscert.
   induction e; introv Hsub; introv Hr; try solve [false*].
 
   destruct l; try solve [false*]... 
@@ -303,15 +152,15 @@ Theorem sub_numplus_characterization :
     red_prog S C p o -> 
     sub_numplus_prog p -> 
     exists S' n, o = (out_ter S' n).
-Proof with JesusTakeTheWheel.
+Proof with inversion_jscert.
   destruct p as (s & le). gen s.
   induction le using list_ind_last; introv Hr Hs...
 
-  + apply last_eq_nil_inv in H0. false~.
+  + apply last_eq_nil_inv in H1. false~.
 
-  + apply last_eq_last_inv in H0; destruct H0; subst.
+  + apply last_eq_last_inv in H1; destruct H1; subst.
     apply Forall_last_inv in Hs. destruct Hs as (Hs & Ha).
-    specializes IHle (rm H3) (rm Hs).
+    specializes IHle (rm H4) (rm Hs).
     destruct IHle as (S' & n & Heq); subst.
     destruct a; try solve [false*].
     destruct s0; try solve [false*].
@@ -320,11 +169,11 @@ Proof with JesusTakeTheWheel.
     - destruct l; try solve [false*]...
 
     - simpls; destruct b; try solve [false*]...
-      apply red_sub_numplus_expr in H1; jauto.
-      simpls. inverts H. destruct H1 as (n1 & Heq).
-      destruct y1; inverts H4; subst...
-      apply red_sub_numplus_expr in H3; jauto.
-      destruct H3 as (n2 & Heq); subst...
+      apply red_sub_numplus_expr in H2; jauto.
+      simpls. inverts H. destruct H2 as (n1 & Heq).
+      destruct y1; inverts H8; subst...
+      apply red_sub_numplus_expr in H5; jauto.
+      destruct H5 as (n2 & Heq); subst...
       invert_jscert_on H10; [simpls; intuition; false* | ]...
 Admitted.
 
