@@ -74,10 +74,31 @@ JS_SRC=\
 	coq/JsPrettyRules.v \
 	coq/JsCorrectness.v \
         coq/JsInversionPrinciplesSpec.v \
+	coq/JsInversionPrinciplesExprAxioms.v \
         coq/JsInversionPrinciplesStat.v \
         coq/JsInversionPrinciplesProg.v \
         coq/JsInversionTactics.v \
         coq/JsSublanguages.v
+
+#       coq/JsInversionPrinciplesExpr01.v \
+        coq/JsInversionPrinciplesExpr02.v \
+        coq/JsInversionPrinciplesExpr03.v \
+        coq/JsInversionPrinciplesExpr04.v \
+        coq/JsInversionPrinciplesExpr05.v \
+        coq/JsInversionPrinciplesExpr06.v \
+        coq/JsInversionPrinciplesExpr07.v \
+        coq/JsInversionPrinciplesExpr08.v \
+        coq/JsInversionPrinciplesExpr09.v \
+        coq/JsInversionPrinciplesExpr10.v \
+        coq/JsInversionPrinciplesExpr11.v \
+        coq/JsInversionPrinciplesExpr12.v \
+        coq/JsInversionPrinciplesExpr13.v \
+        coq/JsInversionPrinciplesExpr14.v \
+        coq/JsInversionPrinciplesExpr15.v \
+        coq/JsInversionPrinciplesExpr16.v \
+        coq/JsInversionPrinciplesExpr17.v \
+        coq/JsInversionPrinciplesExpr18.v \
+        coq/JsInversionPrinciplesExpr19.v
 
 JS_VO=$(JS_SRC:.v=.vo)
 

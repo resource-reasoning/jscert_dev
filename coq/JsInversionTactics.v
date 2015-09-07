@@ -2,7 +2,21 @@ Set Implicit Arguments.
 Require Import Shared.
 Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
 Require Import JsPrettyInterm JsPrettyRules.
-Require Export JsInversionPrinciplesSpec (* JsInversionPrinciplesExpr *) JsInversionPrinciplesStat JsInversionPrinciplesProg.
+Require Import JsInversionPrinciplesSpec JsInversionPrinciplesStat JsInversionPrinciplesProg.
+
+(* 
+
+Require Import JsInversionPrinciplesExpr01 JsInversionPrinciplesExpr02 JsInversionPrinciplesExpr03.
+Require Import JsInversionPrinciplesExpr04 JsInversionPrinciplesExpr05 JsInversionPrinciplesExpr06.
+Require Import JsInversionPrinciplesExpr07 JsInversionPrinciplesExpr08 JsInversionPrinciplesExpr09.
+Require Import JsInversionPrinciplesExpr10 JsInversionPrinciplesExpr11 JsInversionPrinciplesExpr12.
+Require Import JsInversionPrinciplesExpr13 JsInversionPrinciplesExpr14 JsInversionPrinciplesExpr15.
+Require Import JsInversionPrinciplesExpr16 JsInversionPrinciplesExpr17 JsInversionPrinciplesExpr18.
+Require Import JsInversionPrinciplesExpr19. 
+
+*) 
+
+Require Import JsInversionPrinciplesExprAxioms.
 
 (**************************************************************)
 (** ** Speeding up inversion                                  *)
@@ -271,7 +285,6 @@ Tactic Notation "inverts" "red_prog" hyp(H) :=
 (**************************************************************)
 (** ** Inversion for expressions                              *)
 
-(* 
 Tactic Notation "invert" "keep" "red_expr" hyp(H) := 
 match type of H with
   | red_expr ?S ?C (?e) ?oo => 
@@ -347,7 +360,7 @@ match type of H with
       | expr_unary_op_bitwise_not_1 _ => inversion H using inv_red_expr_expr_unary_op_bitwise_not_1
       | expr_unary_op_not_1 _ => inversion H using inv_red_expr_expr_unary_op_not_1
       | expr_conditional_1 _ _ _ => inversion H using inv_red_expr_expr_conditional_1
-      | expr_conditional_1' _ _ _ => inversion H using inv_red_expr_expr_conditional_1
+      | expr_conditional_1' _ _ _ => inversion H using inv_red_expr_expr_conditional_1'
       | expr_conditional_2 _ => inversion H using inv_red_expr_expr_conditional_2
       | expr_binary_op_1 _ _ _ => inversion H using inv_red_expr_expr_binary_op_1
       | expr_binary_op_2 _ _ _ => inversion H using inv_red_expr_expr_binary_op_2
@@ -374,7 +387,7 @@ match type of H with
       | expr_assign_1 _ _ _ => inversion H using inv_red_expr_expr_assign_1
       | expr_assign_2 _ _ _ _ => inversion H using inv_red_expr_expr_assign_2
       | expr_assign_3 _ _ _ _ => inversion H using inv_red_expr_expr_assign_3
-      | expr_assign_3' _ _ => inversion H using inv_red_expr_expr_assign_3
+      | expr_assign_3' _ _ => inversion H using inv_red_expr_expr_assign_3'
       | expr_assign_4 _ _ => inversion H using inv_red_expr_expr_assign_4
       | expr_assign_5 _ _ => inversion H using inv_red_expr_expr_assign_5
       | spec_to_primitive _ _ => inversion H using inv_red_expr_spec_to_primitive
@@ -576,10 +589,10 @@ match type of H with
       | spec_build_error_2 _ _ => inversion H using inv_red_expr_spec_build_error_2
       | spec_new_object _ => inversion H using inv_red_expr_spec_new_object
       | spec_new_object_1 _ _ => inversion H using inv_red_expr_spec_new_object_1
-      | spec_prim_new_object _ => inversion H using inv_red_expr_spec_prim_new_object
+      (* | spec_prim_new_object _ => inversion H using inv_red_expr_spec_prim_new_object *)
       | spec_creating_function_object_proto _ => inversion H using inv_red_expr_spec_creating_function_object_proto
-      | spec_creating_function_object_proto_1 _ _ => inversion H using inv_red_expr_spec_creating_function_object_proto_1
-      | spec_creating_function_object_proto_2 _ _ _ => inversion H using inv_red_expr_spec_creating_function_object_proto_2
+      (* | spec_creating_function_object_proto_1 _ _ => inversion H using inv_red_expr_spec_creating_function_object_proto_1 *)
+      (* | spec_creating_function_object_proto_2 _ _ _ => inversion H using inv_red_expr_spec_creating_function_object_proto_2 *)
       | spec_creating_function_object _ _ _ _ => inversion H using inv_red_expr_spec_creating_function_object
       | spec_creating_function_object_1 _ _ _ => inversion H using inv_red_expr_spec_creating_function_object_1
       | spec_creating_function_object_2 _ _ _ => inversion H using inv_red_expr_spec_creating_function_object_2
@@ -611,8 +624,8 @@ match type of H with
       | spec_construct_default_1 _ _ _ => inversion H using inv_red_expr_spec_construct_default_1
       | spec_construct_default_2 _ _ => inversion H using inv_red_expr_spec_construct_default_2
       | spec_construct_1_after_bind _ _ _ => inversion H using inv_red_expr_spec_construct_1_after_bind
-      | spec_construct_bool_1 _ => inversion H using inv_red_expr_spec_construct_bool_1
-      | spec_construct_number_1 _ => inversion H using inv_red_expr_spec_construct_number_1
+      (* | spec_construct_bool_1 _ => inversion H using inv_red_expr_spec_construct_bool_1 *)
+      (* | spec_construct_number_1 _ => inversion H using inv_red_expr_spec_construct_number_1 *)
       | spec_call_global_is_nan_1 _ => inversion H using inv_red_expr_spec_call_global_is_nan_1
       | spec_call_global_is_finite_1 _ => inversion H using inv_red_expr_spec_call_global_is_finite_1
       | spec_call_object_call_1 _ _ => inversion H using inv_red_expr_spec_call_object_call_1
@@ -728,7 +741,7 @@ Tactic Notation "inverts" "keep" "red_expr" hyp(H) :=
   inverts_tactic_general ltac:(fun H => invert keep red_expr H) H. 
 
 Tactic Notation "inverts" "red_expr" hyp(H) := 
-  inverts keep red_expr H; clear H. *)
+  inverts keep red_expr H; clear H. 
 
 (**************************************************************)
 (** ** Discharging exception difficulties                     *)
@@ -794,29 +807,30 @@ Proof with clean_up; auto.
   introv Hr. 
   inverts red_stat Hr...
   inverts red_spec H1... 
-  inverts* H6...
+  inverts red_expr H6...
   inverts red_spec H7...
   inverts red_spec H5... 
   inverts red_stat H4... 
-Admitted.
+Qed.
 
 Lemma red_expr_expr_literal : forall S C (l : literal) o,
   red_expr S C (expr_literal l) o -> o = out_ter S (convert_literal_to_prim l).
-Proof with clean_up.
-  introv Hr. inverts~ Hr...
-Admitted. (* Faster *)
+Proof with clean_up; auto.
+  introv Hr; inverts red_expr Hr... 
+Qed. 
 
 Lemma red_spec_spec_to_primitive_auto_prim : forall S C (p : prim) o,
   red_expr S C (spec_to_primitive_auto p) o -> o = out_ter S p.
-Proof with clean_up.
-  introv Hr; inverts~ Hr...
-Admitted. (* Faster *)
+Proof with clean_up; tryfalse; auto.
+  introv Hr.
+  inverts red_expr Hr...
+Qed. 
 
-Lemma red_expr_spec_to_number_number : forall S C n o,
+Lemma red_expr_spec_to_number_number : forall S C (n : number) o,
   red_expr S C (spec_to_number n) o -> o = out_ter S n.
-Proof with clean_up.
-  introv Hr. inverts~ Hr...
-Admitted. (* Faster *)
+Proof with clean_up; tryfalse; auto.
+  introv Hr. inverts red_expr Hr...
+Qed.
 
 (**************************************************************)
 (** ** Final automation tactics                               *)
@@ -837,11 +851,11 @@ end.
 (* Main inversion tactic *)
 Ltac invert_jscert_on Hyp :=
 match type of Hyp with
- | red_spec _ _ _ _ => inverts red_spec Hyp
- | red_expr _ _ _ _ => inverts* Hyp
- | red_stat _ _ _ _ => inverts red_stat Hyp
- | red_prog _ _ _ _ => inverts red_prog Hyp
-end; jauto; clean_up; repeat invert_jscert.
+ | red_spec _ _ _ _ => inverts red_spec Hyp; jauto; clean_up; tryfalse; repeat invert_jscert
+ | red_expr _ _ _ _ => inverts red_expr Hyp; jauto; clean_up; tryfalse; repeat invert_jscert
+ | red_stat _ _ _ _ => inverts red_stat Hyp; jauto; clean_up; tryfalse; repeat invert_jscert
+ | red_prog _ _ _ _ => inverts red_prog Hyp; jauto; clean_up; repeat invert_jscert
+end.
 
 (* Wrap-up *)
 Ltac inversion_jscert :=

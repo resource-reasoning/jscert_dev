@@ -94,7 +94,7 @@ Proof with inversion_jscert.
     destruct s0; try solve [false*].
     destruct e; try solve [false*].
     destruct l; try solve [false*]...
-Admitted. (* Faster *)
+Qed. 
 
 (**************************************************************)
 (** ** Toy sublanguage #1 - numbers and +                     *)
@@ -142,9 +142,9 @@ Proof with inversion_jscert.
   simpls; destruct b; try solve [false*].
   destruct Hsub as (He1 & He2 & _).
   specializes IHe1 He1 S C. specializes IHe2 He2 S C... 
-  lets (n1 & Heq1) : (rm IHe1) (rm H0); subst... 
-  lets (n2 & Heq2) : (rm IHe2) (rm H0); subst...
-Admitted. (* Faster *)
+  lets (n1 & Heq1) : (rm IHe1) (rm H6); subst... 
+  lets (n2 & Heq2) : (rm IHe2) (rm H6); subst...
+Qed. (* Faster *)
 
 Theorem sub_numplus_characterization : 
   forall p S C o, 
@@ -173,5 +173,4 @@ Proof with inversion_jscert.
       destruct y1; inverts H2; subst...
       apply red_sub_numplus_expr in H6; jauto.
       destruct H6 as (n2 & Heq); subst...
-      inverts H.
-Admitted.
+Qed.
