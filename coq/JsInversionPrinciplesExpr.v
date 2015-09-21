@@ -6,7 +6,9 @@ Require Import JsPrettyInterm JsPrettyRules.
 (**************************************************************)
 (** ** Inversion principles as axioms                         *)
 
-Axiom inv_red_expr_this
+Module Type InvExpr.
+
+Parameter inv_red_expr_this
      : forall (S : state) (C : execution_ctx) (oo : out)
          (P : state -> execution_ctx -> out -> Prop),
        (red_expr S C (expr_basic expr_this) oo ->
@@ -25,7 +27,8 @@ Axiom inv_red_expr_this
         @eq execution_ctx C0 C ->
         @eq out (out_ter S (res_val v)) oo -> P S C (out_ter S (res_val v))) ->
        red_expr S C (expr_basic expr_this) oo -> P S C oo.
-Axiom inv_red_expr_identifier
+
+Parameter inv_red_expr_identifier
      : forall (S : state) (C : execution_ctx) (a1 : string) 
          (oo : out) (P : state -> execution_ctx -> string -> out -> Prop),
        (red_expr S C (expr_basic (expr_identifier a1)) oo ->
@@ -47,7 +50,8 @@ Axiom inv_red_expr_identifier
         @eq execution_ctx C0 C ->
         @eq string x a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (expr_basic (expr_identifier a1)) oo -> P S C a1 oo.
-Axiom inv_red_expr_literal
+
+Parameter inv_red_expr_literal
      : forall (S : state) (C : execution_ctx) (a1 : literal) 
          (oo : out) (P : state -> execution_ctx -> literal -> out -> Prop),
        (red_expr S C (expr_basic (expr_literal a1)) oo ->
@@ -69,7 +73,8 @@ Axiom inv_red_expr_literal
         @eq out (out_ter S (res_val v)) oo ->
         P S C a1 (out_ter S (res_val v))) ->
        red_expr S C (expr_basic (expr_literal a1)) oo -> P S C a1 oo.
-Axiom inv_red_expr_object
+
+Parameter inv_red_expr_object
      : forall (S : state) (C : execution_ctx)
          (a1 : list (prod propname propbody)) (oo : out)
          (P : state ->
@@ -95,7 +100,8 @@ Axiom inv_red_expr_object
         @eq (list (prod propname propbody)) pds a1 ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (expr_basic (expr_object a1)) oo -> P S C a1 oo.
-Axiom inv_red_expr_array
+
+Parameter inv_red_expr_array
      : forall (S : state) (C : execution_ctx) (a1 : list (option expr))
          (oo : out)
          (P : state -> execution_ctx -> list (option expr) -> out -> Prop),
@@ -118,7 +124,8 @@ Axiom inv_red_expr_array
         @eq execution_ctx C0 C ->
         @eq (list (option expr)) oes a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (expr_basic (expr_array a1)) oo -> P S C a1 oo.
-Axiom inv_red_expr_function
+
+Parameter inv_red_expr_function
      : forall (S : state) (C : execution_ctx) (a1 : option string)
          (a2 : list string) (a3 : funcbody) (oo : out)
          (P : state ->
@@ -166,7 +173,8 @@ Axiom inv_red_expr_function
         @eq funcbody bd a3 -> @eq out o oo -> P S C (@Some string s) a2 a3 oo) ->
        red_expr S C (expr_basic (expr_function a1 a2 a3)) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_access
+
+Parameter inv_red_expr_access
      : forall (S : state) (C : execution_ctx) (a1 a2 : expr) 
          (oo : out)
          (P : state -> execution_ctx -> expr -> expr -> out -> Prop),
@@ -189,7 +197,8 @@ Axiom inv_red_expr_access
         @eq execution_ctx C0 C ->
         @eq expr e1 a1 -> @eq expr e2 a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_basic (expr_access a1 a2)) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_member
+
+Parameter inv_red_expr_member
      : forall (S : state) (C : execution_ctx) (a1 : expr) 
          (a2 : string) (oo : out)
          (P : state -> execution_ctx -> expr -> string -> out -> Prop),
@@ -212,7 +221,8 @@ Axiom inv_red_expr_member
         @eq execution_ctx C0 C ->
         @eq expr e1 a1 -> @eq string x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_basic (expr_member a1 a2)) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_new
+
+Parameter inv_red_expr_new
      : forall (S : state) (C : execution_ctx) (a1 : expr) 
          (a2 : list expr) (oo : out)
          (P : state -> execution_ctx -> expr -> list expr -> out -> Prop),
@@ -236,7 +246,8 @@ Axiom inv_red_expr_new
         @eq expr e1 a1 ->
         @eq (list expr) e2s a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_basic (expr_new a1 a2)) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_call
+
+Parameter inv_red_expr_call
      : forall (S : state) (C : execution_ctx) (a1 : expr) 
          (a2 : list expr) (oo : out)
          (P : state -> execution_ctx -> expr -> list expr -> out -> Prop),
@@ -260,7 +271,8 @@ Axiom inv_red_expr_call
         @eq expr e1 a1 ->
         @eq (list expr) e2s a2 -> @eq out o2 oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_basic (expr_call a1 a2)) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_unary_op
+
+Parameter inv_red_expr_unary_op
      : forall (S : state) (C : execution_ctx) (a1 : unary_op) 
          (a2 : expr) (oo : out)
          (P : state -> execution_ctx -> unary_op -> expr -> out -> Prop),
@@ -309,7 +321,8 @@ Axiom inv_red_expr_unary_op
         @eq unary_op unary_op_typeof a1 ->
         @eq expr e a2 -> @eq out o oo -> P S C unary_op_typeof a2 oo) ->
        red_expr S C (expr_basic (expr_unary_op a1 a2)) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_binary_op
+
+Parameter inv_red_expr_binary_op
      : forall (S : state) (C : execution_ctx) (a1 : expr) 
          (a2 : binary_op) (a3 : expr) (oo : out)
          (P : state ->
@@ -350,7 +363,8 @@ Axiom inv_red_expr_binary_op
         @eq expr e2 a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (expr_basic (expr_binary_op a1 a2 a3)) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_conditional
+
+Parameter inv_red_expr_conditional
      : forall (S : state) (C : execution_ctx) (a1 a2 a3 : expr) 
          (oo : out)
          (P : state -> execution_ctx -> expr -> expr -> expr -> out -> Prop),
@@ -376,7 +390,8 @@ Axiom inv_red_expr_conditional
         @eq expr e2 a2 -> @eq expr e3 a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (expr_basic (expr_conditional a1 a2 a3)) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_assign
+
+Parameter inv_red_expr_assign
      : forall (S : state) (C : execution_ctx) (a1 : expr)
          (a2 : option binary_op) (a3 : expr) (oo : out)
          (P : state ->
@@ -405,7 +420,8 @@ Axiom inv_red_expr_assign
         @eq expr e2 a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (expr_basic (expr_assign a1 a2 a3)) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_identifier_1
+
+Parameter inv_red_expr_expr_identifier_1
      : forall (S : state) (C : execution_ctx) (a1 : specret ref) 
          (oo : out)
          (P : state -> execution_ctx -> specret ref -> out -> Prop),
@@ -427,7 +443,8 @@ Axiom inv_red_expr_expr_identifier_1
         @eq out (out_ter S1 (res_ref r)) oo ->
         P S C (@ret ref S1 r) (out_ter S1 (res_ref r))) ->
        red_expr S C (expr_identifier_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_object_0
+
+Parameter inv_red_expr_expr_object_0
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : propdefs) (oo : out)
          (P : state ->
@@ -453,7 +470,8 @@ Axiom inv_red_expr_expr_object_0
         @eq propdefs pds a2 ->
         @eq out o oo -> P S C (out_ter S1 (res_val (value_object l))) a2 oo) ->
        red_expr S C (expr_object_0 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_object_1
+
+Parameter inv_red_expr_expr_object_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : propdefs) (oo : out)
          (P : state ->
@@ -494,7 +512,8 @@ Axiom inv_red_expr_expr_object_1
         P S C a1
           (@cons (prod propname propbody) (@pair propname propbody pn pb) pds)
           oo) -> red_expr S C (expr_object_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_object_2
+
+Parameter inv_red_expr_expr_object_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : propbody) (a4 : propdefs) 
          (oo : out)
@@ -553,7 +572,8 @@ Axiom inv_red_expr_expr_object_2
         @eq propdefs pds a4 ->
         @eq out o oo -> P S C a1 a2 (propbody_set args bd) a4 oo) ->
        red_expr S C (expr_object_2 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_object_3_val
+
+Parameter inv_red_expr_expr_object_3_val
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : specret value) (a4 : propdefs) 
          (oo : out)
@@ -589,7 +609,8 @@ Axiom inv_red_expr_expr_object_3_val
         @eq out o oo -> P S C a1 a2 (@ret value S0 v) a4 oo) ->
        red_expr S C (expr_object_3_val a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_object_3_get
+
+Parameter inv_red_expr_expr_object_3_get
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : out) (a4 : propdefs) (oo : out)
          (P : state ->
@@ -624,7 +645,8 @@ Axiom inv_red_expr_expr_object_3_get
         @eq out o oo -> P S C a1 a2 (out_ter S0 (res_val v)) a4 oo) ->
        red_expr S C (expr_object_3_get a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_object_3_set
+
+Parameter inv_red_expr_expr_object_3_set
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : out) (a4 : propdefs) (oo : out)
          (P : state ->
@@ -659,7 +681,8 @@ Axiom inv_red_expr_expr_object_3_set
         @eq out o oo -> P S C a1 a2 (out_ter S0 (res_val v)) a4 oo) ->
        red_expr S C (expr_object_3_set a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_object_4
+
+Parameter inv_red_expr_expr_object_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : descriptor) (a4 : propdefs) 
          (oo : out)
@@ -691,7 +714,8 @@ Axiom inv_red_expr_expr_object_4
         @eq descriptor Desc a3 ->
         @eq propdefs pds a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (expr_object_4 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_object_5
+
+Parameter inv_red_expr_expr_object_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : propdefs) (a3 oo : out)
          (P : state ->
@@ -720,7 +744,8 @@ Axiom inv_red_expr_expr_object_5
         @eq out (out_ter S0 (res_normal rv)) a3 ->
         @eq out o oo -> P S C a1 a2 (out_ter S0 (res_normal rv)) oo) ->
        red_expr S C (expr_object_5 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_0
+
+Parameter inv_red_expr_expr_array_0
      : forall (S : state) (C : execution_ctx) (a1 : out)
          (a2 : list (option expr)) (oo : out)
          (P : state ->
@@ -746,7 +771,8 @@ Axiom inv_red_expr_expr_array_0
         @eq (list (option expr)) oes a2 ->
         @eq out o oo -> P S C (out_ter S0 (res_val (value_object l))) a2 oo) ->
        red_expr S C (expr_array_0 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_array_1
+
+Parameter inv_red_expr_expr_array_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list (option expr)) (oo : out)
          (P : state ->
@@ -788,7 +814,8 @@ Axiom inv_red_expr_expr_array_1
         @eq object_loc l a1 ->
         @eq (list (option expr)) oes a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_array_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_array_2
+
+Parameter inv_red_expr_expr_array_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list (option expr)) (a3 : Z) (oo : out)
          (P : state ->
@@ -815,7 +842,8 @@ Axiom inv_red_expr_expr_array_2
         @eq (list (option expr)) elst a2 ->
         @eq Z elgth a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (expr_array_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_3
+
+Parameter inv_red_expr_expr_array_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list (option expr)) (a3 : Z) (oo : out)
          (P : state ->
@@ -881,7 +909,8 @@ Axiom inv_red_expr_expr_array_3
         @eq out o oo ->
         P S C a1 (@cons (option expr) (@Some expr e) oes) a3 oo) ->
        red_expr S C (expr_array_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_3_1
+
+Parameter inv_red_expr_expr_array_3_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret value) (a3 : list (option expr)) 
          (a4 : Z) (oo : out)
@@ -925,7 +954,8 @@ Axiom inv_red_expr_expr_array_3_1
         @eq Z firstIndex a4 ->
         @eq out o oo -> P S C a1 (@ret value S' v) a3 a4 oo) ->
        red_expr S C (expr_array_3_1 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_array_3_2
+
+Parameter inv_red_expr_expr_array_3_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : out) (a4 : list (option expr)) 
          (a5 : Z) (oo : out)
@@ -960,7 +990,8 @@ Axiom inv_red_expr_expr_array_3_2
         @eq out o oo -> P S C a1 a2 (out_ter S' (res_val vlen)) a4 a5 oo) ->
        red_expr S C (expr_array_3_2 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_expr_array_3_3
+
+Parameter inv_red_expr_expr_array_3_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : specret Z) (a4 : list (option expr)) 
          (a5 : Z) (oo : out)
@@ -998,7 +1029,8 @@ Axiom inv_red_expr_expr_array_3_3
         @eq out o oo -> P S C a1 a2 (@ret Z S' lenuint32) a4 a5 oo) ->
        red_expr S C (expr_array_3_3 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_expr_array_3_4
+
+Parameter inv_red_expr_expr_array_3_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : out) (a4 : list (option expr)) 
          (oo : out)
@@ -1031,7 +1063,8 @@ Axiom inv_red_expr_expr_array_3_4
         @eq out o oo ->
         P S C a1 a2 (out_ter S' (res_val (value_prim (prim_string s)))) a4 oo) ->
        red_expr S C (expr_array_3_4 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_array_3_5
+
+Parameter inv_red_expr_expr_array_3_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 : list (option expr)) (oo : out)
          (P : state ->
@@ -1061,7 +1094,8 @@ Axiom inv_red_expr_expr_array_3_5
         @eq out o oo ->
         P S C a1 (out_ter S' (res_val (value_prim (prim_bool b)))) a3 oo) ->
        red_expr S C (expr_array_3_5 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_add_length
+
+Parameter inv_red_expr_expr_array_add_length
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> out -> Prop),
@@ -1087,7 +1121,8 @@ Axiom inv_red_expr_expr_array_add_length
         @eq out o oo ->
         P S C a1 a2 (out_ter S0 (res_val (value_object a1))) oo) ->
        red_expr S C (expr_array_add_length a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_add_length_0
+
+Parameter inv_red_expr_expr_array_add_length_0
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> Prop),
@@ -1123,7 +1158,8 @@ Axiom inv_red_expr_expr_array_add_length_0
         @eq object_loc l a1 ->
         @eq Z elgth a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_array_add_length_0 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_array_add_length_1
+
+Parameter inv_red_expr_expr_array_add_length_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> out -> Prop),
@@ -1151,7 +1187,8 @@ Axiom inv_red_expr_expr_array_add_length_1
         @eq out o oo -> P S C a1 a2 (out_ter S0 (res_val vlen)) oo) ->
        red_expr S C (expr_array_add_length_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_add_length_2
+
+Parameter inv_red_expr_expr_array_add_length_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret Z) (a3 : Z) (oo : out)
          (P : state ->
@@ -1183,7 +1220,8 @@ Axiom inv_red_expr_expr_array_add_length_2
         @eq out o oo -> P S C a1 (@ret Z S0 lenuint32) a3 oo) ->
        red_expr S C (expr_array_add_length_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_array_add_length_3
+
+Parameter inv_red_expr_expr_array_add_length_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret Z) (oo : out)
          (P : state ->
@@ -1223,7 +1261,8 @@ Axiom inv_red_expr_expr_array_add_length_3
         @eq (specret Z) (@ret Z S0 vlen) a2 ->
         @eq out o oo -> P S C a1 (@ret Z S0 vlen) oo) ->
        red_expr S C (expr_array_add_length_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_array_add_length_4
+
+Parameter inv_red_expr_expr_array_add_length_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -1247,7 +1286,8 @@ Axiom inv_red_expr_expr_array_add_length_4
         @eq out (out_ter S0 (res_val (value_object a1))) oo ->
         P S C a1 (out_ter S0 R) (out_ter S0 (res_val (value_object a1)))) ->
        red_expr S C (expr_array_add_length_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_function_1
+
+Parameter inv_red_expr_expr_function_1
      : forall (S : state) (C : execution_ctx) (a1 : string)
          (a2 : list string) (a3 : funcbody) (a4 : env_loc) 
          (a5 : lexical_env) (a6 oo : out)
@@ -1285,7 +1325,8 @@ Axiom inv_red_expr_expr_function_1
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (out_void S1) oo) ->
        red_expr S C (expr_function_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_expr_function_2
+
+Parameter inv_red_expr_expr_function_2
      : forall (S : state) (C : execution_ctx) (a1 : string) 
          (a2 : env_loc) (a3 oo : out)
          (P : state -> execution_ctx -> string -> nat -> out -> out -> Prop),
@@ -1315,7 +1356,8 @@ Axiom inv_red_expr_expr_function_2
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (expr_function_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_function_3
+
+Parameter inv_red_expr_expr_function_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -1338,7 +1380,8 @@ Axiom inv_red_expr_expr_function_3
         @eq out (out_ter S1 (res_val (value_object a1))) oo ->
         P S C a1 (out_void S1) (out_ter S1 (res_val (value_object a1)))) ->
        red_expr S C (expr_function_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_access_1
+
+Parameter inv_red_expr_expr_access_1
      : forall (S : state) (C : execution_ctx) (a1 : specret value)
          (a2 : expr) (oo : out)
          (P : state -> execution_ctx -> specret value -> expr -> out -> Prop),
@@ -1363,7 +1406,8 @@ Axiom inv_red_expr_expr_access_1
         @eq (specret value) (@ret value S1 v1) a1 ->
         @eq expr e2 a2 -> @eq out o oo -> P S C (@ret value S1 v1) a2 oo) ->
        red_expr S C (expr_access_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_access_2
+
+Parameter inv_red_expr_expr_access_2
      : forall (S : state) (C : execution_ctx) (a1 : value)
          (a2 : specret value) (oo : out)
          (P : state -> execution_ctx -> value -> specret value -> out -> Prop),
@@ -1388,7 +1432,8 @@ Axiom inv_red_expr_expr_access_2
         @eq (specret value) (@ret value S1 v2) a2 ->
         @eq out o oo -> P S C a1 (@ret value S1 v2) oo) ->
        red_expr S C (expr_access_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_access_3
+
+Parameter inv_red_expr_expr_access_3
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : out) (a3 : value) (oo : out)
          (P : state -> execution_ctx -> value -> out -> value -> out -> Prop),
@@ -1413,7 +1458,8 @@ Axiom inv_red_expr_expr_access_3
         @eq out (out_void S1) a2 ->
         @eq value v2 a3 -> @eq out o oo -> P S C a1 (out_void S1) a3 oo) ->
        red_expr S C (expr_access_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_access_4
+
+Parameter inv_red_expr_expr_access_4
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -1439,7 +1485,8 @@ Axiom inv_red_expr_expr_access_4
         P S C a1 (out_ter S1 (res_val (value_prim (prim_string x))))
           (out_ter S1 (res_ref r))) ->
        red_expr S C (expr_access_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_new_1
+
+Parameter inv_red_expr_expr_new_1
      : forall (S : state) (C : execution_ctx) (a1 : specret value)
          (a2 : list expr) (oo : out)
          (P : state ->
@@ -1465,7 +1512,8 @@ Axiom inv_red_expr_expr_new_1
         @eq (list expr) e2s a2 ->
         @eq out o oo -> P S C (@ret value S1 v) a2 oo) ->
        red_expr S C (expr_new_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_new_2
+
+Parameter inv_red_expr_expr_new_2
      : forall (S : state) (C : execution_ctx) (a1 : value)
          (a2 : specret (list value)) (oo : out)
          (P : state ->
@@ -1510,7 +1558,8 @@ Axiom inv_red_expr_expr_new_2
         @eq (specret (list value)) (@ret (list value) S0 vs) a2 ->
         @eq out o oo -> P S C (value_object l) (@ret (list value) S0 vs) oo) ->
        red_expr S C (expr_new_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_call_1
+
+Parameter inv_red_expr_expr_call_1
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : bool) (a3 : list expr) (oo : out)
          (P : state ->
@@ -1538,7 +1587,8 @@ Axiom inv_red_expr_expr_call_1
         @eq (list expr) e2s a3 ->
         @eq out o oo -> P S C (out_ter S1 (res_normal rv)) a2 a3 oo) ->
        red_expr S C (expr_call_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_call_2
+
+Parameter inv_red_expr_expr_call_2
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : bool) (a3 : list expr) (a4 : specret value) 
          (oo : out)
@@ -1570,7 +1620,8 @@ Axiom inv_red_expr_expr_call_2
         @eq (specret value) (@ret value S1 v) a4 ->
         @eq out o oo -> P S C (res_normal rv) a2 a3 (@ret value S1 v) oo) ->
        red_expr S C (expr_call_2 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_call_3
+
+Parameter inv_red_expr_expr_call_3
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : value) (a3 : bool) (a4 : specret (list value)) 
          (oo : out)
@@ -1621,7 +1672,8 @@ Axiom inv_red_expr_expr_call_3
         P S C (res_normal rv) (value_object l) a3 (@ret (list value) S1 vs)
           oo) ->
        red_expr S C (expr_call_3 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_call_4
+
+Parameter inv_red_expr_expr_call_4
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : object_loc) (a3 : bool) (a4 : list value) 
          (oo : out)
@@ -1682,7 +1734,8 @@ Axiom inv_red_expr_expr_call_4
         @eq (list value) vs a4 ->
         @eq out o oo -> P S C (res_normal (resvalue_value v)) a2 a3 a4 oo) ->
        red_expr S C (expr_call_4 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_call_5
+
+Parameter inv_red_expr_expr_call_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : bool) (a3 : list value) (a4 oo : out)
          (P : state ->
@@ -1726,7 +1779,8 @@ Axiom inv_red_expr_expr_call_5
         @eq out (out_ter S1 (res_val v)) a4 ->
         @eq out o oo -> P S C a1 a2 a3 (out_ter S1 (res_val v)) oo) ->
        red_expr S C (expr_call_5 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_eval
+
+Parameter inv_red_expr_spec_eval
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : value) (a3 : list value) (oo : out)
          (P : state ->
@@ -1742,7 +1796,8 @@ Axiom inv_red_expr_spec_eval
         @eq ext_expr exte (spec_eval a1 a2 a3) ->
         @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_eval a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_unary_op_1
+
+Parameter inv_red_expr_expr_unary_op_1
      : forall (S : state) (C : execution_ctx) (a1 : unary_op)
          (a2 : specret value) (oo : out)
          (P : state ->
@@ -1767,7 +1822,8 @@ Axiom inv_red_expr_expr_unary_op_1
         @eq (specret value) (@ret value S1 v) a2 ->
         @eq out o oo -> P S C a1 (@ret value S1 v) oo) ->
        red_expr S C (expr_unary_op_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_unary_op_2
+
+Parameter inv_red_expr_expr_unary_op_2
      : forall (S : state) (C : execution_ctx) (a1 : unary_op) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> unary_op -> value -> out -> Prop),
@@ -1822,7 +1878,8 @@ Axiom inv_red_expr_expr_unary_op_2
         @eq unary_op unary_op_not a1 ->
         @eq value v a2 -> @eq out o oo -> P S C unary_op_not a2 oo) ->
        red_expr S C (expr_unary_op_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_delete_1
+
+Parameter inv_red_expr_expr_delete_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (expr_delete_1 a1) oo ->
@@ -1871,7 +1928,8 @@ Axiom inv_red_expr_expr_delete_1
         @eq out (out_ter S1 (res_ref r)) a1 ->
         @eq out o oo -> P S C (out_ter S1 (res_ref r)) oo) ->
        red_expr S C (expr_delete_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_delete_2
+
+Parameter inv_red_expr_expr_delete_2
      : forall (S : state) (C : execution_ctx) (a1 : ref) 
          (oo : out) (P : state -> execution_ctx -> ref -> out -> Prop),
        (red_expr S C (expr_delete_2 a1) oo ->
@@ -1897,7 +1955,8 @@ Axiom inv_red_expr_expr_delete_2
         @eq out (out_ter S (res_val (value_prim (prim_bool true)))) oo ->
         P S C a1 (out_ter S (res_val (value_prim (prim_bool true))))) ->
        red_expr S C (expr_delete_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_delete_3
+
+Parameter inv_red_expr_expr_delete_3
      : forall (S : state) (C : execution_ctx) (a1 : ref) 
          (a2 oo : out)
          (P : state -> execution_ctx -> ref -> out -> out -> Prop),
@@ -1921,7 +1980,8 @@ Axiom inv_red_expr_expr_delete_3
         @eq out (out_ter S1 (res_val (value_object l))) a2 ->
         @eq out o oo -> P S C a1 (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (expr_delete_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_delete_4
+
+Parameter inv_red_expr_expr_delete_4
      : forall (S : state) (C : execution_ctx) (a1 : ref) 
          (a2 : env_loc) (oo : out)
          (P : state -> execution_ctx -> ref -> nat -> out -> Prop),
@@ -1952,7 +2012,8 @@ Axiom inv_red_expr_expr_delete_4
         @eq execution_ctx C0 C ->
         @eq ref r a1 -> @eq env_loc L a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (expr_delete_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_typeof_1
+
+Parameter inv_red_expr_expr_typeof_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (expr_typeof_1 a1) oo ->
@@ -2049,7 +2110,8 @@ Axiom inv_red_expr_expr_typeof_1
         @eq out (out_ter S1 (res_ref r)) a1 ->
         @eq out o oo -> P S C (out_ter S1 (res_ref r)) oo) ->
        red_expr S C (expr_typeof_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_typeof_2
+
+Parameter inv_red_expr_expr_typeof_2
      : forall (S : state) (C : execution_ctx) (a1 : specret value) 
          (oo : out)
          (P : state -> execution_ctx -> specret value -> out -> Prop),
@@ -2071,7 +2133,8 @@ Axiom inv_red_expr_expr_typeof_2
         P S C (@ret value S1 v)
           (out_ter S1 (res_val (value_prim (prim_string s))))) ->
        red_expr S C (expr_typeof_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_prepost_1
+
+Parameter inv_red_expr_expr_prepost_1
      : forall (S : state) (C : execution_ctx) (a1 : unary_op) 
          (a2 oo : out)
          (P : state -> execution_ctx -> unary_op -> out -> out -> Prop),
@@ -2097,7 +2160,8 @@ Axiom inv_red_expr_expr_prepost_1
         @eq out (out_ter S1 (res_normal rv)) a2 ->
         @eq out o oo -> P S C a1 (out_ter S1 (res_normal rv)) oo) ->
        red_expr S C (expr_prepost_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_prepost_2
+
+Parameter inv_red_expr_expr_prepost_2
      : forall (S : state) (C : execution_ctx) (a1 : unary_op) 
          (a2 : res) (a3 : specret value) (oo : out)
          (P : state ->
@@ -2126,7 +2190,8 @@ Axiom inv_red_expr_expr_prepost_2
         @eq (specret value) (@ret value S1 v) a3 ->
         @eq out o oo -> P S C a1 (res_normal rv) (@ret value S1 v) oo) ->
        red_expr S C (expr_prepost_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_prepost_3
+
+Parameter inv_red_expr_expr_prepost_3
      : forall (S : state) (C : execution_ctx) (a1 : unary_op) 
          (a2 : res) (a3 oo : out)
          (P : state -> execution_ctx -> unary_op -> res -> out -> out -> Prop),
@@ -2166,7 +2231,8 @@ Axiom inv_red_expr_expr_prepost_3
         P S C a1 (res_normal rv)
           (out_ter S1 (res_val (value_prim (prim_number n1)))) oo) ->
        red_expr S C (expr_prepost_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_prepost_4
+
+Parameter inv_red_expr_expr_prepost_4
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -2189,7 +2255,8 @@ Axiom inv_red_expr_expr_prepost_4
         @eq out (out_ter S1 (res_val a1)) oo ->
         P S C a1 (out_void S1) (out_ter S1 (res_val a1))) ->
        red_expr S C (expr_prepost_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_unary_op_neg_1
+
+Parameter inv_red_expr_expr_unary_op_neg_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (expr_unary_op_neg_1 a1) oo ->
@@ -2213,7 +2280,8 @@ Axiom inv_red_expr_expr_unary_op_neg_1
         P S C (out_ter S1 (res_val (value_prim (prim_number n))))
           (out_ter S1 (res_val (value_prim (prim_number (JsNumber.neg n)))))) ->
        red_expr S C (expr_unary_op_neg_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_unary_op_bitwise_not_1
+
+Parameter inv_red_expr_expr_unary_op_bitwise_not_1
      : forall (S : state) (C : execution_ctx) (a1 : specret Z) 
          (oo : out) (P : state -> execution_ctx -> specret Z -> out -> Prop),
        (red_expr S C (expr_unary_op_bitwise_not_1 a1) oo ->
@@ -2238,7 +2306,8 @@ Axiom inv_red_expr_expr_unary_op_bitwise_not_1
         P S C (@ret Z S1 k)
           (out_ter S1 (res_val (value_prim (prim_number n))))) ->
        red_expr S C (expr_unary_op_bitwise_not_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_unary_op_not_1
+
+Parameter inv_red_expr_expr_unary_op_not_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (expr_unary_op_not_1 a1) oo ->
@@ -2260,7 +2329,8 @@ Axiom inv_red_expr_expr_unary_op_not_1
         P S C (out_ter S1 (res_val (value_prim (prim_bool b))))
           (out_ter S1 (res_val (value_prim (prim_bool (neg b)))))) ->
        red_expr S C (expr_unary_op_not_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_conditional_1
+
+Parameter inv_red_expr_expr_conditional_1
      : forall (S : state) (C : execution_ctx) (a1 : specret value)
          (a2 a3 : expr) (oo : out)
          (P : state ->
@@ -2293,7 +2363,8 @@ Axiom inv_red_expr_expr_conditional_1
         @eq expr e3 a3 ->
         @eq out o oo -> P S C (vret S1 (value_prim (prim_bool b))) a2 a3 oo) ->
        red_expr S C (expr_conditional_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_conditional_1'
+
+Parameter inv_red_expr_expr_conditional_1'
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 a3 : expr) (oo : out)
          (P : state -> execution_ctx -> out -> expr -> expr -> out -> Prop),
@@ -2308,7 +2379,8 @@ Axiom inv_red_expr_expr_conditional_1'
         @eq ext_expr exte (expr_conditional_1' a1 a2 a3) ->
         @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (expr_conditional_1' a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_conditional_2
+
+Parameter inv_red_expr_expr_conditional_2
      : forall (S : state) (C : execution_ctx) (a1 : specret value) 
          (oo : out)
          (P : state -> execution_ctx -> specret value -> out -> Prop),
@@ -2330,7 +2402,8 @@ Axiom inv_red_expr_expr_conditional_2
         @eq out (out_ter S1 (res_val v)) oo ->
         P S C (@ret value S1 v) (out_ter S1 (res_val v))) ->
        red_expr S C (expr_conditional_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_binary_op_1
+
+Parameter inv_red_expr_expr_binary_op_1
      : forall (S : state) (C : execution_ctx) (a1 : binary_op)
          (a2 : specret value) (a3 : expr) (oo : out)
          (P : state ->
@@ -2358,7 +2431,8 @@ Axiom inv_red_expr_expr_binary_op_1
         @eq (specret value) (@ret value S1 v1) a2 ->
         @eq expr e2 a3 -> @eq out o oo -> P S C a1 (@ret value S1 v1) a3 oo) ->
        red_expr S C (expr_binary_op_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_binary_op_2
+
+Parameter inv_red_expr_expr_binary_op_2
      : forall (S : state) (C : execution_ctx) (a1 : binary_op) 
          (a2 : value) (a3 : specret value) (oo : out)
          (P : state ->
@@ -2385,7 +2459,8 @@ Axiom inv_red_expr_expr_binary_op_2
         @eq (specret value) (@ret value S1 v2) a3 ->
         @eq out o oo -> P S C a1 a2 (@ret value S1 v2) oo) ->
        red_expr S C (expr_binary_op_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_binary_op_3
+
+Parameter inv_red_expr_expr_binary_op_3
      : forall (S : state) (C : execution_ctx) (a1 : binary_op)
          (a2 a3 : value) (oo : out)
          (P : state ->
@@ -2566,7 +2641,8 @@ Axiom inv_red_expr_expr_binary_op_3
         @eq out (out_ter S (res_val a3)) oo ->
         P S C binary_op_coma a2 a3 (out_ter S (res_val a3))) ->
        red_expr S C (expr_binary_op_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_binary_op_add_1
+
+Parameter inv_red_expr_expr_binary_op_add_1
      : forall (S : state) (C : execution_ctx)
          (a1 : specret (prod value value)) (oo : out)
          (P : state ->
@@ -2613,7 +2689,8 @@ Axiom inv_red_expr_expr_binary_op_add_1
         @eq out o oo ->
         P S C (@ret (prod value value) S1 (@pair value value v1 v2)) oo) ->
        red_expr S C (expr_binary_op_add_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_binary_op_add_string_1
+
+Parameter inv_red_expr_expr_binary_op_add_string_1
      : forall (S : state) (C : execution_ctx)
          (a1 : specret (prod value value)) (oo : out)
          (P : state ->
@@ -2644,7 +2721,8 @@ Axiom inv_red_expr_expr_binary_op_add_string_1
                 (value_prim (prim_string s2))))
           (out_ter S1 (res_val (value_prim (prim_string s))))) ->
        red_expr S C (expr_binary_op_add_string_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_puremath_op_1
+
+Parameter inv_red_expr_expr_puremath_op_1
      : forall (S : state) (C : execution_ctx)
          (a1 : JsNumber.number -> JsNumber.number -> JsNumber.number)
          (a2 : specret (prod value value)) (oo : out)
@@ -2686,7 +2764,8 @@ Axiom inv_red_expr_expr_puremath_op_1
                 (value_prim (prim_number n2))))
           (out_ter S1 (res_val (value_prim (prim_number n))))) ->
        red_expr S C (expr_puremath_op_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_shift_op_1
+
+Parameter inv_red_expr_expr_shift_op_1
      : forall (S : state) (C : execution_ctx) (a1 : Z -> Z -> Z)
          (a2 : specret Z) (a3 : value) (oo : out)
          (P : state ->
@@ -2714,7 +2793,8 @@ Axiom inv_red_expr_expr_shift_op_1
         @eq (specret Z) (@ret Z S1 k1) a2 ->
         @eq value v2 a3 -> @eq out o oo -> P S C a1 (@ret Z S1 k1) a3 oo) ->
        red_expr S C (expr_shift_op_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_shift_op_2
+
+Parameter inv_red_expr_expr_shift_op_2
      : forall (S : state) (C : execution_ctx) (a1 : Z -> Z -> Z) 
          (a2 : Z) (a3 : specret Z) (oo : out)
          (P : state ->
@@ -2743,7 +2823,8 @@ Axiom inv_red_expr_expr_shift_op_2
         P S C a1 a2 (@ret Z S1 k2)
           (out_ter S1 (res_val (value_prim (prim_number n))))) ->
        red_expr S C (expr_shift_op_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_inequality_op_1
+
+Parameter inv_red_expr_expr_inequality_op_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : bool) 
          (a3 a4 : value) (oo : out)
          (P : state ->
@@ -2774,7 +2855,8 @@ Axiom inv_red_expr_expr_inequality_op_1
         @eq value v2 a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (expr_inequality_op_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_inequality_op_2
+
+Parameter inv_red_expr_expr_inequality_op_2
      : forall (S : state) (C : execution_ctx) (a1 a2 : bool)
          (a3 : specret (prod value value)) (oo : out)
          (P : state ->
@@ -2835,7 +2917,8 @@ Axiom inv_red_expr_expr_inequality_op_2
              (@pair value value (value_prim w1) (value_prim w2)))
           (out_ter S1 (res_val (value_prim wr')))) ->
        red_expr S C (expr_inequality_op_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_binary_op_in_1
+
+Parameter inv_red_expr_expr_binary_op_in_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -2860,7 +2943,8 @@ Axiom inv_red_expr_expr_binary_op_in_1
         @eq out o oo ->
         P S C a1 (out_ter S1 (res_val (value_prim (prim_string x)))) oo) ->
        red_expr S C (expr_binary_op_in_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_binary_op_disequal_1
+
+Parameter inv_red_expr_expr_binary_op_disequal_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (expr_binary_op_disequal_1 a1) oo ->
@@ -2882,7 +2966,8 @@ Axiom inv_red_expr_expr_binary_op_disequal_1
         P S C (out_ter S1 (res_val (value_prim (prim_bool b))))
           (out_ter S1 (res_val (value_prim (prim_bool (negb b)))))) ->
        red_expr S C (expr_binary_op_disequal_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_equal
+
+Parameter inv_red_expr_spec_equal
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -2905,7 +2990,8 @@ Axiom inv_red_expr_spec_equal
         @eq execution_ctx C0 C ->
         @eq value v1 a1 -> @eq value v2 a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_equal a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_equal_1
+
+Parameter inv_red_expr_spec_equal_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : type) 
          (a3 a4 : value) (oo : out)
          (P : state ->
@@ -3019,7 +3105,8 @@ Axiom inv_red_expr_spec_equal_1
         @eq value v1 a3 ->
         @eq value v2 a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_equal_1 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_equal_2
+
+Parameter inv_red_expr_spec_equal_2
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (oo : out) (P : state -> execution_ctx -> bool -> out -> Prop),
        (red_expr S C (spec_equal_2 a1) oo ->
@@ -3038,7 +3125,8 @@ Axiom inv_red_expr_spec_equal_2
         @eq out (out_ter S (res_val (value_prim (prim_bool a1)))) oo ->
         P S C a1 (out_ter S (res_val (value_prim (prim_bool a1))))) ->
        red_expr S C (spec_equal_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_equal_3
+
+Parameter inv_red_expr_spec_equal_3
      : forall (S : state) (C : execution_ctx) (a1 : value)
          (a2 : value -> ext_expr) (a3 : value) (oo : out)
          (P : state ->
@@ -3065,7 +3153,8 @@ Axiom inv_red_expr_spec_equal_3
         @eq (value -> ext_expr) K a2 ->
         @eq value v2 a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_equal_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_equal_4
+
+Parameter inv_red_expr_spec_equal_4
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -3088,7 +3177,8 @@ Axiom inv_red_expr_spec_equal_4
         @eq out (out_ter S1 (res_val v2)) a2 ->
         @eq out o oo -> P S C a1 (out_ter S1 (res_val v2)) oo) ->
        red_expr S C (spec_equal_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_bitwise_op_1
+
+Parameter inv_red_expr_expr_bitwise_op_1
      : forall (S : state) (C : execution_ctx) (a1 : Z -> Z -> Z)
          (a2 : specret Z) (a3 : value) (oo : out)
          (P : state ->
@@ -3116,7 +3206,8 @@ Axiom inv_red_expr_expr_bitwise_op_1
         @eq (specret Z) (@ret Z S1 k1) a2 ->
         @eq value v2 a3 -> @eq out o oo -> P S C a1 (@ret Z S1 k1) a3 oo) ->
        red_expr S C (expr_bitwise_op_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_bitwise_op_2
+
+Parameter inv_red_expr_expr_bitwise_op_2
      : forall (S : state) (C : execution_ctx) (a1 : Z -> Z -> Z) 
          (a2 : Z) (a3 : specret Z) (oo : out)
          (P : state ->
@@ -3144,7 +3235,8 @@ Axiom inv_red_expr_expr_bitwise_op_2
         P S C a1 a2 (@ret Z S1 k2)
           (out_ter S1 (res_val (value_prim (prim_number n))))) ->
        red_expr S C (expr_bitwise_op_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_lazy_op_1
+
+Parameter inv_red_expr_expr_lazy_op_1
      : forall (S : state) (C : execution_ctx) (a1 : bool)
          (a2 : specret value) (a3 : expr) (oo : out)
          (P : state ->
@@ -3170,7 +3262,8 @@ Axiom inv_red_expr_expr_lazy_op_1
         @eq (specret value) (@ret value S1 v1) a2 ->
         @eq expr e2 a3 -> @eq out o oo -> P S C a1 (@ret value S1 v1) a3 oo) ->
        red_expr S C (expr_lazy_op_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_lazy_op_2
+
+Parameter inv_red_expr_expr_lazy_op_2
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : value) (a3 : out) (a4 : expr) (oo : out)
          (P : state ->
@@ -3214,7 +3307,8 @@ Axiom inv_red_expr_expr_lazy_op_2
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b1)))) a4 oo) ->
        red_expr S C (expr_lazy_op_2 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_lazy_op_2_1
+
+Parameter inv_red_expr_expr_lazy_op_2_1
      : forall (S : state) (C : execution_ctx) (a1 : specret value) 
          (oo : out)
          (P : state -> execution_ctx -> specret value -> out -> Prop),
@@ -3236,7 +3330,8 @@ Axiom inv_red_expr_expr_lazy_op_2_1
         @eq out (out_ter S1 (res_val v)) oo ->
         P S C (@ret value S1 v) (out_ter S1 (res_val v))) ->
        red_expr S C (expr_lazy_op_2_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_expr_assign_1
+
+Parameter inv_red_expr_expr_assign_1
      : forall (S : state) (C : execution_ctx) (a1 : out)
          (a2 : option binary_op) (a3 : expr) (oo : out)
          (P : state ->
@@ -3278,7 +3373,8 @@ Axiom inv_red_expr_expr_assign_1
         @eq out o oo ->
         P S C (out_ter S1 (res_normal rv)) (@Some binary_op op) a3 oo) ->
        red_expr S C (expr_assign_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_expr_assign_2
+
+Parameter inv_red_expr_expr_assign_2
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : specret value) (a3 : binary_op) (a4 : expr) 
          (oo : out)
@@ -3309,7 +3405,8 @@ Axiom inv_red_expr_expr_assign_2
         @eq expr e2 a4 ->
         @eq out o oo -> P S C (res_normal rv) (@ret value S1 v1) a3 a4 oo) ->
        red_expr S C (expr_assign_2 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_assign_3
+
+Parameter inv_red_expr_expr_assign_3
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : value) (a3 : binary_op) (a4 : specret value) 
          (oo : out)
@@ -3340,7 +3437,8 @@ Axiom inv_red_expr_expr_assign_3
         @eq (specret value) (@ret value S1 v2) a4 ->
         @eq out o oo -> P S C (res_normal rv) a2 a3 (@ret value S1 v2) oo) ->
        red_expr S C (expr_assign_3 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_expr_assign_3'
+
+Parameter inv_red_expr_expr_assign_3'
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 oo : out)
          (P : state -> execution_ctx -> res -> out -> out -> Prop),
@@ -3364,7 +3462,8 @@ Axiom inv_red_expr_expr_assign_3'
         @eq out (out_ter S1 (res_val v)) a2 ->
         @eq out o oo -> P S C (res_normal rv) (out_ter S1 (res_val v)) oo) ->
        red_expr S C (expr_assign_3' a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_assign_4
+
+Parameter inv_red_expr_expr_assign_4
      : forall (S : state) (C : execution_ctx) (a1 : res) 
          (a2 : specret value) (oo : out)
          (P : state -> execution_ctx -> res -> specret value -> out -> Prop),
@@ -3389,7 +3488,8 @@ Axiom inv_red_expr_expr_assign_4
         @eq (specret value) (@ret value S1 v) a2 ->
         @eq out o oo -> P S C (res_normal rv) (@ret value S1 v) oo) ->
        red_expr S C (expr_assign_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_expr_assign_5
+
+Parameter inv_red_expr_expr_assign_5
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -3413,7 +3513,8 @@ Axiom inv_red_expr_expr_assign_5
         @eq out (out_ter S1 (res_val a1)) oo ->
         P S C a1 (out_ter S1 (res_normal rv')) (out_ter S1 (res_val a1))) ->
        red_expr S C (expr_assign_5 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_to_primitive
+
+Parameter inv_red_expr_spec_to_primitive
      : forall (S : state) (C : execution_ctx) (a1 : value)
          (a2 : option preftype) (oo : out)
          (P : state ->
@@ -3447,7 +3548,8 @@ Axiom inv_red_expr_spec_to_primitive
         @eq (option preftype) prefo a2 ->
         @eq out o oo -> P S C (value_object l) a2 oo) ->
        red_expr S C (spec_to_primitive a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_to_boolean
+
+Parameter inv_red_expr_spec_to_boolean
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_to_boolean a1) oo ->
@@ -3468,7 +3570,8 @@ Axiom inv_red_expr_spec_to_boolean
         @eq out (out_ter S (res_val (value_prim (prim_bool b)))) oo ->
         P S C a1 (out_ter S (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_to_boolean a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_number
+
+Parameter inv_red_expr_spec_to_number
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_to_number a1) oo ->
@@ -3501,7 +3604,8 @@ Axiom inv_red_expr_spec_to_number
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_to_number a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_number_1
+
+Parameter inv_red_expr_spec_to_number_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_to_number_1 a1) oo ->
@@ -3525,7 +3629,8 @@ Axiom inv_red_expr_spec_to_number_1
         P S C (out_ter S1 (res_val (value_prim w)))
           (out_ter S1 (res_val (value_prim (prim_number n))))) ->
        red_expr S C (spec_to_number_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_integer
+
+Parameter inv_red_expr_spec_to_integer
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_to_integer a1) oo ->
@@ -3545,7 +3650,8 @@ Axiom inv_red_expr_spec_to_integer
         @eq execution_ctx C0 C ->
         @eq value v a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_to_integer a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_integer_1
+
+Parameter inv_red_expr_spec_to_integer_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_to_integer_1 a1) oo ->
@@ -3568,7 +3674,8 @@ Axiom inv_red_expr_spec_to_integer_1
         P S C (out_ter S1 (res_val (value_prim (prim_number n))))
           (out_ter S1 (res_val (value_prim (prim_number n'))))) ->
        red_expr S C (spec_to_integer_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_string
+
+Parameter inv_red_expr_spec_to_string
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_to_string a1) oo ->
@@ -3600,7 +3707,8 @@ Axiom inv_red_expr_spec_to_string
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_to_string a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_string_1
+
+Parameter inv_red_expr_spec_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_to_string_1 a1) oo ->
@@ -3623,7 +3731,8 @@ Axiom inv_red_expr_spec_to_string_1
         P S C (out_ter S1 (res_val (value_prim w)))
           (out_ter S1 (res_val (value_prim (prim_string s))))) ->
        red_expr S C (spec_to_string_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_to_object
+
+Parameter inv_red_expr_spec_to_object
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_to_object a1) oo ->
@@ -3658,7 +3767,8 @@ Axiom inv_red_expr_spec_to_object
         @eq out (out_ter S (res_val (value_object l))) oo ->
         P S C (value_object l) (out_ter S (res_val (value_object l)))) ->
        red_expr S C (spec_to_object a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_check_object_coercible
+
+Parameter inv_red_expr_spec_check_object_coercible
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_check_object_coercible a1) oo ->
@@ -3688,7 +3798,8 @@ Axiom inv_red_expr_spec_check_object_coercible
         @eq execution_ctx C0 C ->
         @eq value v a1 -> @eq out (out_void S) oo -> P S C a1 (out_void S)) ->
        red_expr S C (spec_check_object_coercible a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_eq
+
+Parameter inv_red_expr_spec_eq
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -3701,7 +3812,8 @@ Axiom inv_red_expr_spec_eq
         @eq execution_ctx C0 C ->
         @eq ext_expr exte (spec_eq a1 a2) -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_eq a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_eq0
+
+Parameter inv_red_expr_spec_eq0
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -3714,7 +3826,8 @@ Axiom inv_red_expr_spec_eq0
         @eq execution_ctx C0 C ->
         @eq ext_expr exte (spec_eq0 a1 a2) -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_eq0 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_eq1
+
+Parameter inv_red_expr_spec_eq1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -3727,7 +3840,8 @@ Axiom inv_red_expr_spec_eq1
         @eq execution_ctx C0 C ->
         @eq ext_expr exte (spec_eq1 a1 a2) -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_eq1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_eq2
+
+Parameter inv_red_expr_spec_eq2
      : forall (S : state) (C : execution_ctx) (a1 : ext_expr) 
          (a2 a3 : value) (oo : out)
          (P : state ->
@@ -3742,7 +3856,8 @@ Axiom inv_red_expr_spec_eq2
         @eq ext_expr exte (spec_eq2 a1 a2 a3) ->
         @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_eq2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_get
+
+Parameter inv_red_expr_spec_object_get
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> object_loc -> string -> out -> Prop),
@@ -3766,7 +3881,8 @@ Axiom inv_red_expr_spec_object_get
         @eq object_loc l a1 ->
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_get a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_get_1
+
+Parameter inv_red_expr_spec_object_get_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_get) 
          (a2 : value) (a3 : object_loc) (a4 : prop_name) 
          (oo : out)
@@ -3825,7 +3941,8 @@ Axiom inv_red_expr_spec_object_get_1
         @eq out o oo -> P S C builtin_get_function a2 a3 a4 oo) ->
        red_expr S C (spec_object_get_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_get_2
+
+Parameter inv_red_expr_spec_object_get_2
      : forall (S : state) (C : execution_ctx) (a1 : value)
          (a2 : specret full_descriptor) (oo : out)
          (P : state ->
@@ -3875,7 +3992,8 @@ Axiom inv_red_expr_spec_object_get_2
         @eq out o oo ->
         P S C a1 (dret S1 (full_descriptor_some (attributes_accessor_of Aa)))
           oo) -> red_expr S C (spec_object_get_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_get_3
+
+Parameter inv_red_expr_spec_object_get_3
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -3908,7 +4026,8 @@ Axiom inv_red_expr_spec_object_get_3
         @eq value (value_object lf) a2 ->
         @eq out o oo -> P S C a1 (value_object lf) oo) ->
        red_expr S C (spec_object_get_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_can_put
+
+Parameter inv_red_expr_spec_object_can_put
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> object_loc -> string -> out -> Prop),
@@ -3932,7 +4051,8 @@ Axiom inv_red_expr_spec_object_can_put
         @eq object_loc l a1 ->
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_can_put a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_can_put_1
+
+Parameter inv_red_expr_spec_object_can_put_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_can_put)
          (a2 : object_loc) (a3 : prop_name) (oo : out)
          (P : state ->
@@ -3958,7 +4078,8 @@ Axiom inv_red_expr_spec_object_can_put_1
         @eq object_loc l a2 ->
         @eq prop_name x a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_can_put_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_can_put_2
+
+Parameter inv_red_expr_spec_object_can_put_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : specret full_descriptor) 
          (oo : out)
@@ -4027,7 +4148,8 @@ Axiom inv_red_expr_spec_object_can_put_2
         @eq out o oo ->
         P S C a1 a2 (@ret full_descriptor S1 full_descriptor_undef) oo) ->
        red_expr S C (spec_object_can_put_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_can_put_4
+
+Parameter inv_red_expr_spec_object_can_put_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : value) (oo : out)
          (P : state ->
@@ -4067,7 +4189,8 @@ Axiom inv_red_expr_spec_object_can_put_4
         @eq value (value_object lproto) a3 ->
         @eq out o oo -> P S C a1 a2 (value_object lproto) oo) ->
        red_expr S C (spec_object_can_put_4 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_can_put_5
+
+Parameter inv_red_expr_spec_object_can_put_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret full_descriptor) (oo : out)
          (P : state ->
@@ -4129,7 +4252,8 @@ Axiom inv_red_expr_spec_object_can_put_5
         @eq out o oo ->
         P S C a1 (dret S1 (full_descriptor_some (attributes_data_of Ad))) oo) ->
        red_expr S C (spec_object_can_put_5 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_can_put_6
+
+Parameter inv_red_expr_spec_object_can_put_6
      : forall (S : state) (C : execution_ctx) (a1 : attributes_data)
          (a2 : bool) (oo : out)
          (P : state ->
@@ -4163,7 +4287,8 @@ Axiom inv_red_expr_spec_object_can_put_6
         @eq out (out_ter S (res_val (value_prim (prim_bool b)))) oo ->
         P S C a1 true (out_ter S (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_object_can_put_6 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_put
+
+Parameter inv_red_expr_spec_object_put
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : value) (a4 : bool) 
          (oo : out)
@@ -4193,7 +4318,8 @@ Axiom inv_red_expr_spec_object_put
         @eq value v a3 ->
         @eq bool throw a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_object_put a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_put_1
+
+Parameter inv_red_expr_spec_object_put_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_put) 
          (a2 : value) (a3 : object_loc) (a4 : prop_name) 
          (a5 : value) (a6 : bool) (oo : out)
@@ -4227,7 +4353,8 @@ Axiom inv_red_expr_spec_object_put_1
         @eq bool throw a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_object_put_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_put_2
+
+Parameter inv_red_expr_spec_object_put_2
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : object_loc) (a3 : prop_name) (a4 : value) 
          (a5 : bool) (a6 oo : out)
@@ -4281,7 +4408,8 @@ Axiom inv_red_expr_spec_object_put_2
           (out_ter S1 (res_val (value_prim (prim_bool true)))) oo) ->
        red_expr S C (spec_object_put_2 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_put_3
+
+Parameter inv_red_expr_spec_object_put_3
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : object_loc) (a3 : prop_name) (a4 : value) 
          (a5 : bool) (a6 : specret full_descriptor) 
@@ -4366,7 +4494,8 @@ Axiom inv_red_expr_spec_object_put_3
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (@ret full_descriptor S1 D) oo) ->
        red_expr S C (spec_object_put_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_put_4
+
+Parameter inv_red_expr_spec_object_put_4
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : object_loc) (a3 : prop_name) (a4 : value) 
          (a5 : bool) (a6 : specret full_descriptor) 
@@ -4453,7 +4582,8 @@ Axiom inv_red_expr_spec_object_put_4
         @eq out o oo -> P S C (value_prim wthis) a2 a3 a4 a5 (dret S1 D) oo) ->
        red_expr S C (spec_object_put_4 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_put_5
+
+Parameter inv_red_expr_spec_object_put_5
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_object_put_5 a1) oo ->
@@ -4474,7 +4604,8 @@ Axiom inv_red_expr_spec_object_put_5
         @eq out (out_void S1) oo ->
         P S C (out_ter S1 (res_normal rv)) (out_void S1)) ->
        red_expr S C (spec_object_put_5 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_object_has_prop
+
+Parameter inv_red_expr_spec_object_has_prop
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> object_loc -> string -> out -> Prop),
@@ -4498,7 +4629,8 @@ Axiom inv_red_expr_spec_object_has_prop
         @eq object_loc l a1 ->
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_has_prop a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_has_prop_1
+
+Parameter inv_red_expr_spec_object_has_prop_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_has_prop)
          (a2 : object_loc) (a3 : prop_name) (oo : out)
          (P : state ->
@@ -4525,7 +4657,8 @@ Axiom inv_red_expr_spec_object_has_prop_1
         @eq object_loc l a2 ->
         @eq prop_name x a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_has_prop_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_has_prop_2
+
+Parameter inv_red_expr_spec_object_has_prop_2
      : forall (S : state) (C : execution_ctx) (a1 : specret full_descriptor)
          (oo : out)
          (P : state ->
@@ -4558,7 +4691,8 @@ Axiom inv_red_expr_spec_object_has_prop_2
         P S C (@ret full_descriptor S1 D)
           (out_ter S1 (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_object_has_prop_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_object_delete
+
+Parameter inv_red_expr_spec_object_delete
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : bool) (oo : out)
          (P : state ->
@@ -4585,7 +4719,8 @@ Axiom inv_red_expr_spec_object_delete
         @eq prop_name x a2 ->
         @eq bool throw a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_delete a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_delete_1
+
+Parameter inv_red_expr_spec_object_delete_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_delete)
          (a2 : object_loc) (a3 : prop_name) (a4 : bool) 
          (oo : out)
@@ -4632,7 +4767,8 @@ Axiom inv_red_expr_spec_object_delete_1
         @eq out o oo -> P S C builtin_delete_args_obj a2 a3 a4 oo) ->
        red_expr S C (spec_object_delete_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_delete_2
+
+Parameter inv_red_expr_spec_object_delete_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : bool) (a4 : specret full_descriptor)
          (oo : out)
@@ -4698,7 +4834,8 @@ Axiom inv_red_expr_spec_object_delete_2
         P S C a1 a2 a3 (@ret full_descriptor S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_object_delete_2 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_delete_3
+
+Parameter inv_red_expr_spec_object_delete_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 a4 : bool) (oo : out)
          (P : state ->
@@ -4716,7 +4853,8 @@ Axiom inv_red_expr_spec_object_delete_3
         @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_object_delete_3 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_default_value
+
+Parameter inv_red_expr_spec_object_default_value
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : option preftype) (oo : out)
          (P : state ->
@@ -4742,7 +4880,8 @@ Axiom inv_red_expr_spec_object_default_value
         @eq object_loc l a1 ->
         @eq (option preftype) prefo a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_default_value a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_default_value_1
+
+Parameter inv_red_expr_spec_object_default_value_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_default_value)
          (a2 : object_loc) (a3 : option preftype) (oo : out)
          (P : state ->
@@ -4773,7 +4912,8 @@ Axiom inv_red_expr_spec_object_default_value_1
         @eq (option preftype) prefo a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_default_value_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_default_value_2
+
+Parameter inv_red_expr_spec_object_default_value_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 a3 : preftype) (oo : out)
          (P : state ->
@@ -4803,7 +4943,8 @@ Axiom inv_red_expr_spec_object_default_value_2
         @eq preftype pref2 a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_default_value_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_default_value_3
+
+Parameter inv_red_expr_spec_object_default_value_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : preftype) (oo : out)
          (P : state -> execution_ctx -> object_loc -> preftype -> out -> Prop),
@@ -4829,7 +4970,8 @@ Axiom inv_red_expr_spec_object_default_value_3
         @eq object_loc l a1 ->
         @eq preftype pref2 a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_default_value_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_default_value_4
+
+Parameter inv_red_expr_spec_object_default_value_4
      : forall (S : state) (C : execution_ctx) (oo : out)
          (P : state -> execution_ctx -> out -> Prop),
        (red_expr S C spec_object_default_value_4 oo ->
@@ -4847,7 +4989,8 @@ Axiom inv_red_expr_spec_object_default_value_4
         red_expr S C (spec_error native_error_type) oo ->
         @eq state S0 S -> @eq execution_ctx C0 C -> @eq out o oo -> P S C oo) ->
        red_expr S C spec_object_default_value_4 oo -> P S C oo.
-Axiom inv_red_expr_spec_object_default_value_sub_1
+
+Parameter inv_red_expr_spec_object_default_value_sub_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : ext_expr) (oo : out)
          (P : state ->
@@ -4878,7 +5021,8 @@ Axiom inv_red_expr_spec_object_default_value_sub_1
         @eq ext_expr K a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_default_value_sub_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_default_value_sub_2
+
+Parameter inv_red_expr_spec_object_default_value_sub_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 : ext_expr) (oo : out)
          (P : state ->
@@ -4923,7 +5067,8 @@ Axiom inv_red_expr_spec_object_default_value_sub_2
         @eq out o oo -> P S C a1 (out_ter S1 (res_val v)) a3 oo) ->
        red_expr S C (spec_object_default_value_sub_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_default_value_sub_3
+
+Parameter inv_red_expr_spec_object_default_value_sub_3
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : ext_expr) (oo : out)
          (P : state -> execution_ctx -> out -> ext_expr -> out -> Prop),
@@ -4958,7 +5103,8 @@ Axiom inv_red_expr_spec_object_default_value_sub_3
         @eq out o oo -> P S C (out_ter S1 (res_val (value_object l))) a2 oo) ->
        red_expr S C (spec_object_default_value_sub_3 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_define_own_prop
+
+Parameter inv_red_expr_spec_object_define_own_prop
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (oo : out)
@@ -4991,7 +5137,8 @@ Axiom inv_red_expr_spec_object_define_own_prop
         @eq bool throw a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_object_define_own_prop a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_1
+
+Parameter inv_red_expr_spec_object_define_own_prop_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_define_own_prop)
          (a2 : object_loc) (a3 : prop_name) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5070,7 +5217,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_1
         @eq out o oo -> P S C builtin_define_own_prop_args_obj a2 a3 a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_2
+
+Parameter inv_red_expr_spec_object_define_own_prop_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool)
          (a5 : specret full_descriptor) (oo : out)
@@ -5109,7 +5257,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_2
         @eq out o oo -> P S C a1 a2 a3 a4 (@ret full_descriptor S1 D) oo) ->
        red_expr S C (spec_object_define_own_prop_2 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_3
+
+Parameter inv_red_expr_spec_object_define_own_prop_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool)
          (a5 : full_descriptor) (a6 : bool) (oo : out)
@@ -5204,7 +5353,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_3
         @eq out o oo -> P S C a1 a2 a3 a4 (full_descriptor_some A) a6 oo) ->
        red_expr S C (spec_object_define_own_prop_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_4
+
+Parameter inv_red_expr_spec_object_define_own_prop_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5253,7 +5403,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_4
         @eq bool throw a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_4 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_5
+
+Parameter inv_red_expr_spec_object_define_own_prop_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5334,7 +5485,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_5
         @eq out o oo -> P S C a1 a2 (attributes_accessor_of Aa) a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_5 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_6a
+
+Parameter inv_red_expr_spec_object_define_own_prop_6a
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5392,7 +5544,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_6a
         @eq bool throw a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_6a a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_6b
+
+Parameter inv_red_expr_spec_object_define_own_prop_6b
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5445,7 +5598,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_6b
         @eq out o oo -> P S C a1 a2 (attributes_data_of Ad) a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_6b a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_6c
+
+Parameter inv_red_expr_spec_object_define_own_prop_6c
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5498,7 +5652,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_6c
         @eq out o oo -> P S C a1 a2 (attributes_accessor_of Aa) a4 a5 oo) ->
        red_expr S C (spec_object_define_own_prop_6c a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_reject
+
+Parameter inv_red_expr_spec_object_define_own_prop_reject
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (oo : out) (P : state -> execution_ctx -> bool -> out -> Prop),
        (red_expr S C (spec_object_define_own_prop_reject a1) oo ->
@@ -5521,7 +5676,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_reject
         @eq execution_ctx C0 C ->
         @eq bool throw a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_object_define_own_prop_reject a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_write
+
+Parameter inv_red_expr_spec_object_define_own_prop_write
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : attributes) (a4 : descriptor) 
          (a5 : bool) (oo : out)
@@ -5560,7 +5716,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_write
           (out_ter S' (res_val (value_prim (prim_bool true))))) ->
        red_expr S C (spec_object_define_own_prop_write a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_2
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool)
          (a5 : specret full_descriptor) (oo : out)
@@ -5608,7 +5765,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_2
              (full_descriptor_some (attributes_data_of Ad))) oo) ->
        red_expr S C (spec_object_define_own_prop_array_2 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_2_1
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_2_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : descriptor) (a6 : value) (oo : out)
@@ -5666,7 +5824,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_2_1
              (@Some bool (attributes_data_configurable Ad))) a6 oo) ->
        red_expr S C (spec_object_define_own_prop_array_2_1 a1 a2 a3 a4 a5 a6)
          oo -> P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_branch_3_4
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_branch_3_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : descriptor) (a6 : specret Z) (oo : out)
@@ -5783,7 +5942,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_branch_3_4
        red_expr S C
          (spec_object_define_own_prop_array_branch_3_4 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_branch_4_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : descriptor) (a6 : Z) (oo : out)
@@ -5840,7 +6000,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5
        red_expr S C
          (spec_object_define_own_prop_array_branch_4_5 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5_a
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_branch_4_5_a
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : specret Z) (a4 : descriptor) 
          (a5 : bool) (a6 : descriptor) (a7 : Z) (oo : out)
@@ -5905,7 +6066,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5_a
        red_expr S C
          (spec_object_define_own_prop_array_branch_4_5_a a1 a2 a3 a4 a5 a6 a7)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5_b
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_branch_4_5_b
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : Z) (a4 : out) (a5 : descriptor) 
          (a6 : bool) (a7 : descriptor) (a8 : Z) (oo : out)
@@ -6007,7 +6169,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_branch_4_5_b
        red_expr S C
          (spec_object_define_own_prop_array_branch_4_5_b a1 a2 a3 a4 a5 a6 a7
             a8) oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_4a
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_4a
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : descriptor) (a6 : Z) (oo : out)
@@ -6063,7 +6226,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_4a
              (@Some bool (attributes_data_configurable Ad))) a6 oo) ->
        red_expr S C (spec_object_define_own_prop_array_4a a1 a2 a3 a4 a5 a6)
          oo -> P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_4b
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_4b
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : specret Z) (a4 : descriptor) 
          (a5 : bool) (a6 : descriptor) (a7 : Z) (oo : out)
@@ -6158,7 +6322,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_4b
        red_expr S C
          (spec_object_define_own_prop_array_4b a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_4c
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_4c
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 : descriptor) (a4 : bool) (a5 : Z) 
          (a6 : descriptor) (a7 oo : out)
@@ -6292,7 +6457,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_4c
        red_expr S C
          (spec_object_define_own_prop_array_4c a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_5
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (oo : out)
@@ -6327,7 +6493,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_5
         @eq bool throw a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_object_define_own_prop_array_5 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : descriptor) (a3 : bool) (a4 : descriptor) 
          (a5 : Z) (oo : out)
@@ -6419,7 +6586,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3
              (@Some bool (attributes_data_configurable Ad))) a5 oo) ->
        red_expr S C (spec_object_define_own_prop_array_3 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3c
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3c
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : specret Z) (a4 : descriptor) 
          (a5 : bool) (a6 : descriptor) (a7 : Z) (oo : out)
@@ -6479,7 +6647,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3c
        red_expr S C
          (spec_object_define_own_prop_array_3c a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3d_e
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3d_e
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 : Z) (a4 : descriptor) (a5 : bool) 
          (a6 : descriptor) (a7 : Z) (oo : out)
@@ -6573,7 +6742,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3d_e
        red_expr S C
          (spec_object_define_own_prop_array_3d_e a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3f_g
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3f_g
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 : bool) 
          (a6 : descriptor) (oo : out)
@@ -6695,7 +6865,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3f_g
        red_expr S C
          (spec_object_define_own_prop_array_3f_g a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3h_i
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3h_i
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 : bool) 
          (a6 : descriptor) (oo : out)
@@ -6782,7 +6953,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3h_i
        red_expr S C
          (spec_object_define_own_prop_array_3h_i a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3j
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3j
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 a6 : bool) 
          (a7 : descriptor) (oo : out)
@@ -6853,7 +7025,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3j
        red_expr S C
          (spec_object_define_own_prop_array_3j a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3k_l
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3k_l
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 a4 : Z) (a5 : descriptor) (a6 a7 : bool)
          (a8 : descriptor) (oo : out)
@@ -6942,7 +7115,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3k_l
        red_expr S C
          (spec_object_define_own_prop_array_3k_l a1 a2 a3 a4 a5 a6 a7 a8) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 a6 : bool) 
          (oo : out)
@@ -7000,7 +7174,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l
         @eq bool throw a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_object_define_own_prop_array_3l a1 a2 a3 a4 a5 a6)
          oo -> P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_ii
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 a6 : bool) 
          (oo : out)
@@ -7044,7 +7219,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii
        red_expr S C
          (spec_object_define_own_prop_array_3l_ii a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii_1
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_ii_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 a6 : bool) 
          (a7 oo : out)
@@ -7092,7 +7268,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii_1
        red_expr S C
          (spec_object_define_own_prop_array_3l_ii_1 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii_2
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_ii_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 : descriptor) (a5 a6 : bool) 
          (a7 oo : out)
@@ -7157,7 +7334,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_ii_2
        red_expr S C
          (spec_object_define_own_prop_array_3l_ii_2 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_1
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_iii_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 : descriptor) (a4 a5 : bool) 
          (oo : out)
@@ -7203,7 +7381,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_1
        red_expr S C
          (spec_object_define_own_prop_array_3l_iii_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_2
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_iii_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : descriptor) (a3 a4 : bool) (oo : out)
          (P : state ->
@@ -7251,7 +7430,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_2
         @eq bool throw a4 -> @eq out o oo -> P S C a1 a2 true a4 oo) ->
        red_expr S C (spec_object_define_own_prop_array_3l_iii_2 a1 a2 a3 a4)
          oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_3
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_iii_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : descriptor) (a3 : bool) (oo : out)
          (P : state ->
@@ -7296,7 +7476,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_3
         @eq bool throw a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_object_define_own_prop_array_3l_iii_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_4
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3l_iii_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : bool) (a3 oo : out)
          (P : state ->
@@ -7330,7 +7511,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3l_iii_4
         P S C a1 a2 (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_object_define_own_prop_array_3l_iii_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_object_define_own_prop_array_3m_n
+
+Parameter inv_red_expr_spec_object_define_own_prop_array_3m_n
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : bool) (oo : out)
          (P : state -> execution_ctx -> object_loc -> bool -> out -> Prop),
@@ -7379,7 +7561,8 @@ Axiom inv_red_expr_spec_object_define_own_prop_array_3m_n
         P S C a1 true (out_ter S (res_val (value_prim (prim_bool true))))) ->
        red_expr S C (spec_object_define_own_prop_array_3m_n a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_prim_value_get
+
+Parameter inv_red_expr_spec_prim_value_get
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> value -> string -> out -> Prop),
@@ -7403,7 +7586,8 @@ Axiom inv_red_expr_spec_prim_value_get
         @eq value v a1 ->
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_prim_value_get a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_prim_value_get_1
+
+Parameter inv_red_expr_spec_prim_value_get_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : prop_name) (a3 oo : out)
          (P : state -> execution_ctx -> value -> string -> out -> out -> Prop),
@@ -7430,7 +7614,8 @@ Axiom inv_red_expr_spec_prim_value_get_1
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (spec_prim_value_get_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_prim_value_put
+
+Parameter inv_red_expr_spec_prim_value_put
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : prop_name) (a3 : value) (a4 : bool) 
          (oo : out)
@@ -7461,7 +7646,8 @@ Axiom inv_red_expr_spec_prim_value_put
         @eq bool throw a4 -> @eq out o oo -> P S C (value_prim w) a2 a3 a4 oo) ->
        red_expr S C (spec_prim_value_put a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_prim_value_put_1
+
+Parameter inv_red_expr_spec_prim_value_put_1
      : forall (S : state) (C : execution_ctx) (a1 : prim) 
          (a2 : prop_name) (a3 : value) (a4 : bool) 
          (a5 oo : out)
@@ -7497,7 +7683,8 @@ Axiom inv_red_expr_spec_prim_value_put_1
         P S C a1 a2 a3 a4 (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (spec_prim_value_put_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_put_value
+
+Parameter inv_red_expr_spec_put_value
      : forall (S : state) (C : execution_ctx) (a1 : resvalue) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> resvalue -> value -> out -> Prop),
@@ -7575,7 +7762,8 @@ Axiom inv_red_expr_spec_put_value
         @eq resvalue (resvalue_ref r) a1 ->
         @eq value vnew a2 -> @eq out o oo -> P S C (resvalue_ref r) a2 oo) ->
        red_expr S C (spec_put_value a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_env_record_has_binding
+
+Parameter inv_red_expr_spec_env_record_has_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> nat -> string -> out -> Prop),
@@ -7600,7 +7788,8 @@ Axiom inv_red_expr_spec_env_record_has_binding
         @eq env_loc L a1 ->
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_env_record_has_binding a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_env_record_has_binding_1
+
+Parameter inv_red_expr_spec_env_record_has_binding_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : env_record) (oo : out)
          (P : state ->
@@ -7645,7 +7834,8 @@ Axiom inv_red_expr_spec_env_record_has_binding_1
         @eq out o oo -> P S C a1 a2 (env_record_object l pt) oo) ->
        red_expr S C (spec_env_record_has_binding_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_env_record_get_binding_value
+
+Parameter inv_red_expr_spec_env_record_get_binding_value
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : bool) (oo : out)
          (P : state -> execution_ctx -> nat -> string -> bool -> out -> Prop),
@@ -7675,7 +7865,8 @@ Axiom inv_red_expr_spec_env_record_get_binding_value
         @eq bool str a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_env_record_get_binding_value a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_env_record_get_binding_value_1
+
+Parameter inv_red_expr_spec_env_record_get_binding_value_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : bool) (a4 : env_record) 
          (oo : out)
@@ -7742,7 +7933,8 @@ Axiom inv_red_expr_spec_env_record_get_binding_value_1
         @eq out o oo -> P S C a1 a2 a3 (env_record_object l pt) oo) ->
        red_expr S C (spec_env_record_get_binding_value_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_env_record_get_binding_value_2
+
+Parameter inv_red_expr_spec_env_record_get_binding_value_2
      : forall (S : state) (C : execution_ctx) (a1 : prop_name) 
          (a2 : bool) (a3 : object_loc) (a4 oo : out)
          (P : state ->
@@ -7792,7 +7984,8 @@ Axiom inv_red_expr_spec_env_record_get_binding_value_2
           oo) ->
        red_expr S C (spec_env_record_get_binding_value_2 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_env_record_create_immutable_binding
+
+Parameter inv_red_expr_spec_env_record_create_immutable_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> nat -> string -> out -> Prop),
@@ -7825,7 +8018,8 @@ Axiom inv_red_expr_spec_env_record_create_immutable_binding
         @eq out (out_void S') oo -> P S C a1 a2 (out_void S')) ->
        red_expr S C (spec_env_record_create_immutable_binding a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_env_record_initialize_immutable_binding
+
+Parameter inv_red_expr_spec_env_record_initialize_immutable_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : value) (oo : out)
          (P : state -> execution_ctx -> nat -> string -> value -> out -> Prop),
@@ -7862,7 +8056,8 @@ Axiom inv_red_expr_spec_env_record_initialize_immutable_binding
         @eq out (out_void S') oo -> P S C a1 a2 a3 (out_void S')) ->
        red_expr S C (spec_env_record_initialize_immutable_binding a1 a2 a3)
          oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_env_record_create_mutable_binding
+
+Parameter inv_red_expr_spec_env_record_create_mutable_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : option bool) (oo : out)
          (P : state ->
@@ -7896,7 +8091,8 @@ Axiom inv_red_expr_spec_env_record_create_mutable_binding
         @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_env_record_create_mutable_binding a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_env_record_create_mutable_binding_1
+
+Parameter inv_red_expr_spec_env_record_create_mutable_binding_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : bool) (a4 : env_record) 
          (oo : out)
@@ -7954,7 +8150,8 @@ Axiom inv_red_expr_spec_env_record_create_mutable_binding_1
         @eq out o oo -> P S C a1 a2 a3 (env_record_object l pt) oo) ->
        red_expr S C (spec_env_record_create_mutable_binding_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_env_record_create_mutable_binding_2
+
+Parameter inv_red_expr_spec_env_record_create_mutable_binding_2
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : bool) (a4 : object_loc) 
          (a5 oo : out)
@@ -8001,7 +8198,8 @@ Axiom inv_red_expr_spec_env_record_create_mutable_binding_2
           (out_ter S1 (res_val (value_prim (prim_bool false)))) oo) ->
        red_expr S C (spec_env_record_create_mutable_binding_2 a1 a2 a3 a4 a5)
          oo -> P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_env_record_create_mutable_binding_3
+
+Parameter inv_red_expr_spec_env_record_create_mutable_binding_3
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_env_record_create_mutable_binding_3 a1) oo ->
@@ -8026,7 +8224,8 @@ Axiom inv_red_expr_spec_env_record_create_mutable_binding_3
         P S C (out_ter S1 (res_normal rv)) (out_void S1)) ->
        red_expr S C (spec_env_record_create_mutable_binding_3 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_env_record_set_mutable_binding
+
+Parameter inv_red_expr_spec_env_record_set_mutable_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : value) (a4 : bool) 
          (oo : out)
@@ -8059,7 +8258,8 @@ Axiom inv_red_expr_spec_env_record_set_mutable_binding
         @eq bool str a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_env_record_set_mutable_binding a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_env_record_set_mutable_binding_1
+
+Parameter inv_red_expr_spec_env_record_set_mutable_binding_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : value) (a4 : bool) 
          (a5 : env_record) (oo : out)
@@ -8135,7 +8335,8 @@ Axiom inv_red_expr_spec_env_record_set_mutable_binding_1
         @eq out o oo -> P S C a1 a2 a3 a4 (env_record_object l pt) oo) ->
        red_expr S C (spec_env_record_set_mutable_binding_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_env_record_delete_binding
+
+Parameter inv_red_expr_spec_env_record_delete_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> nat -> string -> out -> Prop),
@@ -8161,7 +8362,8 @@ Axiom inv_red_expr_spec_env_record_delete_binding
         @eq prop_name x a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_env_record_delete_binding a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_env_record_delete_binding_1
+
+Parameter inv_red_expr_spec_env_record_delete_binding_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : env_record) (oo : out)
          (P : state ->
@@ -8227,7 +8429,8 @@ Axiom inv_red_expr_spec_env_record_delete_binding_1
         @eq out o oo -> P S C a1 a2 (env_record_object l pt) oo) ->
        red_expr S C (spec_env_record_delete_binding_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_env_record_create_set_mutable_binding
+
+Parameter inv_red_expr_spec_env_record_create_set_mutable_binding
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : prop_name) (a3 : option bool) (a4 : value) 
          (a5 : bool) (oo : out)
@@ -8268,7 +8471,8 @@ Axiom inv_red_expr_spec_env_record_create_set_mutable_binding
        red_expr S C
          (spec_env_record_create_set_mutable_binding a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_env_record_create_set_mutable_binding_1
+
+Parameter inv_red_expr_spec_env_record_create_set_mutable_binding_1
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : env_loc) (a3 : prop_name) (a4 : value) 
          (a5 : bool) (oo : out)
@@ -8307,7 +8511,8 @@ Axiom inv_red_expr_spec_env_record_create_set_mutable_binding_1
        red_expr S C
          (spec_env_record_create_set_mutable_binding_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_env_record_implicit_this_value
+
+Parameter inv_red_expr_spec_env_record_implicit_this_value
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (oo : out) (P : state -> execution_ctx -> nat -> out -> Prop),
        (red_expr S C (spec_env_record_implicit_this_value a1) oo ->
@@ -8331,7 +8536,8 @@ Axiom inv_red_expr_spec_env_record_implicit_this_value
         @eq env_loc L a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_env_record_implicit_this_value a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_env_record_implicit_this_value_1
+
+Parameter inv_red_expr_spec_env_record_implicit_this_value_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : env_record) (oo : out)
          (P : state -> execution_ctx -> nat -> env_record -> out -> Prop),
@@ -8374,7 +8580,8 @@ Axiom inv_red_expr_spec_env_record_implicit_this_value_1
         P S C a1 (env_record_object l pt) (out_ter S (res_val v))) ->
        red_expr S C (spec_env_record_implicit_this_value_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_from_descriptor
+
+Parameter inv_red_expr_spec_from_descriptor
      : forall (S : state) (C : execution_ctx) (a1 : specret full_descriptor)
          (oo : out)
          (P : state ->
@@ -8411,7 +8618,8 @@ Axiom inv_red_expr_spec_from_descriptor
         @eq out o oo ->
         P S C (@ret full_descriptor S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_from_descriptor a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_from_descriptor_1
+
+Parameter inv_red_expr_spec_from_descriptor_1
      : forall (S : state) (C : execution_ctx) (a1 : attributes) 
          (a2 oo : out)
          (P : state -> execution_ctx -> attributes -> out -> out -> Prop),
@@ -8476,7 +8684,8 @@ Axiom inv_red_expr_spec_from_descriptor_1
         P S C (attributes_accessor_of Aa)
           (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (spec_from_descriptor_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_from_descriptor_2
+
+Parameter inv_red_expr_spec_from_descriptor_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : attributes_data) (a3 oo : out)
          (P : state ->
@@ -8531,7 +8740,8 @@ Axiom inv_red_expr_spec_from_descriptor_2
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_from_descriptor_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_from_descriptor_3
+
+Parameter inv_red_expr_spec_from_descriptor_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : attributes_accessor) (a3 oo : out)
          (P : state ->
@@ -8572,7 +8782,8 @@ Axiom inv_red_expr_spec_from_descriptor_3
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_from_descriptor_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_from_descriptor_4
+
+Parameter inv_red_expr_spec_from_descriptor_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : attributes) (a3 oo : out)
          (P : state ->
@@ -8630,7 +8841,8 @@ Axiom inv_red_expr_spec_from_descriptor_4
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_from_descriptor_4 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_from_descriptor_5
+
+Parameter inv_red_expr_spec_from_descriptor_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : attributes) (a3 oo : out)
          (P : state ->
@@ -8695,7 +8907,8 @@ Axiom inv_red_expr_spec_from_descriptor_5
         @eq out o oo ->
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_from_descriptor_5 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_from_descriptor_6
+
+Parameter inv_red_expr_spec_from_descriptor_6
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -8720,7 +8933,8 @@ Axiom inv_red_expr_spec_from_descriptor_6
         P S C a1 (out_ter S1 (res_val (value_prim (prim_bool b))))
           (out_ter S1 (res_val (value_object a1)))) ->
        red_expr S C (spec_from_descriptor_6 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_entering_eval_code
+
+Parameter inv_red_expr_spec_entering_eval_code
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : funcbody) (a3 : ext_expr) (oo : out)
          (P : state ->
@@ -8754,7 +8968,8 @@ Axiom inv_red_expr_spec_entering_eval_code
         @eq ext_expr K a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_entering_eval_code a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_entering_eval_code_1
+
+Parameter inv_red_expr_spec_entering_eval_code_1
      : forall (S : state) (C : execution_ctx) (a1 : funcbody) 
          (a2 : ext_expr) (a3 : bool) (oo : out)
          (P : state ->
@@ -8797,7 +9012,8 @@ Axiom inv_red_expr_spec_entering_eval_code_1
         @eq bool str a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_entering_eval_code_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_entering_eval_code_2
+
+Parameter inv_red_expr_spec_entering_eval_code_2
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : ext_expr) (oo : out)
          (P : state -> execution_ctx -> out -> ext_expr -> out -> Prop),
@@ -8820,7 +9036,8 @@ Axiom inv_red_expr_spec_entering_eval_code_2
         @eq out (out_void S1) a1 ->
         @eq ext_expr K a2 -> @eq out o oo -> P S C (out_void S1) a2 oo) ->
        red_expr S C (spec_entering_eval_code_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_global_eval
+
+Parameter inv_red_expr_spec_call_global_eval
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> bool -> list value -> out -> Prop),
@@ -8844,7 +9061,8 @@ Axiom inv_red_expr_spec_call_global_eval
         @eq bool bdirect a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_global_eval a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_global_eval_1
+
+Parameter inv_red_expr_spec_call_global_eval_1
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> bool -> value -> out -> Prop),
@@ -8890,7 +9108,8 @@ Axiom inv_red_expr_spec_call_global_eval_1
         @eq value (value_prim (prim_string s)) a2 ->
         @eq out o oo -> P S C a1 (value_prim (prim_string s)) oo) ->
        red_expr S C (spec_call_global_eval_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_global_eval_2
+
+Parameter inv_red_expr_spec_call_global_eval_2
      : forall (S : state) (C : execution_ctx) (a1 : prog) 
          (oo : out) (P : state -> execution_ctx -> prog -> out -> Prop),
        (red_expr S C (spec_call_global_eval_2 a1) oo ->
@@ -8912,7 +9131,8 @@ Axiom inv_red_expr_spec_call_global_eval_2
         @eq execution_ctx C0 C ->
         @eq prog p a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_global_eval_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_global_eval_3
+
+Parameter inv_red_expr_spec_call_global_eval_3
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_global_eval_3 a1) oo ->
@@ -8950,7 +9170,8 @@ Axiom inv_red_expr_spec_call_global_eval_3
         @eq out (out_ter S1 (res_throw (res_value R))) oo ->
         P S C (out_ter S1 R) (out_ter S1 (res_throw (res_value R)))) ->
        red_expr S C (spec_call_global_eval_3 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_entering_func_code
+
+Parameter inv_red_expr_spec_entering_func_code
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : list value) (a4 : ext_expr) 
          (oo : out)
@@ -8984,7 +9205,8 @@ Axiom inv_red_expr_spec_entering_func_code
         @eq ext_expr K a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_entering_func_code a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_entering_func_code_1
+
+Parameter inv_red_expr_spec_entering_func_code_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : funcbody) (a4 : value)
          (a5 : strictness_flag) (a6 : ext_expr) (oo : out)
@@ -9075,7 +9297,8 @@ Axiom inv_red_expr_spec_entering_func_code_1
         P S C a1 a2 a3 (value_object lthis) strictness_false a6 oo) ->
        red_expr S C (spec_entering_func_code_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_entering_func_code_2
+
+Parameter inv_red_expr_spec_entering_func_code_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : funcbody) (a4 : out) 
          (a5 : ext_expr) (oo : out)
@@ -9111,7 +9334,8 @@ Axiom inv_red_expr_spec_entering_func_code_2
         @eq out o oo -> P S C a1 a2 a3 (out_ter S0 (res_val vthis)) a5 oo) ->
        red_expr S C (spec_entering_func_code_2 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_entering_func_code_3
+
+Parameter inv_red_expr_spec_entering_func_code_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : strictness_flag) (a4 : funcbody)
          (a5 : value) (a6 : ext_expr) (oo : out)
@@ -9158,7 +9382,8 @@ Axiom inv_red_expr_spec_entering_func_code_3
         @eq ext_expr K a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_entering_func_code_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_entering_func_code_4
+
+Parameter inv_red_expr_spec_entering_func_code_4
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : ext_expr) (oo : out)
          (P : state -> execution_ctx -> out -> ext_expr -> out -> Prop),
@@ -9180,7 +9405,8 @@ Axiom inv_red_expr_spec_entering_func_code_4
         @eq out (out_void S1) a1 ->
         @eq ext_expr K a2 -> @eq out o oo -> P S C (out_void S1) a2 oo) ->
        red_expr S C (spec_entering_func_code_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_binding_inst_formal_params
+
+Parameter inv_red_expr_spec_binding_inst_formal_params
      : forall (S : state) (C : execution_ctx) (a1 : list value)
          (a2 : env_loc) (a3 : list string) (a4 : strictness_flag) 
          (oo : out)
@@ -9233,7 +9459,8 @@ Axiom inv_red_expr_spec_binding_inst_formal_params
         @eq out o oo -> P S C a1 a2 (@cons prop_name x xs) a4 oo) ->
        red_expr S C (spec_binding_inst_formal_params a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_binding_inst_formal_params_1
+
+Parameter inv_red_expr_spec_binding_inst_formal_params_1
      : forall (S : state) (C : execution_ctx) (a1 : list value)
          (a2 : env_loc) (a3 : string) (a4 : list string)
          (a5 : strictness_flag) (a6 : value) (a7 oo : out)
@@ -9302,7 +9529,8 @@ Axiom inv_red_expr_spec_binding_inst_formal_params_1
           (out_ter S1 (res_val (value_prim (prim_bool true)))) oo) ->
        red_expr S C (spec_binding_inst_formal_params_1 a1 a2 a3 a4 a5 a6 a7)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_formal_params_2
+
+Parameter inv_red_expr_spec_binding_inst_formal_params_2
      : forall (S : state) (C : execution_ctx) (a1 : list value)
          (a2 : env_loc) (a3 : string) (a4 : list string)
          (a5 : strictness_flag) (a6 : value) (a7 oo : out)
@@ -9347,7 +9575,8 @@ Axiom inv_red_expr_spec_binding_inst_formal_params_2
         @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_formal_params_2 a1 a2 a3 a4 a5 a6 a7)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_formal_params_3
+
+Parameter inv_red_expr_spec_binding_inst_formal_params_3
      : forall (S : state) (C : execution_ctx) (a1 : list value)
          (a2 : env_loc) (a3 : string) (a4 : list string)
          (a5 : strictness_flag) (a6 : value) (oo : out)
@@ -9387,7 +9616,8 @@ Axiom inv_red_expr_spec_binding_inst_formal_params_3
         @eq value v a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_binding_inst_formal_params_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_formal_params_4
+
+Parameter inv_red_expr_spec_binding_inst_formal_params_4
      : forall (S : state) (C : execution_ctx) (a1 : list value)
          (a2 : env_loc) (a3 : list string) (a4 : strictness_flag)
          (a5 oo : out)
@@ -9422,7 +9652,8 @@ Axiom inv_red_expr_spec_binding_inst_formal_params_4
         @eq out o oo -> P S C a1 a2 a3 a4 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_formal_params_4 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls
+
+Parameter inv_red_expr_spec_binding_inst_function_decls
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : list funcdecl) (a3 : strictness_flag) 
          (a4 : bool) (oo : out)
@@ -9473,7 +9704,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls
         @eq out o oo -> P S C a1 (@cons funcdecl fd fds) a3 a4 oo) ->
        red_expr S C (spec_binding_inst_function_decls a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_1
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : funcdecl) (a3 : list funcdecl) (a4 : strictness_flag)
          (a5 : bool) (a6 oo : out)
@@ -9518,7 +9750,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_1
         P S C a1 a2 a3 a4 a5 (out_ter S1 (res_val (value_object fo))) oo) ->
        red_expr S C (spec_binding_inst_function_decls_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_2
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_2
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : funcdecl) (a3 : list funcdecl) (a4 : strictness_flag)
          (a5 : object_loc) (a6 : bool) (a7 oo : out)
@@ -9612,7 +9845,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_2
           (out_ter S1 (res_val (value_prim (prim_bool true)))) oo) ->
        red_expr S C (spec_binding_inst_function_decls_2 a1 a2 a3 a4 a5 a6 a7)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_3
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_3
      : forall (S : state) (C : execution_ctx) (a1 : funcdecl)
          (a2 : list funcdecl) (a3 : strictness_flag) 
          (a4 : object_loc) (a5 : bool) (a6 : specret full_descriptor)
@@ -9691,7 +9925,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_3
           (@ret full_descriptor S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_binding_inst_function_decls_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_3a
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_3a
      : forall (S : state) (C : execution_ctx) (a1 : funcdecl)
          (a2 : list funcdecl) (a3 : strictness_flag) 
          (a4 : object_loc) (a5 : bool) (a6 : full_descriptor) 
@@ -9760,7 +9995,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_3a
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (full_descriptor_some A) oo) ->
        red_expr S C (spec_binding_inst_function_decls_3a a1 a2 a3 a4 a5 a6)
          oo -> P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_4
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_4
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : funcdecl) (a3 : list funcdecl) (a4 : strictness_flag)
          (a5 : object_loc) (a6 : bool) (a7 oo : out)
@@ -9807,7 +10043,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_4
         P S C a1 a2 a3 a4 a5 a6 (out_ter S1 (res_normal rv)) oo) ->
        red_expr S C (spec_binding_inst_function_decls_4 a1 a2 a3 a4 a5 a6 a7)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_5
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_5
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : funcdecl) (a3 : list funcdecl) (a4 : strictness_flag)
          (a5 : object_loc) (a6 : bool) (oo : out)
@@ -9852,7 +10089,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_5
         @eq bool bconfig a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_binding_inst_function_decls_5 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_function_decls_6
+
+Parameter inv_red_expr_spec_binding_inst_function_decls_6
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : list funcdecl) (a3 : strictness_flag) 
          (a4 : bool) (a5 oo : out)
@@ -9888,7 +10126,8 @@ Axiom inv_red_expr_spec_binding_inst_function_decls_6
         @eq out o oo -> P S C a1 a2 a3 a4 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_function_decls_6 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_binding_inst_arg_obj
+
+Parameter inv_red_expr_spec_binding_inst_arg_obj
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : env_loc)
          (a5 : strictness_flag) (oo : out)
@@ -9926,7 +10165,8 @@ Axiom inv_red_expr_spec_binding_inst_arg_obj
         @eq strictness_flag str a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_binding_inst_arg_obj a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_binding_inst_arg_obj_1
+
+Parameter inv_red_expr_spec_binding_inst_arg_obj_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : strictness_flag) (a3 oo : out)
          (P : state -> execution_ctx -> nat -> bool -> out -> out -> Prop),
@@ -10008,7 +10248,8 @@ Axiom inv_red_expr_spec_binding_inst_arg_obj_1
         @eq out o oo -> P S C a1 false (out_ter S1 (res_val largs)) oo) ->
        red_expr S C (spec_binding_inst_arg_obj_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_binding_inst_arg_obj_2
+
+Parameter inv_red_expr_spec_binding_inst_arg_obj_2
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : object_loc) (a3 oo : out)
          (P : state ->
@@ -10057,7 +10298,8 @@ Axiom inv_red_expr_spec_binding_inst_arg_obj_2
         @eq out o oo -> P S C a1 a2 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_arg_obj_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_binding_inst_var_decls
+
+Parameter inv_red_expr_spec_binding_inst_var_decls
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : list string) (a3 : bool) (a4 : strictness_flag) 
          (oo : out)
@@ -10102,7 +10344,8 @@ Axiom inv_red_expr_spec_binding_inst_var_decls
         @eq out o oo -> P S C a1 (@cons prop_name vd vds) a3 a4 oo) ->
        red_expr S C (spec_binding_inst_var_decls a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_binding_inst_var_decls_1
+
+Parameter inv_red_expr_spec_binding_inst_var_decls_1
      : forall (S : state) (C : execution_ctx) (a1 : env_loc) 
          (a2 : string) (a3 : list string) (a4 : bool) 
          (a5 : strictness_flag) (a6 oo : out)
@@ -10161,7 +10404,8 @@ Axiom inv_red_expr_spec_binding_inst_var_decls_1
           (out_ter S1 (res_val (value_prim (prim_bool false)))) oo) ->
        red_expr S C (spec_binding_inst_var_decls_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_var_decls_2
+
+Parameter inv_red_expr_spec_binding_inst_var_decls_2
      : forall (S : state) (C : execution_ctx) (a1 : env_loc)
          (a2 : list string) (a3 : bool) (a4 : strictness_flag) 
          (a5 oo : out)
@@ -10196,7 +10440,8 @@ Axiom inv_red_expr_spec_binding_inst_var_decls_2
         @eq out o oo -> P S C a1 a2 a3 a4 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_var_decls_2 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_binding_inst
+
+Parameter inv_red_expr_spec_binding_inst
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list value) 
          (oo : out)
@@ -10228,7 +10473,8 @@ Axiom inv_red_expr_spec_binding_inst
         @eq (list value) args a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_binding_inst a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_binding_inst_1
+
+Parameter inv_red_expr_spec_binding_inst_1
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list value)
          (a5 : env_loc) (oo : out)
@@ -10283,7 +10529,8 @@ Axiom inv_red_expr_spec_binding_inst_1
         @eq out o oo -> P S C a1 (@None object_loc) a3 a4 a5 oo) ->
        red_expr S C (spec_binding_inst_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_binding_inst_2
+
+Parameter inv_red_expr_spec_binding_inst_2
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : object_loc) (a3 : prog) (a4 : list string) 
          (a5 : list value) (a6 : env_loc) (a7 oo : out)
@@ -10323,7 +10570,8 @@ Axiom inv_red_expr_spec_binding_inst_2
         @eq out o oo -> P S C codetype_func a2 a3 a4 a5 a6 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_2 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_3
+
+Parameter inv_red_expr_spec_binding_inst_3
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list string)
          (a5 : list value) (a6 : env_loc) (oo : out)
@@ -10368,7 +10616,8 @@ Axiom inv_red_expr_spec_binding_inst_3
         @eq env_loc L a6 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_binding_inst_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_binding_inst_4
+
+Parameter inv_red_expr_spec_binding_inst_4
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list string)
          (a5 : list value) (a6 : bool) (a7 : env_loc) 
@@ -10411,7 +10660,8 @@ Axiom inv_red_expr_spec_binding_inst_4
         @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 a7 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_4 a1 a2 a3 a4 a5 a6 a7 a8) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 oo.
-Axiom inv_red_expr_spec_binding_inst_5
+
+Parameter inv_red_expr_spec_binding_inst_5
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list string)
          (a5 : list value) (a6 : bool) (a7 : env_loc) 
@@ -10472,7 +10722,8 @@ Axiom inv_red_expr_spec_binding_inst_5
         @eq env_loc L a7 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 a7 oo) ->
        red_expr S C (spec_binding_inst_5 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_binding_inst_6
+
+Parameter inv_red_expr_spec_binding_inst_6
      : forall (S : state) (C : execution_ctx) (a1 : codetype)
          (a2 : option object_loc) (a3 : prog) (a4 : list string)
          (a5 : list value) (a6 : bool) (a7 : env_loc) 
@@ -10542,7 +10793,8 @@ Axiom inv_red_expr_spec_binding_inst_6
           (out_ter S1 (res_val (value_prim (prim_bool bdefined)))) oo) ->
        red_expr S C (spec_binding_inst_6 a1 a2 a3 a4 a5 a6 a7 a8) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 oo.
-Axiom inv_red_expr_spec_binding_inst_7
+
+Parameter inv_red_expr_spec_binding_inst_7
      : forall (S : state) (C : execution_ctx) (a1 : prog) 
          (a2 : bool) (a3 : env_loc) (a4 oo : out)
          (P : state ->
@@ -10571,7 +10823,8 @@ Axiom inv_red_expr_spec_binding_inst_7
         @eq out o oo -> P S C a1 a2 a3 (out_void S1) oo) ->
        red_expr S C (spec_binding_inst_7 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_binding_inst_8
+
+Parameter inv_red_expr_spec_binding_inst_8
      : forall (S : state) (C : execution_ctx) (a1 : prog) 
          (a2 : bool) (a3 : env_loc) (oo : out)
          (P : state -> execution_ctx -> prog -> bool -> nat -> out -> Prop),
@@ -10598,7 +10851,8 @@ Axiom inv_red_expr_spec_binding_inst_8
         @eq bool bconfig a2 ->
         @eq env_loc L a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_binding_inst_8 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_make_arg_getter
+
+Parameter inv_red_expr_spec_make_arg_getter
      : forall (S : state) (C : execution_ctx) (a1 : string)
          (a2 : lexical_env) (oo : out)
          (P : state -> execution_ctx -> string -> list nat -> out -> Prop),
@@ -10650,7 +10904,8 @@ Axiom inv_red_expr_spec_make_arg_getter
         @eq string x a1 ->
         @eq lexical_env X a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_make_arg_getter a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_make_arg_setter
+
+Parameter inv_red_expr_spec_make_arg_setter
      : forall (S : state) (C : execution_ctx) (a1 : string)
          (a2 : lexical_env) (oo : out)
          (P : state -> execution_ctx -> string -> list nat -> out -> Prop),
@@ -10706,7 +10961,8 @@ Axiom inv_red_expr_spec_make_arg_setter
         @eq string x a1 ->
         @eq lexical_env X a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_make_arg_setter a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_args_obj_get_1
+
+Parameter inv_red_expr_spec_args_obj_get_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : object_loc) (a3 : prop_name) (a4 : object_loc)
          (a5 : specret full_descriptor) (oo : out)
@@ -10759,7 +11015,8 @@ Axiom inv_red_expr_spec_args_obj_get_1
           oo) ->
        red_expr S C (spec_args_obj_get_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_1
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : object_loc) (a6 : specret full_descriptor) 
@@ -10806,7 +11063,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_1
         P S C a1 a2 a3 a4 a5 (@ret full_descriptor S0 Dmap) oo) ->
        red_expr S C (spec_args_obj_define_own_prop_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_2
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : object_loc) (a6 : full_descriptor) (a7 oo : out)
@@ -10935,7 +11193,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_2
           (out_ter S' (res_val (value_prim (prim_bool true)))) oo) ->
        red_expr S C (spec_args_obj_define_own_prop_2 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_3
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : object_loc) (a6 oo : out)
@@ -10974,7 +11233,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_3
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (out_void S') oo) ->
        red_expr S C (spec_args_obj_define_own_prop_3 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_4
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : descriptor) (a4 : bool) 
          (a5 : object_loc) (oo : out)
@@ -11024,7 +11284,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_4
         @eq object_loc lmap a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_args_obj_define_own_prop_4 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_5
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_5
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_args_obj_define_own_prop_5 a1) oo ->
@@ -11048,7 +11309,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_5
         @eq out o oo ->
         P S C (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_args_obj_define_own_prop_5 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_args_obj_define_own_prop_6
+
+Parameter inv_red_expr_spec_args_obj_define_own_prop_6
      : forall (S : state) (C : execution_ctx) (oo : out)
          (P : state -> execution_ctx -> out -> Prop),
        (red_expr S C spec_args_obj_define_own_prop_6 oo ->
@@ -11068,7 +11330,8 @@ Axiom inv_red_expr_spec_args_obj_define_own_prop_6
         @eq out (out_ter S (res_val (value_prim (prim_bool true)))) oo ->
         P S C (out_ter S (res_val (value_prim (prim_bool true))))) ->
        red_expr S C spec_args_obj_define_own_prop_6 oo -> P S C oo.
-Axiom inv_red_expr_spec_args_obj_delete_1
+
+Parameter inv_red_expr_spec_args_obj_delete_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : bool) (a4 : object_loc)
          (a5 : specret full_descriptor) (oo : out)
@@ -11106,7 +11369,8 @@ Axiom inv_red_expr_spec_args_obj_delete_1
         @eq out o oo -> P S C a1 a2 a3 a4 (@ret full_descriptor S0 D) oo) ->
        red_expr S C (spec_args_obj_delete_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_args_obj_delete_2
+
+Parameter inv_red_expr_spec_args_obj_delete_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : bool) (a4 : object_loc)
          (a5 : full_descriptor) (a6 oo : out)
@@ -11166,7 +11430,8 @@ Axiom inv_red_expr_spec_args_obj_delete_2
           (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_args_obj_delete_2 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_args_obj_delete_3
+
+Parameter inv_red_expr_spec_args_obj_delete_3
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_args_obj_delete_3 a1) oo ->
@@ -11189,7 +11454,8 @@ Axiom inv_red_expr_spec_args_obj_delete_3
         @eq out o oo ->
         P S C (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_args_obj_delete_3 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_args_obj_delete_4
+
+Parameter inv_red_expr_spec_args_obj_delete_4
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (oo : out) (P : state -> execution_ctx -> bool -> out -> Prop),
        (red_expr S C (spec_args_obj_delete_4 a1) oo ->
@@ -11210,7 +11476,8 @@ Axiom inv_red_expr_spec_args_obj_delete_4
         @eq out (out_ter S (res_val (value_prim (prim_bool a1)))) oo ->
         P S C a1 (out_ter S (res_val (value_prim (prim_bool a1))))) ->
        red_expr S C (spec_args_obj_delete_4 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_arguments_object_map
+
+Parameter inv_red_expr_spec_arguments_object_map
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (oo : out)
@@ -11247,7 +11514,8 @@ Axiom inv_red_expr_spec_arguments_object_map
         @eq strictness_flag str a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_arguments_object_map a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_arguments_object_map_1
+
+Parameter inv_red_expr_spec_arguments_object_map_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 oo : out)
@@ -11290,7 +11558,8 @@ Axiom inv_red_expr_spec_arguments_object_map_1
         P S C a1 a2 a3 a4 a5 (out_ter S' (res_val (value_object lmap))) oo) ->
        red_expr S C (spec_arguments_object_map_1 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_arguments_object_map_2
+
+Parameter inv_red_expr_spec_arguments_object_map_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11362,7 +11631,8 @@ Axiom inv_red_expr_spec_arguments_object_map_2
         @eq Z k a8 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 oo) ->
        red_expr S C (spec_arguments_object_map_2 a1 a2 a3 a4 a5 a6 a7 a8) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 oo.
-Axiom inv_red_expr_spec_arguments_object_map_3
+
+Parameter inv_red_expr_spec_arguments_object_map_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11469,7 +11739,8 @@ Axiom inv_red_expr_spec_arguments_object_map_3
           (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_arguments_object_map_3 a1 a2 a3 a4 a5 a6 a7 a8 a9)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 oo.
-Axiom inv_red_expr_spec_arguments_object_map_4
+
+Parameter inv_red_expr_spec_arguments_object_map_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11522,7 +11793,8 @@ Axiom inv_red_expr_spec_arguments_object_map_4
         @eq out o oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 oo) ->
        red_expr S C (spec_arguments_object_map_4 a1 a2 a3 a4 a5 a6 a7 a8 a9)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 oo.
-Axiom inv_red_expr_spec_arguments_object_map_5
+
+Parameter inv_red_expr_spec_arguments_object_map_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11580,7 +11852,8 @@ Axiom inv_red_expr_spec_arguments_object_map_5
        red_expr S C
          (spec_arguments_object_map_5 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 oo.
-Axiom inv_red_expr_spec_arguments_object_map_6
+
+Parameter inv_red_expr_spec_arguments_object_map_6
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11646,7 +11919,8 @@ Axiom inv_red_expr_spec_arguments_object_map_6
        red_expr S C
          (spec_arguments_object_map_6 a1 a2 a3 a4 a5 a6 a7 a8 a9 a10) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 a10 oo.
-Axiom inv_red_expr_spec_arguments_object_map_7
+
+Parameter inv_red_expr_spec_arguments_object_map_7
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 : list string) 
@@ -11700,7 +11974,8 @@ Axiom inv_red_expr_spec_arguments_object_map_7
           (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_arguments_object_map_7 a1 a2 a3 a4 a5 a6 a7 a8 a9)
          oo -> P S C a1 a2 a3 a4 a5 a6 a7 a8 a9 oo.
-Axiom inv_red_expr_spec_arguments_object_map_8
+
+Parameter inv_red_expr_spec_arguments_object_map_8
      : forall (S : state) (C : execution_ctx) (a1 a2 : object_loc)
          (a3 : list string) (oo : out)
          (P : state ->
@@ -11744,7 +12019,8 @@ Axiom inv_red_expr_spec_arguments_object_map_8
         @eq out (out_void S) oo -> P S C a1 a2 (@nil string) (out_void S)) ->
        red_expr S C (spec_arguments_object_map_8 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_create_arguments_object
+
+Parameter inv_red_expr_spec_create_arguments_object
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (oo : out)
@@ -11826,7 +12102,8 @@ Axiom inv_red_expr_spec_create_arguments_object
         @eq strictness_flag str a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_create_arguments_object a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_create_arguments_object_1
+
+Parameter inv_red_expr_spec_create_arguments_object_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list string) (a3 : list value) (a4 : lexical_env)
          (a5 : strictness_flag) (a6 : object_loc) (a7 oo : out)
@@ -11873,7 +12150,8 @@ Axiom inv_red_expr_spec_create_arguments_object_1
           (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_create_arguments_object_1 a1 a2 a3 a4 a5 a6 a7) oo ->
        P S C a1 a2 a3 a4 a5 a6 a7 oo.
-Axiom inv_red_expr_spec_create_arguments_object_2
+
+Parameter inv_red_expr_spec_create_arguments_object_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : strictness_flag) (a3 : object_loc) (a4 oo : out)
          (P : state ->
@@ -11956,7 +12234,8 @@ Axiom inv_red_expr_spec_create_arguments_object_2
         @eq out o oo -> P S C a1 true a3 (out_void S') oo) ->
        red_expr S C (spec_create_arguments_object_2 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_create_arguments_object_3
+
+Parameter inv_red_expr_spec_create_arguments_object_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : attributes) (a4 oo : out)
          (P : state ->
@@ -12005,7 +12284,8 @@ Axiom inv_red_expr_spec_create_arguments_object_3
         P S C a1 a2 a3 (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_create_arguments_object_3 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_create_arguments_object_4
+
+Parameter inv_red_expr_spec_create_arguments_object_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -12032,7 +12312,8 @@ Axiom inv_red_expr_spec_create_arguments_object_4
           (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_create_arguments_object_4 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_has_instance
+
+Parameter inv_red_expr_spec_object_has_instance
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -12057,7 +12338,8 @@ Axiom inv_red_expr_spec_object_has_instance
         @eq object_loc l a1 ->
         @eq value v a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_object_has_instance a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_object_has_instance_1
+
+Parameter inv_red_expr_spec_object_has_instance_1
      : forall (S : state) (C : execution_ctx) (a1 : builtin_has_instance)
          (a2 : object_loc) (a3 : value) (oo : out)
          (P : state ->
@@ -12129,7 +12411,8 @@ Axiom inv_red_expr_spec_object_has_instance_1
         @eq out o oo -> P S C builtin_has_instance_after_bind a2 a3 oo) ->
        red_expr S C (spec_object_has_instance_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_function_has_instance_1
+
+Parameter inv_red_expr_spec_function_has_instance_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -12164,7 +12447,8 @@ Axiom inv_red_expr_spec_function_has_instance_1
         @eq out (out_ter S1 (res_val (value_object lo))) a2 ->
         @eq out o oo -> P S C a1 (out_ter S1 (res_val (value_object lo))) oo) ->
        red_expr S C (spec_function_has_instance_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_has_instance_2
+
+Parameter inv_red_expr_spec_function_has_instance_2
      : forall (S : state) (C : execution_ctx) (a1 a2 : object_loc) 
          (oo : out)
          (P : state ->
@@ -12190,7 +12474,8 @@ Axiom inv_red_expr_spec_function_has_instance_2
         @eq object_loc lo a1 ->
         @eq object_loc lv a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_function_has_instance_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_has_instance_3
+
+Parameter inv_red_expr_spec_function_has_instance_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -12235,7 +12520,8 @@ Axiom inv_red_expr_spec_function_has_instance_3
         @eq value (value_object lv) a2 ->
         @eq out o oo -> P S C a1 (value_object lv) oo) ->
        red_expr S C (spec_function_has_instance_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_has_instance_after_bind_1
+
+Parameter inv_red_expr_spec_function_has_instance_after_bind_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -12264,7 +12550,8 @@ Axiom inv_red_expr_spec_function_has_instance_after_bind_1
         @eq value v a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_function_has_instance_after_bind_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_has_instance_after_bind_2
+
+Parameter inv_red_expr_spec_function_has_instance_after_bind_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -12303,7 +12590,8 @@ Axiom inv_red_expr_spec_function_has_instance_after_bind_2
         @eq value v a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_function_has_instance_after_bind_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_get_1
+
+Parameter inv_red_expr_spec_function_get_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 oo : out)
          (P : state ->
@@ -12342,7 +12630,8 @@ Axiom inv_red_expr_spec_function_get_1
         @eq out (out_ter S1 (res_val v)) oo ->
         P S C a1 a2 (out_ter S1 (res_val v)) (out_ter S1 (res_val v))) ->
        red_expr S C (spec_function_get_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_error
+
+Parameter inv_red_expr_spec_error
      : forall (S : state) (C : execution_ctx) (a1 : native_error) 
          (oo : out)
          (P : state -> execution_ctx -> native_error -> out -> Prop),
@@ -12367,7 +12656,8 @@ Axiom inv_red_expr_spec_error
         @eq execution_ctx C0 C ->
         @eq native_error ne a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_error a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_error_1
+
+Parameter inv_red_expr_spec_error_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_error_1 a1) oo ->
@@ -12387,7 +12677,8 @@ Axiom inv_red_expr_spec_error_1
         P S C (out_ter S1 (res_val (value_object l)))
           (out_ter S1 (res_throw (resvalue_value (value_object l))))) ->
        red_expr S C (spec_error_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_error_or_cst
+
+Parameter inv_red_expr_spec_error_or_cst
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : native_error) (a3 : value) (oo : out)
          (P : state ->
@@ -12422,7 +12713,8 @@ Axiom inv_red_expr_spec_error_or_cst
         @eq out (out_ter S (res_val a3)) oo ->
         P S C false a2 a3 (out_ter S (res_val a3))) ->
        red_expr S C (spec_error_or_cst a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_error_or_void
+
+Parameter inv_red_expr_spec_error_or_void
      : forall (S : state) (C : execution_ctx) (a1 : bool) 
          (a2 : native_error) (oo : out)
          (P : state -> execution_ctx -> bool -> native_error -> out -> Prop),
@@ -12452,7 +12744,8 @@ Axiom inv_red_expr_spec_error_or_void
         @eq native_error ne a2 ->
         @eq out (out_void S) oo -> P S C false a2 (out_void S)) ->
        red_expr S C (spec_error_or_void a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_init_throw_type_error
+
+Parameter inv_red_expr_spec_init_throw_type_error
      : forall (S : state) (C : execution_ctx) (oo : out)
          (P : state -> execution_ctx -> out -> Prop),
        (red_expr S C spec_init_throw_type_error oo ->
@@ -12466,7 +12759,8 @@ Axiom inv_red_expr_spec_init_throw_type_error
         @eq ext_expr exte spec_init_throw_type_error ->
         @eq out o oo -> P S C oo) ->
        red_expr S C spec_init_throw_type_error oo -> P S C oo.
-Axiom inv_red_expr_spec_init_throw_type_error_1
+
+Parameter inv_red_expr_spec_init_throw_type_error_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_init_throw_type_error_1 a1) oo ->
@@ -12480,7 +12774,8 @@ Axiom inv_red_expr_spec_init_throw_type_error_1
         @eq ext_expr exte (spec_init_throw_type_error_1 a1) ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_init_throw_type_error_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_build_error
+
+Parameter inv_red_expr_spec_build_error
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -12517,7 +12812,8 @@ Axiom inv_red_expr_spec_build_error
         @eq value vproto a1 ->
         @eq value vmsg a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_build_error a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_build_error_1
+
+Parameter inv_red_expr_spec_build_error_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -12552,7 +12848,8 @@ Axiom inv_red_expr_spec_build_error_1
         @eq object_loc l a1 ->
         @eq value vmsg a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_build_error_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_build_error_2
+
+Parameter inv_red_expr_spec_build_error_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -12591,7 +12888,8 @@ Axiom inv_red_expr_spec_build_error_2
         P S C a1 (out_ter S1 (res_val smsg))
           (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_build_error_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_new_object
+
+Parameter inv_red_expr_spec_new_object
      : forall (S : state) (C : execution_ctx) (a1 : object_loc -> ext_expr)
          (oo : out)
          (P : state ->
@@ -12606,7 +12904,8 @@ Axiom inv_red_expr_spec_new_object
         @eq execution_ctx C0 C ->
         @eq ext_expr exte (spec_new_object a1) -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_new_object a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_new_object_1
+
+Parameter inv_red_expr_spec_new_object_1
      : forall (S : state) (C : execution_ctx) (a1 : out)
          (a2 : object_loc -> ext_expr) (oo : out)
          (P : state ->
@@ -12622,7 +12921,8 @@ Axiom inv_red_expr_spec_new_object_1
         @eq ext_expr exte (spec_new_object_1 a1 a2) ->
         @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_new_object_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_creating_function_object_proto
+
+Parameter inv_red_expr_spec_creating_function_object_proto
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (oo : out) (P : state -> execution_ctx -> object_loc -> out -> Prop),
        (red_expr S C (spec_creating_function_object_proto a1) oo ->
@@ -12647,7 +12947,8 @@ Axiom inv_red_expr_spec_creating_function_object_proto
         @eq object_loc l a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_creating_function_object_proto a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_creating_function_object
+
+Parameter inv_red_expr_spec_creating_function_object
      : forall (S : state) (C : execution_ctx) (a1 : list string)
          (a2 : funcbody) (a3 : lexical_env) (a4 : strictness_flag) 
          (oo : out)
@@ -12733,7 +13034,8 @@ Axiom inv_red_expr_spec_creating_function_object
         @eq strictness_flag str a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_creating_function_object a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_creating_function_object_1
+
+Parameter inv_red_expr_spec_creating_function_object_1
      : forall (S : state) (C : execution_ctx) (a1 : strictness_flag)
          (a2 : object_loc) (a3 oo : out)
          (P : state ->
@@ -12765,7 +13067,8 @@ Axiom inv_red_expr_spec_creating_function_object_1
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_creating_function_object_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_creating_function_object_2
+
+Parameter inv_red_expr_spec_creating_function_object_2
      : forall (S : state) (C : execution_ctx) (a1 : strictness_flag)
          (a2 : object_loc) (a3 oo : out)
          (P : state ->
@@ -12827,7 +13130,8 @@ Axiom inv_red_expr_spec_creating_function_object_2
         P S C true a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_creating_function_object_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_creating_function_object_3
+
+Parameter inv_red_expr_spec_creating_function_object_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -12882,7 +13186,8 @@ Axiom inv_red_expr_spec_creating_function_object_3
         P S C a1 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_creating_function_object_3 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_creating_function_object_4
+
+Parameter inv_red_expr_spec_creating_function_object_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -12909,7 +13214,8 @@ Axiom inv_red_expr_spec_creating_function_object_4
           (out_ter S1 (res_val (value_object a1)))) ->
        red_expr S C (spec_creating_function_object_4 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_proto_apply
+
+Parameter inv_red_expr_spec_function_proto_apply
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 a3 : value) (oo : out)
          (P : state ->
@@ -12975,7 +13281,8 @@ Axiom inv_red_expr_spec_function_proto_apply
         @eq value argArray a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_function_proto_apply a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_function_proto_apply_1
+
+Parameter inv_red_expr_spec_function_proto_apply_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : object_loc) (a4 oo : out)
          (P : state ->
@@ -13008,7 +13315,8 @@ Axiom inv_red_expr_spec_function_proto_apply_1
         @eq out o oo -> P S C a1 a2 a3 (out_ter S' (res_val v)) oo) ->
        red_expr S C (spec_function_proto_apply_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_function_proto_apply_2
+
+Parameter inv_red_expr_spec_function_proto_apply_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : object_loc) (a4 : specret Z) 
          (oo : out)
@@ -13043,7 +13351,8 @@ Axiom inv_red_expr_spec_function_proto_apply_2
         @eq out o oo -> P S C a1 a2 a3 (@ret Z S' ilen) oo) ->
        red_expr S C (spec_function_proto_apply_2 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_function_proto_apply_3
+
+Parameter inv_red_expr_spec_function_proto_apply_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : specret (list value)) (oo : out)
          (P : state ->
@@ -13073,7 +13382,8 @@ Axiom inv_red_expr_spec_function_proto_apply_3
         @eq out o oo -> P S C a1 a2 (@ret (list value) S' argList) oo) ->
        red_expr S C (spec_function_proto_apply_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_function_proto_bind_1
+
+Parameter inv_red_expr_spec_function_proto_bind_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : list value) (oo : out)
          (P : state ->
@@ -13153,7 +13463,8 @@ Axiom inv_red_expr_spec_function_proto_bind_1
         @eq (list value) A a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_function_proto_bind_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_function_proto_bind_2
+
+Parameter inv_red_expr_spec_function_proto_bind_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : list value) (oo : out)
          (P : state ->
@@ -13183,7 +13494,8 @@ Axiom inv_red_expr_spec_function_proto_bind_2
         @eq out o oo -> P S C a1 (value_object target) a3 oo) ->
        red_expr S C (spec_function_proto_bind_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_function_proto_bind_3
+
+Parameter inv_red_expr_spec_function_proto_bind_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret Z) (oo : out)
          (P : state ->
@@ -13208,7 +13520,8 @@ Axiom inv_red_expr_spec_function_proto_bind_3
         @eq (specret Z) (@ret Z S' length) a2 ->
         @eq out o oo -> P S C a1 (@ret Z S' length) oo) ->
        red_expr S C (spec_function_proto_bind_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_proto_bind_4
+
+Parameter inv_red_expr_spec_function_proto_bind_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> Prop),
@@ -13247,7 +13560,8 @@ Axiom inv_red_expr_spec_function_proto_bind_4
         @eq object_loc l a1 ->
         @eq Z length a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_function_proto_bind_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_proto_bind_5
+
+Parameter inv_red_expr_spec_function_proto_bind_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (oo : out) (P : state -> execution_ctx -> object_loc -> out -> Prop),
        (red_expr S C (spec_function_proto_bind_5 a1) oo ->
@@ -13288,7 +13602,8 @@ Axiom inv_red_expr_spec_function_proto_bind_5
         @eq execution_ctx C0 C ->
         @eq object_loc l a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_function_proto_bind_5 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_function_proto_bind_6
+
+Parameter inv_red_expr_spec_function_proto_bind_6
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -13341,7 +13656,8 @@ Axiom inv_red_expr_spec_function_proto_bind_6
         @eq out o oo ->
         P S C a1 (out_ter S' (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_function_proto_bind_6 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_function_proto_bind_7
+
+Parameter inv_red_expr_spec_function_proto_bind_7
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -13366,7 +13682,8 @@ Axiom inv_red_expr_spec_function_proto_bind_7
         P S C a1 (out_ter S' (res_val (value_prim (prim_bool b))))
           (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_function_proto_bind_7 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_create_new_function_in
+
+Parameter inv_red_expr_spec_create_new_function_in
      : forall (S : state) (C a1 : execution_ctx) (a2 : list string)
          (a3 : funcbody) (oo : out)
          (P : state ->
@@ -13396,7 +13713,8 @@ Axiom inv_red_expr_spec_create_new_function_in
         @eq funcbody bd a3 -> @eq out o oo -> P S a1 a1 a2 a3 oo) ->
        red_expr S C (spec_create_new_function_in a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call
+
+Parameter inv_red_expr_spec_call
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : list value) (oo : out)
          (P : state ->
@@ -13424,7 +13742,8 @@ Axiom inv_red_expr_spec_call
         @eq value this a2 ->
         @eq (list value) args a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_call a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_1
+
+Parameter inv_red_expr_spec_call_1
      : forall (S : state) (C : execution_ctx) (a1 : call) 
          (a2 : object_loc) (a3 : value) (a4 : list value) 
          (oo : out)
@@ -13485,7 +13804,8 @@ Axiom inv_red_expr_spec_call_1
         @eq (list value) args a4 ->
         @eq out o oo -> P S C call_after_bind a2 a3 a4 oo) ->
        red_expr S C (spec_call_1 a1 a2 a3 a4) oo -> P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_default
+
+Parameter inv_red_expr_spec_call_default
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 : list value) (oo : out)
          (P : state ->
@@ -13512,7 +13832,8 @@ Axiom inv_red_expr_spec_call_default
         @eq value this a2 ->
         @eq (list value) args a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_call_default a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_default_1
+
+Parameter inv_red_expr_spec_call_default_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (oo : out) (P : state -> execution_ctx -> object_loc -> out -> Prop),
        (red_expr S C (spec_call_default_1 a1) oo ->
@@ -13534,7 +13855,8 @@ Axiom inv_red_expr_spec_call_default_1
         @eq execution_ctx C0 C ->
         @eq object_loc l a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_default_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_default_2
+
+Parameter inv_red_expr_spec_call_default_2
      : forall (S : state) (C : execution_ctx) (a1 : option funcbody)
          (oo : out)
          (P : state -> execution_ctx -> option funcbody -> out -> Prop),
@@ -13572,7 +13894,8 @@ Axiom inv_red_expr_spec_call_default_2
         @eq execution_ctx C0 C ->
         @eq (option funcbody) bdo a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_default_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_default_3
+
+Parameter inv_red_expr_spec_call_default_3
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_default_3 a1) oo ->
@@ -13601,7 +13924,8 @@ Axiom inv_red_expr_spec_call_default_3
         P S C (out_ter S1 (res_normal rv))
           (out_ter S1 (res_val (value_prim prim_undef)))) ->
        red_expr S C (spec_call_default_3 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_construct
+
+Parameter inv_red_expr_spec_construct
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (oo : out)
          (P : state ->
@@ -13627,7 +13951,8 @@ Axiom inv_red_expr_spec_construct
         @eq object_loc l a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_construct a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_construct_1
+
+Parameter inv_red_expr_spec_construct_1
      : forall (S : state) (C : execution_ctx) (a1 : construct)
          (a2 : object_loc) (a3 : list value) (oo : out)
          (P : state ->
@@ -13676,7 +14001,8 @@ Axiom inv_red_expr_spec_construct_1
         @eq (list value) args a3 ->
         @eq out o oo -> P S C construct_after_bind a2 a3 oo) ->
        red_expr S C (spec_construct_1 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_construct_prealloc
+
+Parameter inv_red_expr_spec_construct_prealloc
      : forall (S : state) (C : execution_ctx) (a1 : prealloc)
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> prealloc -> list value -> out -> Prop),
@@ -13818,7 +14144,8 @@ Axiom inv_red_expr_spec_construct_prealloc
         @eq prealloc B a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_construct_prealloc a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_construct_default
+
+Parameter inv_red_expr_spec_construct_default
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (oo : out)
          (P : state ->
@@ -13864,7 +14191,8 @@ Axiom inv_red_expr_spec_construct_default
         @eq object_loc l a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_construct_default a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_construct_default_1
+
+Parameter inv_red_expr_spec_construct_default_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 oo : out)
          (P : state ->
@@ -13917,7 +14245,8 @@ Axiom inv_red_expr_spec_construct_default_1
         @eq out o oo -> P S C a1 a2 (out_ter S1 (res_val v)) oo) ->
        red_expr S C (spec_construct_default_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_construct_default_2
+
+Parameter inv_red_expr_spec_construct_default_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -13946,7 +14275,8 @@ Axiom inv_red_expr_spec_construct_default_2
         @eq out (out_ter S1 (res_val v')) oo ->
         P S C a1 (out_ter S1 (res_val v)) (out_ter S1 (res_val v'))) ->
        red_expr S C (spec_construct_default_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_construct_1_after_bind
+
+Parameter inv_red_expr_spec_construct_1_after_bind
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : object_loc) (oo : out)
          (P : state ->
@@ -13992,7 +14322,8 @@ Axiom inv_red_expr_spec_construct_1_after_bind
         @eq object_loc target a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_construct_1_after_bind a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_global_is_nan_1
+
+Parameter inv_red_expr_spec_call_global_is_nan_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_global_is_nan_1 a1) oo ->
@@ -14022,7 +14353,8 @@ Axiom inv_red_expr_spec_call_global_is_nan_1
         P S C (out_ter S0 (res_val (value_prim (prim_number n))))
           (out_ter S0 (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_call_global_is_nan_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_global_is_finite_1
+
+Parameter inv_red_expr_spec_call_global_is_finite_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_global_is_finite_1 a1) oo ->
@@ -14056,7 +14388,8 @@ Axiom inv_red_expr_spec_call_global_is_finite_1
         P S C (out_ter S0 (res_val (value_prim (prim_number n))))
           (out_ter S0 (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_call_global_is_finite_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_call_1
+
+Parameter inv_red_expr_spec_call_object_call_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> value -> list value -> out -> Prop),
@@ -14091,7 +14424,8 @@ Axiom inv_red_expr_spec_call_object_call_1
         @eq value v a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_object_call_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_new_1
+
+Parameter inv_red_expr_spec_call_object_new_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_new_1 a1) oo ->
@@ -14150,7 +14484,8 @@ Axiom inv_red_expr_spec_call_object_new_1
         @eq out (out_ter S' (res_val (value_object l))) oo ->
         P S C a1 (out_ter S' (res_val (value_object l)))) ->
        red_expr S C (spec_call_object_new_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_get_proto_of_1
+
+Parameter inv_red_expr_spec_call_object_get_proto_of_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_get_proto_of_1 a1) oo ->
@@ -14180,7 +14515,8 @@ Axiom inv_red_expr_spec_call_object_get_proto_of_1
         @eq out (out_ter S (res_val v)) oo ->
         P S C (value_object l) (out_ter S (res_val v))) ->
        red_expr S C (spec_call_object_get_proto_of_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_is_extensible_1
+
+Parameter inv_red_expr_spec_call_object_is_extensible_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_is_extensible_1 a1) oo ->
@@ -14211,7 +14547,8 @@ Axiom inv_red_expr_spec_call_object_is_extensible_1
         P S C (value_object l)
           (out_ter S (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_call_object_is_extensible_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_define_props_1
+
+Parameter inv_red_expr_spec_call_object_define_props_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -14244,7 +14581,8 @@ Axiom inv_red_expr_spec_call_object_define_props_1
         @eq value vp a2 -> @eq out o oo -> P S C (value_object l) a2 oo) ->
        red_expr S C (spec_call_object_define_props_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_define_props_2
+
+Parameter inv_red_expr_spec_call_object_define_props_2
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : object_loc) (oo : out)
          (P : state -> execution_ctx -> out -> object_loc -> out -> Prop),
@@ -14274,7 +14612,8 @@ Axiom inv_red_expr_spec_call_object_define_props_2
         @eq out o oo -> P S C (out_ter S1 (res_val (value_object lp))) a2 oo) ->
        red_expr S C (spec_call_object_define_props_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_define_props_3
+
+Parameter inv_red_expr_spec_call_object_define_props_3
      : forall (S : state) (C : execution_ctx) (a1 a2 : object_loc)
          (a3 : list prop_name) (a4 : list (prod prop_name attributes))
          (oo : out)
@@ -14324,7 +14663,8 @@ Axiom inv_red_expr_spec_call_object_define_props_3
         @eq out o oo -> P S C a1 a2 (@cons prop_name x xs) a4 oo) ->
        red_expr S C (spec_call_object_define_props_3 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_object_define_props_4
+
+Parameter inv_red_expr_spec_call_object_define_props_4
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 a3 : object_loc) (a4 : prop_name) (a5 : list prop_name)
          (a6 : list (prod prop_name attributes)) (oo : out)
@@ -14368,7 +14708,8 @@ Axiom inv_red_expr_spec_call_object_define_props_4
         @eq out o oo -> P S C (out_ter S1 (res_val v)) a2 a3 a4 a5 a6 oo) ->
        red_expr S C (spec_call_object_define_props_4 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_call_object_define_props_5
+
+Parameter inv_red_expr_spec_call_object_define_props_5
      : forall (S : state) (C : execution_ctx) (a1 a2 : object_loc)
          (a3 : prop_name) (a4 : list prop_name)
          (a5 : list (prod prop_name attributes)) (a6 : specret attributes)
@@ -14417,7 +14758,8 @@ Axiom inv_red_expr_spec_call_object_define_props_5
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (@ret attributes S0 A) oo) ->
        red_expr S C (spec_call_object_define_props_5 a1 a2 a3 a4 a5 a6) oo ->
        P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_call_object_define_props_6
+
+Parameter inv_red_expr_spec_call_object_define_props_6
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list (prod prop_name attributes)) (oo : out)
          (P : state ->
@@ -14465,7 +14807,8 @@ Axiom inv_red_expr_spec_call_object_define_props_6
           (out_ter S (res_val (value_object a1)))) ->
        red_expr S C (spec_call_object_define_props_6 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_define_props_7
+
+Parameter inv_red_expr_spec_call_object_define_props_7
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : object_loc) (a3 : list (prod prop_name attributes)) 
          (oo : out)
@@ -14499,7 +14842,8 @@ Axiom inv_red_expr_spec_call_object_define_props_7
         P S C (out_ter S1 (res_val (value_prim (prim_bool b)))) a2 a3 oo) ->
        red_expr S C (spec_call_object_define_props_7 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_create_1
+
+Parameter inv_red_expr_spec_call_object_create_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -14530,7 +14874,8 @@ Axiom inv_red_expr_spec_call_object_create_1
         @eq execution_ctx C0 C ->
         @eq value vo a1 -> @eq value vp a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_object_create_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_create_2
+
+Parameter inv_red_expr_spec_call_object_create_2
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 a3 : value) (oo : out)
          (P : state -> execution_ctx -> out -> value -> value -> out -> Prop),
@@ -14562,7 +14907,8 @@ Axiom inv_red_expr_spec_call_object_create_2
         P S C (out_ter S0 (res_val (value_object l))) a2 a3 oo) ->
        red_expr S C (spec_call_object_create_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_create_3
+
+Parameter inv_red_expr_spec_call_object_create_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -14596,7 +14942,8 @@ Axiom inv_red_expr_spec_call_object_create_3
         P S C a1 (value_prim prim_undef)
           (out_ter S (res_val (value_object a1)))) ->
        red_expr S C (spec_call_object_create_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_seal_1
+
+Parameter inv_red_expr_spec_call_object_seal_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_seal_1 a1) oo ->
@@ -14626,7 +14973,8 @@ Axiom inv_red_expr_spec_call_object_seal_1
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_call_object_seal_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_seal_2
+
+Parameter inv_red_expr_spec_call_object_seal_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (oo : out)
          (P : state ->
@@ -14662,7 +15010,8 @@ Axiom inv_red_expr_spec_call_object_seal_2
         @eq out (out_ter S' (res_val (value_object a1))) oo ->
         P S C a1 (@nil prop_name) (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_call_object_seal_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_seal_3
+
+Parameter inv_red_expr_spec_call_object_seal_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : list prop_name)
          (a4 : specret full_descriptor) (oo : out)
@@ -14705,7 +15054,8 @@ Axiom inv_red_expr_spec_call_object_seal_3
         @eq out o oo -> P S C a1 a2 a3 (dret S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_call_object_seal_3 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_object_seal_4
+
+Parameter inv_red_expr_spec_call_object_seal_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 oo : out)
          (P : state ->
@@ -14735,7 +15085,8 @@ Axiom inv_red_expr_spec_call_object_seal_4
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_call_object_seal_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_is_sealed_1
+
+Parameter inv_red_expr_spec_call_object_is_sealed_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_is_sealed_1 a1) oo ->
@@ -14765,7 +15116,8 @@ Axiom inv_red_expr_spec_call_object_is_sealed_1
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_call_object_is_sealed_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_is_sealed_2
+
+Parameter inv_red_expr_spec_call_object_is_sealed_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (oo : out)
          (P : state ->
@@ -14803,7 +15155,8 @@ Axiom inv_red_expr_spec_call_object_is_sealed_2
         P S C a1 (@nil prop_name)
           (out_ter S (res_val (value_prim (prim_bool (negb b)))))) ->
        red_expr S C (spec_call_object_is_sealed_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_is_sealed_3
+
+Parameter inv_red_expr_spec_call_object_is_sealed_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 : specret full_descriptor) 
          (oo : out)
@@ -14848,7 +15201,8 @@ Axiom inv_red_expr_spec_call_object_is_sealed_3
         @eq out o oo -> P S C a1 a2 (dret S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_call_object_is_sealed_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_freeze_1
+
+Parameter inv_red_expr_spec_call_object_freeze_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_freeze_1 a1) oo ->
@@ -14878,7 +15232,8 @@ Axiom inv_red_expr_spec_call_object_freeze_1
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_call_object_freeze_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_freeze_2
+
+Parameter inv_red_expr_spec_call_object_freeze_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (oo : out)
          (P : state ->
@@ -14914,7 +15269,8 @@ Axiom inv_red_expr_spec_call_object_freeze_2
         @eq out (out_ter S' (res_val (value_object a1))) oo ->
         P S C a1 (@nil prop_name) (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_call_object_freeze_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_freeze_3
+
+Parameter inv_red_expr_spec_call_object_freeze_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : list prop_name)
          (a4 : specret full_descriptor) (oo : out)
@@ -14961,7 +15317,8 @@ Axiom inv_red_expr_spec_call_object_freeze_3
         @eq out o oo -> P S C a1 a2 a3 (dret S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_call_object_freeze_3 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_object_freeze_4
+
+Parameter inv_red_expr_spec_call_object_freeze_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : prop_name) (a3 : list prop_name) (a4 : full_descriptor)
          (oo : out)
@@ -15004,7 +15361,8 @@ Axiom inv_red_expr_spec_call_object_freeze_4
         @eq out o oo -> P S C a1 a2 a3 (full_descriptor_some A) oo) ->
        red_expr S C (spec_call_object_freeze_4 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_object_freeze_5
+
+Parameter inv_red_expr_spec_call_object_freeze_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 oo : out)
          (P : state ->
@@ -15035,7 +15393,8 @@ Axiom inv_red_expr_spec_call_object_freeze_5
         P S C a1 a2 (out_ter S1 (res_val (value_prim (prim_bool b)))) oo) ->
        red_expr S C (spec_call_object_freeze_5 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_is_frozen_1
+
+Parameter inv_red_expr_spec_call_object_is_frozen_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_is_frozen_1 a1) oo ->
@@ -15065,7 +15424,8 @@ Axiom inv_red_expr_spec_call_object_is_frozen_1
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_call_object_is_frozen_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_is_frozen_2
+
+Parameter inv_red_expr_spec_call_object_is_frozen_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (oo : out)
          (P : state ->
@@ -15103,7 +15463,8 @@ Axiom inv_red_expr_spec_call_object_is_frozen_2
         P S C a1 (@nil prop_name)
           (out_ter S (res_val (value_prim (prim_bool (negb b)))))) ->
        red_expr S C (spec_call_object_is_frozen_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_is_frozen_3
+
+Parameter inv_red_expr_spec_call_object_is_frozen_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 : specret full_descriptor) 
          (oo : out)
@@ -15150,7 +15511,8 @@ Axiom inv_red_expr_spec_call_object_is_frozen_3
         @eq out o oo -> P S C a1 a2 (dret S1 (full_descriptor_some A)) oo) ->
        red_expr S C (spec_call_object_is_frozen_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_is_frozen_4
+
+Parameter inv_red_expr_spec_call_object_is_frozen_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 : full_descriptor) 
          (oo : out)
@@ -15194,7 +15556,8 @@ Axiom inv_red_expr_spec_call_object_is_frozen_4
         @eq out o oo -> P S C a1 a2 (full_descriptor_some A) oo) ->
        red_expr S C (spec_call_object_is_frozen_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_is_frozen_5
+
+Parameter inv_red_expr_spec_call_object_is_frozen_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list prop_name) (a3 : full_descriptor) 
          (oo : out)
@@ -15237,7 +15600,8 @@ Axiom inv_red_expr_spec_call_object_is_frozen_5
         @eq out o oo -> P S C a1 a2 (full_descriptor_some A) oo) ->
        red_expr S C (spec_call_object_is_frozen_5 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_prevent_extensions_1
+
+Parameter inv_red_expr_spec_call_object_prevent_extensions_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_prevent_extensions_1 a1) oo ->
@@ -15272,7 +15636,8 @@ Axiom inv_red_expr_spec_call_object_prevent_extensions_1
         P S C (value_object l) (out_ter S' (res_val (value_object l)))) ->
        red_expr S C (spec_call_object_prevent_extensions_1 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_define_prop_1
+
+Parameter inv_red_expr_spec_call_object_define_prop_1
      : forall (S : state) (C : execution_ctx) (a1 a2 a3 : value) 
          (oo : out)
          (P : state ->
@@ -15310,7 +15675,8 @@ Axiom inv_red_expr_spec_call_object_define_prop_1
         @eq value va a3 -> @eq out o oo -> P S C (value_object l) a2 a3 oo) ->
        red_expr S C (spec_call_object_define_prop_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_define_prop_2
+
+Parameter inv_red_expr_spec_call_object_define_prop_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 : value) (oo : out)
          (P : state ->
@@ -15342,7 +15708,8 @@ Axiom inv_red_expr_spec_call_object_define_prop_2
         P S C a1 (out_ter S0 (res_val (value_prim (prim_string x)))) a3 oo) ->
        red_expr S C (spec_call_object_define_prop_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_define_prop_3
+
+Parameter inv_red_expr_spec_call_object_define_prop_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 : specret descriptor) (oo : out)
          (P : state ->
@@ -15374,7 +15741,8 @@ Axiom inv_red_expr_spec_call_object_define_prop_3
         @eq out o oo -> P S C a1 a2 (@ret descriptor S0 Desc) oo) ->
        red_expr S C (spec_call_object_define_prop_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_object_define_prop_4
+
+Parameter inv_red_expr_spec_call_object_define_prop_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -15401,7 +15769,8 @@ Axiom inv_red_expr_spec_call_object_define_prop_4
           (out_ter S0 (res_val (value_object a1)))) ->
        red_expr S C (spec_call_object_define_prop_4 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_get_own_prop_descriptor_1
+
+Parameter inv_red_expr_spec_call_object_get_own_prop_descriptor_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -15436,7 +15805,8 @@ Axiom inv_red_expr_spec_call_object_get_own_prop_descriptor_1
         @eq value vx a2 -> @eq out o oo -> P S C (value_object l) a2 oo) ->
        red_expr S C (spec_call_object_get_own_prop_descriptor_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_get_own_prop_descriptor_2
+
+Parameter inv_red_expr_spec_call_object_get_own_prop_descriptor_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -15467,7 +15837,8 @@ Axiom inv_red_expr_spec_call_object_get_own_prop_descriptor_2
         P S C a1 (out_ter S1 (res_val (value_prim (prim_string x)))) oo) ->
        red_expr S C (spec_call_object_get_own_prop_descriptor_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_to_string_1
+
+Parameter inv_red_expr_spec_call_object_proto_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_object_proto_to_string_1 a1) oo ->
@@ -15523,8 +15894,9 @@ Axiom inv_red_expr_spec_call_object_proto_to_string_1
         @eq state S0 S ->
         @eq execution_ctx C0 C ->
         @eq value v a1 -> @eq out o oo -> P S C a1 oo) ->
-       red_expr S C (spec_call_object_proto_to_string_1 a1) oo -> P S C a1 oo. 
-Axiom inv_red_expr_spec_call_object_proto_to_string_2
+       red_expr S C (spec_call_object_proto_to_string_1 a1) oo -> P S C a1 oo.
+ 
+Parameter inv_red_expr_spec_call_object_proto_to_string_2
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_object_proto_to_string_2 a1) oo ->
@@ -15572,7 +15944,8 @@ Axiom inv_red_expr_spec_call_object_proto_to_string_2
         P S C (out_ter S1 (res_val (value_object l)))
           (out_ter S1 (res_val (value_prim (prim_string s))))) ->
        red_expr S C (spec_call_object_proto_to_string_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_proto_has_own_prop_1
+
+Parameter inv_red_expr_spec_call_object_proto_has_own_prop_1
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> out -> value -> out -> Prop),
@@ -15602,7 +15975,8 @@ Axiom inv_red_expr_spec_call_object_proto_has_own_prop_1
         P S C (out_ter S' (res_val (value_prim (prim_string s)))) a2 oo) ->
        red_expr S C (spec_call_object_proto_has_own_prop_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_has_own_prop_2
+
+Parameter inv_red_expr_spec_call_object_proto_has_own_prop_2
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : prop_name) (oo : out)
          (P : state -> execution_ctx -> out -> string -> out -> Prop),
@@ -15632,7 +16006,8 @@ Axiom inv_red_expr_spec_call_object_proto_has_own_prop_2
         @eq out o oo -> P S C (out_ter S' (res_val (value_object l))) a2 oo) ->
        red_expr S C (spec_call_object_proto_has_own_prop_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_has_own_prop_3
+
+Parameter inv_red_expr_spec_call_object_proto_has_own_prop_3
      : forall (S : state) (C : execution_ctx) (a1 : specret full_descriptor)
          (oo : out)
          (P : state ->
@@ -15668,7 +16043,8 @@ Axiom inv_red_expr_spec_call_object_proto_has_own_prop_3
           (out_ter S' (res_val (value_prim (prim_bool true))))) ->
        red_expr S C (spec_call_object_proto_has_own_prop_3 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_1
+
+Parameter inv_red_expr_spec_call_object_proto_is_prototype_of_2_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -15705,7 +16081,8 @@ Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_1
         @eq value vthis a2 -> @eq out o oo -> P S C (value_object l) a2 oo) ->
        red_expr S C (spec_call_object_proto_is_prototype_of_2_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_2
+
+Parameter inv_red_expr_spec_call_object_proto_is_prototype_of_2_2
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : object_loc) (oo : out)
          (P : state -> execution_ctx -> out -> object_loc -> out -> Prop),
@@ -15735,7 +16112,8 @@ Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_2
         P S C (out_ter S1 (res_val (value_object lthis))) a2 oo) ->
        red_expr S C (spec_call_object_proto_is_prototype_of_2_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_3
+
+Parameter inv_red_expr_spec_call_object_proto_is_prototype_of_2_3
      : forall (S : state) (C : execution_ctx) (a1 a2 : object_loc) 
          (oo : out)
          (P : state ->
@@ -15765,7 +16143,8 @@ Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_3
         @eq object_loc l a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_object_proto_is_prototype_of_2_3 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_4
+
+Parameter inv_red_expr_spec_call_object_proto_is_prototype_of_2_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -15813,7 +16192,8 @@ Axiom inv_red_expr_spec_call_object_proto_is_prototype_of_2_4
         @eq out o oo -> P S C a1 (value_object lproto) oo) ->
        red_expr S C (spec_call_object_proto_is_prototype_of_2_4 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_1
+
+Parameter inv_red_expr_spec_call_object_proto_prop_is_enumerable_1
      : forall (S : state) (C : execution_ctx) (a1 a2 : value) 
          (oo : out)
          (P : state -> execution_ctx -> value -> value -> out -> Prop),
@@ -15842,7 +16222,8 @@ Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_1
         @eq value vthis a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_object_proto_prop_is_enumerable_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_2
+
+Parameter inv_red_expr_spec_call_object_proto_prop_is_enumerable_2
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -15873,7 +16254,8 @@ Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_2
         P S C a1 (out_ter S' (res_val (value_prim (prim_string s)))) oo) ->
        red_expr S C (spec_call_object_proto_prop_is_enumerable_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_3
+
+Parameter inv_red_expr_spec_call_object_proto_prop_is_enumerable_3
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : string) (oo : out)
          (P : state -> execution_ctx -> out -> string -> out -> Prop),
@@ -15904,7 +16286,8 @@ Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_3
         @eq out o oo -> P S C (out_ter S' (res_val (value_object l))) a2 oo) ->
        red_expr S C (spec_call_object_proto_prop_is_enumerable_3 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_4
+
+Parameter inv_red_expr_spec_call_object_proto_prop_is_enumerable_4
      : forall (S : state) (C : execution_ctx) (a1 : specret full_descriptor)
          (oo : out)
          (P : state ->
@@ -15942,7 +16325,8 @@ Axiom inv_red_expr_spec_call_object_proto_prop_is_enumerable_4
           (out_ter S0 (res_val (value_prim (prim_bool b))))) ->
        red_expr S C (spec_call_object_proto_prop_is_enumerable_4 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_new_1
+
+Parameter inv_red_expr_spec_call_array_new_1
      : forall (S : state) (C : execution_ctx) (a1 : list value) 
          (oo : out) (P : state -> execution_ctx -> list value -> out -> Prop),
        (red_expr S C (spec_call_array_new_1 a1) oo ->
@@ -15979,7 +16363,8 @@ Axiom inv_red_expr_spec_call_array_new_1
         @eq execution_ctx C0 C ->
         @eq (list value) args a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_array_new_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_new_2
+
+Parameter inv_red_expr_spec_call_array_new_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (oo : out)
          (P : state ->
@@ -16019,7 +16404,8 @@ Axiom inv_red_expr_spec_call_array_new_2
         @eq object_loc l a1 ->
         @eq (list value) args a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_array_new_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_new_3
+
+Parameter inv_red_expr_spec_call_array_new_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : Z) (oo : out)
          (P : state ->
@@ -16056,7 +16442,8 @@ Axiom inv_red_expr_spec_call_array_new_3
         @eq out (out_ter S (res_val (value_object a1))) oo ->
         P S C a1 (@nil value) a3 (out_ter S (res_val (value_object a1)))) ->
        red_expr S C (spec_call_array_new_3 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_new_single_1
+
+Parameter inv_red_expr_spec_call_array_new_single_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_array_new_single_1 a1) oo ->
@@ -16093,7 +16480,8 @@ Axiom inv_red_expr_spec_call_array_new_single_1
         @eq execution_ctx C0 C ->
         @eq value v a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_array_new_single_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_new_single_2
+
+Parameter inv_red_expr_spec_call_array_new_single_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -16148,7 +16536,8 @@ Axiom inv_red_expr_spec_call_array_new_single_2
         @eq object_loc l a1 ->
         @eq value v a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_array_new_single_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_new_single_3
+
+Parameter inv_red_expr_spec_call_array_new_single_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : JsNumber.number) (a3 : specret Z) (oo : out)
          (P : state ->
@@ -16194,7 +16583,8 @@ Axiom inv_red_expr_spec_call_array_new_single_3
         @eq out o oo -> P S C a1 a2 (@ret Z S' ilen) oo) ->
        red_expr S C (spec_call_array_new_single_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_new_single_4
+
+Parameter inv_red_expr_spec_call_array_new_single_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> Prop),
@@ -16233,7 +16623,8 @@ Axiom inv_red_expr_spec_call_array_new_single_4
         @eq out (out_ter S' (res_val (value_object a1))) oo ->
         P S C a1 a2 (out_ter S' (res_val (value_object a1)))) ->
        red_expr S C (spec_call_array_new_single_4 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_is_array_1
+
+Parameter inv_red_expr_spec_call_array_is_array_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_array_is_array_1 a1) oo ->
@@ -16264,7 +16655,8 @@ Axiom inv_red_expr_spec_call_array_is_array_1
         @eq execution_ctx C0 C ->
         @eq value arg a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_array_is_array_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_is_array_2_3
+
+Parameter inv_red_expr_spec_call_array_is_array_2_3
      : forall (S : state) (C : execution_ctx) (a1 : class_name) 
          (oo : out) (P : state -> execution_ctx -> string -> out -> Prop),
        (red_expr S C (spec_call_array_is_array_2_3 a1) oo ->
@@ -16301,7 +16693,8 @@ Axiom inv_red_expr_spec_call_array_is_array_2_3
         @eq out (out_ter S (res_val (value_prim (prim_bool false)))) oo ->
         P S C a1 (out_ter S (res_val (value_prim (prim_bool false))))) ->
        red_expr S C (spec_call_array_is_array_2_3 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_proto_join
+
+Parameter inv_red_expr_spec_call_array_proto_join
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> out -> list value -> out -> Prop),
@@ -16338,7 +16731,8 @@ Axiom inv_red_expr_spec_call_array_proto_join
         @eq (list value) args a2 ->
         @eq out o oo -> P S C (out_ter S' (res_val (value_object l))) a2 oo) ->
        red_expr S C (spec_call_array_proto_join a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_1
+
+Parameter inv_red_expr_spec_call_array_proto_join_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : out) (a3 : list value) (oo : out)
          (P : state ->
@@ -16368,7 +16762,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_1
         @eq out o oo -> P S C a1 (out_ter S' (res_val vlen)) a3 oo) ->
        red_expr S C (spec_call_array_proto_join_1 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_2
+
+Parameter inv_red_expr_spec_call_array_proto_join_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret Z) (a3 : list value) (oo : out)
          (P : state ->
@@ -16399,7 +16794,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_2
         @eq out o oo -> P S C a1 (@ret Z S' length) a3 oo) ->
        red_expr S C (spec_call_array_proto_join_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_3
+
+Parameter inv_red_expr_spec_call_array_proto_join_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 : value) (oo : out)
          (P : state ->
@@ -16447,7 +16843,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_3
         @eq value sep a3 -> @eq out o oo -> P S C a1 a2 a3 oo) ->
        red_expr S C (spec_call_array_proto_join_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_4
+
+Parameter inv_red_expr_spec_call_array_proto_join_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> out -> Prop),
@@ -16491,7 +16888,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_4
         P S C a1 a2 (out_ter S' (res_val (value_prim (prim_string sep)))) oo) ->
        red_expr S C (spec_call_array_proto_join_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_5
+
+Parameter inv_red_expr_spec_call_array_proto_join_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (a3 : string) (a4 : specret string) 
          (oo : out)
@@ -16525,7 +16923,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_5
         @eq out o oo -> P S C a1 a2 a3 (@ret string S' s) oo) ->
        red_expr S C (spec_call_array_proto_join_5 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_elements
+
+Parameter inv_red_expr_spec_call_array_proto_join_elements
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 a5 : string) (oo : out)
          (P : state ->
@@ -16576,7 +16975,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_elements
         @eq string sR a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_call_array_proto_join_elements a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_elements_1
+
+Parameter inv_red_expr_spec_call_array_proto_join_elements_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 a5 : string) (oo : out)
          (P : state ->
@@ -16615,7 +17015,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_elements_1
         @eq string str a5 -> @eq out o oo -> P S C a1 a2 a3 a4 a5 oo) ->
        red_expr S C (spec_call_array_proto_join_elements_1 a1 a2 a3 a4 a5) oo ->
        P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_call_array_proto_join_elements_2
+
+Parameter inv_red_expr_spec_call_array_proto_join_elements_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 a3 : Z) (a4 a5 : string) (a6 : specret string) 
          (oo : out)
@@ -16658,7 +17059,8 @@ Axiom inv_red_expr_spec_call_array_proto_join_elements_2
         @eq out o oo -> P S C a1 a2 a3 a4 a5 (@ret string S' next) oo) ->
        red_expr S C (spec_call_array_proto_join_elements_2 a1 a2 a3 a4 a5 a6)
          oo -> P S C a1 a2 a3 a4 a5 a6 oo.
-Axiom inv_red_expr_spec_call_array_proto_to_string
+
+Parameter inv_red_expr_spec_call_array_proto_to_string
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_array_proto_to_string a1) oo ->
@@ -16690,7 +17092,8 @@ Axiom inv_red_expr_spec_call_array_proto_to_string
         @eq out (out_ter S' (res_val (value_object l))) a1 ->
         @eq out o oo -> P S C (out_ter S' (res_val (value_object l))) oo) ->
        red_expr S C (spec_call_array_proto_to_string a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_proto_to_string_1
+
+Parameter inv_red_expr_spec_call_array_proto_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -16732,7 +17135,8 @@ Axiom inv_red_expr_spec_call_array_proto_to_string_1
         @eq out o oo -> P S C a1 (out_ter S' (res_val vfunc)) oo) ->
        red_expr S C (spec_call_array_proto_to_string_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_1
+
+Parameter inv_red_expr_spec_call_array_proto_pop_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_array_proto_pop_1 a1) oo ->
@@ -16767,7 +17171,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_1
         @eq out (out_ter S1 (res_val (value_object l))) a1 ->
         @eq out o oo -> P S C (out_ter S1 (res_val (value_object l))) oo) ->
        red_expr S C (spec_call_array_proto_pop_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_2
+
+Parameter inv_red_expr_spec_call_array_proto_pop_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -16794,7 +17199,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_2
         @eq out (out_ter S1 (res_val vlen)) a2 ->
         @eq out o oo -> P S C a1 (out_ter S1 (res_val vlen)) oo) ->
        red_expr S C (spec_call_array_proto_pop_2 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : specret Z) (oo : out)
          (P : state ->
@@ -16831,7 +17237,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3
         @eq (specret Z) (@ret Z S1 lenuint32) a2 ->
         @eq out o oo -> P S C a1 (@ret Z S1 lenuint32) oo) ->
        red_expr S C (spec_call_array_proto_pop_3 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_empty_1
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_empty_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (oo : out) (P : state -> execution_ctx -> object_loc -> out -> Prop),
        (red_expr S C (spec_call_array_proto_pop_3_empty_1 a1) oo ->
@@ -16868,7 +17275,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_empty_1
         @eq object_loc l a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_array_proto_pop_3_empty_1 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_empty_2
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_empty_2
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_array_proto_pop_3_empty_2 a1) oo ->
@@ -16891,7 +17299,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_empty_2
         P S C (out_ter S1 R) (out_ter S1 (res_val (value_prim prim_undef)))) ->
        red_expr S C (spec_call_array_proto_pop_3_empty_2 a1) oo ->
        P S C a1 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_1
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_nonempty_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : Z) (oo : out)
          (P : state -> execution_ctx -> object_loc -> Z -> out -> Prop),
@@ -16922,7 +17331,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_1
         @eq Z lenuint32 a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_array_proto_pop_3_nonempty_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_2
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_nonempty_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -16954,7 +17364,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_2
         P S C a1 (out_ter S1 (res_val (value_prim (prim_string vindx)))) oo) ->
        red_expr S C (spec_call_array_proto_pop_3_nonempty_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_3
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_nonempty_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (a3 oo : out)
          (P : state ->
@@ -16992,7 +17403,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_3
           (out_ter S1 (res_val velem)) oo) ->
        red_expr S C (spec_call_array_proto_pop_3_nonempty_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_4
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_nonempty_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 a3 : value) (a4 oo : out)
          (P : state ->
@@ -17040,7 +17452,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_4
         @eq out o oo -> P S C a1 a2 a3 (out_ter S1 R) oo) ->
        red_expr S C (spec_call_array_proto_pop_3_nonempty_4 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_5
+
+Parameter inv_red_expr_spec_call_array_proto_pop_3_nonempty_5
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -17067,7 +17480,8 @@ Axiom inv_red_expr_spec_call_array_proto_pop_3_nonempty_5
         P S C a1 (out_ter S1 R) (out_ter S1 (res_val a1))) ->
        red_expr S C (spec_call_array_proto_pop_3_nonempty_5 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_1
+
+Parameter inv_red_expr_spec_call_array_proto_push_1
      : forall (S : state) (C : execution_ctx) (a1 : out) 
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> out -> list value -> out -> Prop),
@@ -17105,7 +17519,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_1
         @eq (list value) args a2 ->
         @eq out o oo -> P S C (out_ter S1 (res_val (value_object l))) a2 oo) ->
        red_expr S C (spec_call_array_proto_push_1 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_2
+
+Parameter inv_red_expr_spec_call_array_proto_push_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 oo : out)
          (P : state ->
@@ -17135,7 +17550,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_2
         @eq out o oo -> P S C a1 a2 (out_ter S1 (res_val vlen)) oo) ->
        red_expr S C (spec_call_array_proto_push_2 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_3
+
+Parameter inv_red_expr_spec_call_array_proto_push_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : specret Z) (oo : out)
          (P : state ->
@@ -17165,7 +17581,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_3
         @eq out o oo -> P S C a1 a2 (@ret Z S1 lenuint32) oo) ->
        red_expr S C (spec_call_array_proto_push_3 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_4
+
+Parameter inv_red_expr_spec_call_array_proto_push_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : Z) (oo : out)
          (P : state ->
@@ -17205,7 +17622,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_4
         @eq out o oo -> P S C a1 (@cons value v vs) a3 oo) ->
        red_expr S C (spec_call_array_proto_push_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_1
+
+Parameter inv_red_expr_spec_call_array_proto_push_4_nonempty_1
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : Z) (a4 : value) (oo : out)
          (P : state ->
@@ -17242,7 +17660,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_1
         @eq value v a4 -> @eq out o oo -> P S C a1 a2 a3 a4 oo) ->
        red_expr S C (spec_call_array_proto_push_4_nonempty_1 a1 a2 a3 a4) oo ->
        P S C a1 a2 a3 a4 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_2
+
+Parameter inv_red_expr_spec_call_array_proto_push_4_nonempty_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : Z) (a4 : value) (a5 oo : out)
          (P : state ->
@@ -17284,7 +17703,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_2
           (out_ter S1 (res_val (value_prim (prim_string vindx)))) oo) ->
        red_expr S C (spec_call_array_proto_push_4_nonempty_2 a1 a2 a3 a4 a5)
          oo -> P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_3
+
+Parameter inv_red_expr_spec_call_array_proto_push_4_nonempty_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc)
          (a2 : list value) (a3 : Z) (a4 : value) (a5 oo : out)
          (P : state ->
@@ -17323,7 +17743,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_4_nonempty_3
         @eq out o oo -> P S C a1 a2 a3 a4 (out_ter S1 R) oo) ->
        red_expr S C (spec_call_array_proto_push_4_nonempty_3 a1 a2 a3 a4 a5)
          oo -> P S C a1 a2 a3 a4 a5 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_5
+
+Parameter inv_red_expr_spec_call_array_proto_push_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : value) (oo : out)
          (P : state -> execution_ctx -> object_loc -> value -> out -> Prop),
@@ -17360,7 +17781,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_5
         @eq object_loc l a1 ->
         @eq value vlen a2 -> @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_array_proto_push_5 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_array_proto_push_6
+
+Parameter inv_red_expr_spec_call_array_proto_push_6
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -17384,7 +17806,8 @@ Axiom inv_red_expr_spec_call_array_proto_push_6
         @eq out (out_ter S1 (res_val a1)) oo ->
         P S C a1 (out_ter S1 R) (out_ter S1 (res_val a1))) ->
        red_expr S C (spec_call_array_proto_push_6 a1 a2) oo -> P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_string_non_empty
+
+Parameter inv_red_expr_spec_call_string_non_empty
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_string_non_empty a1) oo ->
@@ -17406,7 +17829,8 @@ Axiom inv_red_expr_spec_call_string_non_empty
         P S C (out_ter S' (res_val (value_prim (prim_string s))))
           (out_ter S' (res_val (value_prim (prim_string s))))) ->
        red_expr S C (spec_call_string_non_empty a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_construct_string_1
+
+Parameter inv_red_expr_spec_construct_string_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_construct_string_1 a1) oo ->
@@ -17427,7 +17851,8 @@ Axiom inv_red_expr_spec_construct_string_1
         @eq execution_ctx C0 C ->
         @eq value v a1 -> @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_construct_string_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_construct_string_2
+
+Parameter inv_red_expr_spec_construct_string_2
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_construct_string_2 a1) oo ->
@@ -17486,7 +17911,8 @@ Axiom inv_red_expr_spec_construct_string_2
         P S C (out_ter S1 (res_val (value_prim (prim_string s))))
           (out_ter S'' (res_val (value_object l)))) ->
        red_expr S C (spec_construct_string_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_bool_proto_to_string_1
+
+Parameter inv_red_expr_spec_call_bool_proto_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_call_bool_proto_to_string_1 a1) oo ->
@@ -17501,7 +17927,8 @@ Axiom inv_red_expr_spec_call_bool_proto_to_string_1
         @eq ext_expr exte (spec_call_bool_proto_to_string_1 a1) ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_bool_proto_to_string_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_bool_proto_value_of_1
+
+Parameter inv_red_expr_spec_call_bool_proto_value_of_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_bool_proto_value_of_1 a1) oo ->
@@ -17516,7 +17943,8 @@ Axiom inv_red_expr_spec_call_bool_proto_value_of_1
         @eq ext_expr exte (spec_call_bool_proto_value_of_1 a1) ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_bool_proto_value_of_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_bool_proto_value_of_2
+
+Parameter inv_red_expr_spec_call_bool_proto_value_of_2
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_bool_proto_value_of_2 a1) oo ->
@@ -17531,7 +17959,8 @@ Axiom inv_red_expr_spec_call_bool_proto_value_of_2
         @eq ext_expr exte (spec_call_bool_proto_value_of_2 a1) ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_bool_proto_value_of_2 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_number_proto_to_string_1
+
+Parameter inv_red_expr_spec_call_number_proto_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 : list value) (oo : out)
          (P : state -> execution_ctx -> value -> list value -> out -> Prop),
@@ -17549,7 +17978,8 @@ Axiom inv_red_expr_spec_call_number_proto_to_string_1
         @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_number_proto_to_string_1 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_number_proto_to_string_2
+
+Parameter inv_red_expr_spec_call_number_proto_to_string_2
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (a2 oo : out)
          (P : state -> execution_ctx -> value -> out -> out -> Prop),
@@ -17567,7 +17997,8 @@ Axiom inv_red_expr_spec_call_number_proto_to_string_2
         @eq out o oo -> P S C a1 a2 oo) ->
        red_expr S C (spec_call_number_proto_to_string_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_number_proto_value_of_1
+
+Parameter inv_red_expr_spec_call_number_proto_value_of_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_number_proto_value_of_1 a1) oo ->
@@ -17582,7 +18013,8 @@ Axiom inv_red_expr_spec_call_number_proto_value_of_1
         @eq ext_expr exte (spec_call_number_proto_value_of_1 a1) ->
         @eq out o oo -> P S C a1 oo) ->
        red_expr S C (spec_call_number_proto_value_of_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_1
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_1
      : forall (S : state) (C : execution_ctx) (a1 : value) 
          (oo : out) (P : state -> execution_ctx -> value -> out -> Prop),
        (red_expr S C (spec_call_error_proto_to_string_1 a1) oo ->
@@ -17620,7 +18052,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_1
         @eq value (value_object l) a1 ->
         @eq out o oo -> P S C (value_object l) oo) ->
        red_expr S C (spec_call_error_proto_to_string_1 a1) oo -> P S C a1 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_2
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_2
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -17680,7 +18113,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_2
         @eq out o oo -> P S C a1 (out_ter S1 (res_val v)) oo) ->
        red_expr S C (spec_call_error_proto_to_string_2 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_3
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_3
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
@@ -17724,7 +18158,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_3
         P S C a1 (out_ter S1 (res_val (value_prim (prim_string sname)))) oo) ->
        red_expr S C (spec_call_error_proto_to_string_3 a1 a2) oo ->
        P S C a1 a2 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_4
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_4
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 oo : out)
          (P : state ->
@@ -17771,7 +18206,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_4
         @eq out o oo -> P S C a1 a2 (out_ter S1 (res_val v)) oo) ->
        red_expr S C (spec_call_error_proto_to_string_4 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_5
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_5
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 oo : out)
          (P : state ->
@@ -17818,7 +18254,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_5
         @eq out o oo -> P S C a1 a2 (out_ter S1 (res_val v)) oo) ->
        red_expr S C (spec_call_error_proto_to_string_5 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_call_error_proto_to_string_6
+
+Parameter inv_red_expr_spec_call_error_proto_to_string_6
      : forall (S : state) (C : execution_ctx) (a1 : object_loc) 
          (a2 : string) (a3 oo : out)
          (P : state ->
@@ -17865,7 +18302,8 @@ Axiom inv_red_expr_spec_call_error_proto_to_string_6
           (out_ter S1 (res_val (value_prim (prim_string s))))) ->
        red_expr S C (spec_call_error_proto_to_string_6 a1 a2 a3) oo ->
        P S C a1 a2 a3 oo.
-Axiom inv_red_expr_spec_returns
+
+Parameter inv_red_expr_spec_returns
      : forall (S : state) (C : execution_ctx) (a1 oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
        (red_expr S C (spec_returns a1) oo ->
@@ -17883,10 +18321,11 @@ Axiom inv_red_expr_spec_returns
         @eq out o a1 -> @eq out a1 oo -> P S C oo oo) ->
        red_expr S C (spec_returns a1) oo -> P S C a1 oo.
 
-(**************************************************************)
-(** ** Five renegade + one unprintable inversion schemes      *)
 
-Axiom inv_red_expr_spec_prim_new_object : 
+(**************************************************************)
+(** ** Five renegade inversion schemes                        *)
+
+Parameter inv_red_expr_spec_prim_new_object : 
   forall (S : state) (C : execution_ctx) (a1 : prim) (oo : out)
          (P : state -> execution_ctx -> prim -> out -> Prop),
     (red_expr S C (spec_prim_new_object a1) oo ->
@@ -17919,7 +18358,7 @@ Axiom inv_red_expr_spec_prim_new_object :
        P S C a1 oo) ->
     red_expr S C (spec_prim_new_object a1) oo -> P S C a1 oo.
 
-Axiom inv_red_expr_spec_construct_bool_1 : 
+Parameter inv_red_expr_spec_construct_bool_1 : 
   forall (S : state) (C : execution_ctx) (a1 : out) (oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
     (red_expr S C (spec_construct_bool_1 a1) oo ->
@@ -17936,7 +18375,7 @@ Axiom inv_red_expr_spec_construct_bool_1 :
        P S C a1 oo) ->
     red_expr S C (spec_construct_bool_1 a1) oo -> P S C a1 oo.
 
-Axiom inv_red_expr_spec_construct_number_1 : 
+Parameter inv_red_expr_spec_construct_number_1 : 
   forall (S : state) (C : execution_ctx) (a1 : out) (oo : out)
          (P : state -> execution_ctx -> out -> out -> Prop),
     (red_expr S C (spec_construct_number_1 a1) oo ->
@@ -17953,7 +18392,7 @@ Axiom inv_red_expr_spec_construct_number_1 :
        P S C a1 oo) ->
     red_expr S C (spec_construct_number_1 a1) oo -> P S C a1 oo.
 
-Axiom inv_red_expr_spec_creating_function_object_proto_1 : 
+Parameter inv_red_expr_spec_creating_function_object_proto_1 : 
   forall (S : state) (C : execution_ctx) (a1 : object_loc) (a2 : out) (oo : out)
          (P : state -> execution_ctx -> object_loc -> out -> out -> Prop),
     (red_expr S C (spec_creating_function_object_proto_1 a1 a2) oo ->
@@ -17970,7 +18409,7 @@ Axiom inv_red_expr_spec_creating_function_object_proto_1 :
        P S C a1 a2 oo) ->
     red_expr S C (spec_creating_function_object_proto_1 a1 a2) oo -> P S C a1 a2 oo.
 
-Axiom inv_red_expr_spec_creating_function_object_proto_2 : 
+Parameter inv_red_expr_spec_creating_function_object_proto_2 : 
   forall (S : state) (C : execution_ctx) (a1 : object_loc) (a2 : object_loc) (a3 : out) (oo : out)
          (P : state -> execution_ctx -> object_loc -> object_loc -> out -> out -> Prop),
     (red_expr S C (spec_creating_function_object_proto_2 a1 a2 a3) oo ->
@@ -17986,4 +18425,61 @@ Axiom inv_red_expr_spec_creating_function_object_proto_2 :
        P S C a1 a2 a3 oo) ->
     red_expr S C (spec_creating_function_object_proto_2 a1 a2 a3) oo -> P S C a1 a2 a3 oo.
 
-Derive Inversion inv_red_expr_spec_call_prealloc with (forall S C a1 a2 a3 oo, red_expr S C (spec_call_prealloc a1 a2 a3) oo) Sort Prop. 
+Parameter inv_red_expr_spec_call_prealloc
+     : forall (S : state) (C : execution_ctx) (a1 : prealloc) (a2 : value) (a3 : list value) (oo : out) (P : state -> execution_ctx -> prealloc -> value -> list value -> out -> Prop),
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (exte : ext_expr) (o : out), @eq (option out) (out_of_ext_expr (spec_call_prealloc a1 a2 a3)) (@Some out oo) -> abort oo -> not (abort_intercepted_expr (spec_call_prealloc a1 a2 a3)) -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq ext_expr exte (spec_call_prealloc a1 a2 a3) -> @eq out o oo -> P S C a1 a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (o : out) (vthis : value) (args : list value), red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_throw_type_error a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_throw_type_error a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o o1 : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_number v) o1 -> red_expr S C (spec_call_global_is_nan_1 o1) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_global_is_nan a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_global_is_nan a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o o1 : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_number v) o1 -> red_expr S C (spec_call_global_is_finite_1 o1) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_global_is_finite a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_global_is_finite a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (v : value) (o : out), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_call_1 v a3) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v vthis : value) (args : list value) (o : out), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_get_proto_of_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_get_proto_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_get_proto_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vo vx : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value vo (@cons value vx (@nil value))) -> red_expr S C (spec_call_object_get_own_prop_descriptor_1 vo vx) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_get_own_prop_descriptor a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_get_own_prop_descriptor a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vo vp vthis : value) (args : list value) (o : out), arguments_from a3 (@cons value vo (@cons value vp (@nil value))) -> red_expr S C (spec_call_object_create_1 vo vp) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_create a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_create a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vo vx va : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value vo (@cons value vx (@cons value va (@nil value)))) -> red_expr S C (spec_call_object_define_prop_1 vo vx va) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_define_prop a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_define_prop a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vo vp : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value vo (@cons value vp (@nil value))) -> red_expr S C (spec_call_object_define_props_1 vo vp) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_define_props a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_define_props a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_seal_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_seal a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_seal a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_freeze_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_freeze a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_freeze a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_prevent_extensions_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_prevent_extensions a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_prevent_extensions a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_is_sealed_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_is_sealed a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_is_sealed a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_is_frozen_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_is_frozen a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_is_frozen a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_is_extensible_1 v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_is_extensible a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_is_extensible a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), red_expr S C (spec_call_object_proto_to_string_1 a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), red_expr S C (spec_to_object a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_proto_value_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v vthis : value) (args : list value) (o o1 : out), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_string v) o1 -> red_expr S C (spec_call_object_proto_has_own_prop_1 o1 a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_proto_has_own_prop a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_proto_has_own_prop a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (v : value) (o : out), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_proto_is_prototype_of_2_1 v a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_proto_is_prototype_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_proto_is_prototype_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_call_object_proto_prop_is_enumerable_1 v a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_object_proto_prop_is_enumerable a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_object_proto_prop_is_enumerable a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value), @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out (out_ter S (res_val (value_prim prim_undef))) oo -> P S C prealloc_function_proto a2 a3 (out_ter S (res_val (value_prim prim_undef)))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (o : out) (vthis : value) (args : list value), not (is_callable S a2) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_call a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_call a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (o : out) (this : object_loc) (vthis : value) (args : list value) (thisArg : value) (arguments : list value), @eq value a2 (value_object this) -> is_callable S (value_object this) -> arguments_first_and_rest a3 (@pair value (list value) thisArg arguments) -> red_expr S C (spec_call this thisArg arguments) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_call a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_call a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), not (is_callable S a2) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (o : out) (args : list value), not (is_callable S a2) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_apply a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_apply a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (o : out) (func : object_loc) (args : list value) (thisArg argArray : value), is_callable S a2 -> @eq value a2 (value_object func) -> arguments_from a3 (@cons value thisArg (@cons value argArray (@nil value))) -> red_expr S C (spec_function_proto_apply func thisArg argArray) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_apply a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_apply a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (o : out) (args : list value), not (is_callable S a2) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_bind a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_bind a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (target : object_loc) (thisArg : value) (A : list value) (o : out) (args : list value), is_callable S a2 -> @eq value a2 (value_object target) -> arguments_first_and_rest a3 (@pair value (list value) thisArg A) -> red_expr S C (spec_function_proto_bind_1 target thisArg A) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_function_proto_bind a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_function_proto_bind a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), red_expr S C (spec_construct_prealloc prealloc_array a3) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (o : out) (args : list value) (arg : value), arguments_from a3 (@cons value arg (@nil value)) -> red_expr S C (spec_call_array_is_array_1 arg) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array_is_array a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array_is_array a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o1 o : out), red_expr S C (spec_to_object a2) o1 -> red_expr S C (spec_call_array_proto_to_string o1) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o1 o : out), red_expr S C (spec_to_object a2) o1 -> red_expr S C (spec_call_array_proto_join o1 a3) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array_proto_join a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array_proto_join a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (o o1 : out) (args : list value), red_expr S C (spec_to_object a2) o1 -> red_expr S C (spec_call_array_proto_pop_1 o1) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array_proto_pop a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array_proto_pop a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o o1 : out), red_expr S C (spec_to_object a2) o1 -> red_expr S C (spec_call_array_proto_push_1 o1 a3) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_array_proto_push a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_array_proto_push a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (args : list value) (o o1 : out) (v vthis : value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_string v) o1 -> red_expr S C (spec_call_string_non_empty o1) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value), @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string a1 -> @eq value vthis a2 -> @eq (list value) (@nil value) a3 -> @eq out (out_ter S (res_val (value_prim (prim_string EmptyString)))) oo -> P S C prealloc_string a2 (@nil value) (out_ter S (res_val (value_prim (prim_string EmptyString))))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), red_expr S C (spec_call_prealloc prealloc_string_proto_value_of a2 a3) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_string_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value), @eq type (type_of a2) type_string -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out (out_ter S (res_val a2)) oo -> P S C prealloc_string_proto_value_of a2 a3 (out_ter S (res_val a2))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (l : object_loc) (v : value) (args : list value), object_class S l (String (Ascii true true false false true false true false) (String (Ascii false false true false true true true false) (String (Ascii false true false false true true true false) (String (Ascii true false false true false true true false) (String (Ascii false true true true false true true false) (String (Ascii true true true false false true true false) EmptyString)))))) -> object_prim_value S l v -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string_proto_value_of a1 -> @eq value (value_object l) a2 -> @eq (list value) args a3 -> @eq out (out_ter S (res_val v)) oo -> P S C prealloc_string_proto_value_of (value_object l) a3 (out_ter S (res_val v))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (l : object_loc) (args : list value) (o : out), not (object_class S l (String (Ascii true true false false true false true false) (String (Ascii false false true false true true true false) (String (Ascii false true false false true true true false) (String (Ascii true false false true false true true false) (String (Ascii false true true true false true true false) (String (Ascii true true true false false true true false) EmptyString))))))) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string_proto_value_of a1 -> @eq value (value_object l) a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_string_proto_value_of (value_object l) a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), not (@eq type (type_of a2) type_string) -> not (@eq type (type_of a2) type_object) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_string_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_string_proto_value_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_boolean v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_bool a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_bool a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (s : string) (o : out) (b : bool), value_viewable_as (String (Ascii false true false false false false true false) (String (Ascii true true true true false true true false) (String (Ascii true true true true false true true false) (String (Ascii false false true true false true true false) (String (Ascii true false true false false true true false) (String (Ascii true false false false false true true false) (String (Ascii false true true true false true true false) EmptyString))))))) S a2 (prim_bool b) -> @eq string s (convert_bool_to_string b) -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_bool_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_bool_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), (forall b : bool, not (value_viewable_as (String (Ascii false true false false false false true false) (String (Ascii true true true true false true true false) (String (Ascii true true true true false true true false) (String (Ascii false false true true false true true false) (String (Ascii true false true false false true true false) (String (Ascii true false false false false true true false) (String (Ascii false true true true false true true false) EmptyString))))))) S a2 (prim_bool b))) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_bool_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_bool_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (b : bool), value_viewable_as (String (Ascii false true false false false false true false) (String (Ascii true true true true false true true false) (String (Ascii true true true true false true true false) (String (Ascii false false true true false true true false) (String (Ascii true false true false false true true false) (String (Ascii true false false false false true true false) (String (Ascii false true true true false true true false) EmptyString))))))) S a2 (prim_bool b) -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_bool_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out (out_ter S (res_val (value_prim (prim_bool b)))) oo -> P S C prealloc_bool_proto_value_of a2 a3 (out_ter S (res_val (value_prim (prim_bool b))))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), (forall b : bool, not (value_viewable_as (String (Ascii false true false false false false true false) (String (Ascii true true true true false true true false) (String (Ascii true true true true false true true false) (String (Ascii false false true true false true true false) (String (Ascii true false true false false true true false) (String (Ascii true false false false false true true false) (String (Ascii false true true true false true true false) EmptyString))))))) S a2 (prim_bool b))) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_bool_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_bool_proto_value_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value), @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_number a1 -> @eq value vthis a2 -> @eq (list value) (@nil value) a3 -> @eq out (out_ter S (res_val (value_prim (prim_number JsNumber.zero)))) oo -> P S C prealloc_number a2 (@nil value) (out_ter S (res_val (value_prim (prim_number JsNumber.zero))))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), not (@eq (list value) a3 (@nil value)) -> arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_to_number v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_number a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_number a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (n : JsNumber.number), value_viewable_as (String (Ascii false true true true false false true false) (String (Ascii true false true false true true true false) (String (Ascii true false true true false true true false) (String (Ascii false true false false false true true false) (String (Ascii true false true false false true true false) (String (Ascii false true false false true true true false) EmptyString)))))) S a2 (prim_number n) -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_number_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out (out_ter S (res_val (value_prim (prim_number n)))) oo -> P S C prealloc_number_proto_value_of a2 a3 (out_ter S (res_val (value_prim (prim_number n))))) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (vthis : value) (args : list value) (o : out), (forall n : JsNumber.number, not (value_viewable_as (String (Ascii false true true true false false true false) (String (Ascii true false true false true true true false) (String (Ascii true false true true false true true false) (String (Ascii false true false false false true true false) (String (Ascii true false true false false true true false) (String (Ascii false true false false true true true false) EmptyString)))))) S a2 (prim_number n))) -> red_expr S C (spec_error native_error_type) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_number_proto_value_of a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_number_proto_value_of a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_build_error (value_object (object_loc_prealloc prealloc_error_proto)) v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_error a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_error a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (args : list value) (vthis : value) (o : out), red_expr S C (spec_call_error_proto_to_string_1 a2) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc prealloc_error_proto_to_string a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C prealloc_error_proto_to_string a2 a3 oo) ->
+       (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (v : value) (o : out) (ne : native_error) (vthis : value) (args : list value), arguments_from a3 (@cons value v (@nil value)) -> red_expr S C (spec_build_error (value_object (object_loc_prealloc (prealloc_native_error_proto ne))) v) oo -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc (prealloc_native_error ne) a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C (prealloc_native_error ne) a2 a3 oo) -> (red_expr S C (spec_call_prealloc a1 a2 a3) oo -> forall (S0 : state) (C0 : execution_ctx) (B : prealloc) (vthis : value) (args : list value) (o : out), implementation_prealloc a1 -> @eq state S0 S -> @eq execution_ctx C0 C -> @eq prealloc B a1 -> @eq value vthis a2 -> @eq (list value) args a3 -> @eq out o oo -> P S C a1 a2 a3 oo) -> red_expr S C (spec_call_prealloc a1 a2 a3) oo -> P S C a1 a2 a3 oo.
+
+End InvExpr.

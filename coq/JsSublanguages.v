@@ -50,6 +50,8 @@ Implicit Type t : stat.
 
 Implicit Type T : Type.
 
+Module Sublanguages (InvExpr : InvExpr) (InvTact : InversionTactics InvExpr).
+
 (**************************************************************)
 (** ** Toy sublanguage #1 - just numbers                      *)
 
@@ -81,7 +83,7 @@ Theorem sub_numbers_characterization :
     red_prog S C p o -> 
     sub_numbers_prog p -> 
     exists S' n, o = (out_ter S' n).
-Proof with inversion_jscert.
+Proof with InvTact.inversion_jscert.
   destruct p as (s & le). gen s.
   induction le using list_ind_last; introv Hr Hs...
 
@@ -133,7 +135,7 @@ end.
 Lemma red_sub_numplus_expr : forall (e : expr),
   sub_numplus_expr e -> forall S C o, 
     red_expr S C e o -> exists (n : number), o = out_ter S n.
-Proof with inversion_jscert.
+Proof with InvTact.inversion_jscert.
   induction e; introv Hsub; introv Hr; try solve [false*].
 
   destruct l; try solve [false*]... 
@@ -151,7 +153,7 @@ Theorem sub_numplus_characterization :
     red_prog S C p o -> 
     sub_numplus_prog p -> 
     exists S' n, o = (out_ter S' n).
-Proof with inversion_jscert.
+Proof with InvTact.inversion_jscert.
   destruct p as (s & le). gen s.
   induction le using list_ind_last; introv Hr Hs...
 
@@ -174,3 +176,5 @@ Proof with inversion_jscert.
       apply red_sub_numplus_expr in H6; jauto.
       destruct H6 as (n2 & Heq); subst...
 Qed.
+
+End Sublanguages.
