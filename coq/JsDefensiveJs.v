@@ -504,4 +504,4 @@ Proof.
     repeat rewrite app_nil_l in *.
     inverts H7. inverts H2. inverts H4.
     rew_length in H5; nat_math.
-Qed.      
+Qed.     
