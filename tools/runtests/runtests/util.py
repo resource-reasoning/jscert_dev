@@ -2,20 +2,19 @@ from datetime import datetime
 
 
 class Timer(object):
-    start_time = datetime.min
-    stop_time = datetime.min
-
     def start_timer(self):
         self.start_time = datetime.now()
 
     def stop_timer(self):
+        if not self.start_time:
+            raise Exception('Timer not started')
         self.stop_time = datetime.now()
+        self.duration = self.get_delta().total_seconds()
 
     def get_delta(self):
+        if not self.start_time or not self.stop_time:
+            raise Exception('Timer not stopped')
         return self.stop_time - self.start_time
-
-    def get_duration(self):
-        return self.get_delta().total_seconds()
 
 
 class SubclassSelectorMixin(object):
