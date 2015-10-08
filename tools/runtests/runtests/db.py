@@ -1,30 +1,40 @@
-import os
-import re
-import sqlite3
-try:
-    import psycopg2
-except ImportError:
-    psycopg2 = None
-
+from . import DB_SCHEMA
 from .resulthandler import TestResultHandler
+import sys
 
 
 class DBManager(TestResultHandler):
-    conn = None
-    cur = None
+    engine = None
+    sessionmaker = None
+    session = None
     wait_for_batch = False
+
+    def __init__(self, connstr=None, schema=None):
+        from sqlalchemy import create_engine
+        from selalchemy.orm import sessionmaker
+        self.engine = create_engine(connstr)
+        self.sessionmaker = sessionmaker
+
+        # dbmodels MUST NOT have been imported before here in order for the db
+        # schema to take effect
+        assert('runtests.dbmodels' not in sys.modules)
+        DB_SCHEMA = schema
+        self.connect()
 
     def __del__(self):
         self.disconnect()
 
     def connect(self):
-        """Only implement for db backends with limited connection pools"""
-        pass
+        self.session = self.sessionmaker(bind=self.engine)
+
+    def commit(self):
+        self.session.commit()
 
     def disconnect(self):
-        """Only implement for db backends with limited connection pools, or require explicit commit"""
-        pass
+        self.session.close()
 
+
+    #
     def insert_testcases(self, testcases):
         """Bulk inserts testcase data and commits"""
         tcds = map(lambda t: t.db_tc_dict(), testcases)
@@ -38,28 +48,17 @@ class DBManager(TestResultHandler):
                 self.insert_object(test)
         self.conn.commit()
 
-    def start_batch(self, batch):
-        self.connect()
-        self.update_object(batch)
-        self.conn.commit()
-        if self.wait_for_batch:
-            self.disconnect()
 
-    def start_test(self, testcase):
-        pass
+    # Implementation of TestResultHandler
+    def start_batch(self, batch):
+        self.commit()
 
     def finish_test(self, testcase):
-        if not self.wait_for_batch:
-            self.update_object(testcase)
-            self.conn.commit()
+        if testcase.duration > 30:
+            self.commit()
 
     def finish_batch(self, batch):
-        self.connect()
-        if self.wait_for_batch:
-            self.update_objects(batch.get_finished_testcases())
-        self.update_object(batch)
-        self.conn.commit()
-        self.disconnect()
+        self.commit()
 
     # Helper functions
     def insert_ignore_many(self, table, coll):
@@ -70,60 +69,29 @@ class DBManager(TestResultHandler):
     def insert_object(self, obj):
         self.session.add(obj)
 
-    def update_object(self, obj):
-        pass
+    @staticmethod
+    def add_arg_group(argp):
+        db_args = argp.add_argument_group(title="Database options")
+        db_args.add_argument(
+            "--db", action="store", choices=['sqlite', 'postgres'],
+            help="Save the results of this testrun to the database")
 
-    def update_objects(self, objs):
-        pass
+        db_args.add_argument(
+            "--dbpath", action="store", metavar="file", default="",
+            help="Path to the database (for SQLite) or configuration file (for "
+            "Postgres).")
 
-    def load_batch_tests(self, job_id, batch_idx):
-        # FIXME
-        batch_id_sql = """SELECT id FROM test_batches WHERE job_id = %s ORDER BY
-                          id LIMIT 1 OFFSET %s"""
-        self.cur.execute(batch_id_sql, (job_id, batch_idx))
-        (batch_id,) = self.cur.fetchone()
+        db_args.add_argument("--db_init", action="store_true",
+                             help="Create the database and load schema")
 
-        tests_sql = "SELECT id, test_id FROM test_runs WHERE batch_id = %s"
-        self.cur.execute(tests_sql, (batch_id,))
-        return (batch_id, self.cur.fetchall())
-
-    def import_schema(self):
-        # Deprecate?
-        pass
+        db_args.add_argument(
+            "--db_pg_schema", action="store", metavar="name", default="jscert",
+            help="Schema of Postgres database to use. (Defaults to 'jscert')")
 
     @staticmethod
     def from_args(args):
-        dbmanager = None
-        if args.db:
-            if args.db == "sqlite":
-                if not args.dbpath:
-                    args.dbpath = os.path.join(
-                        JSCERT_ROOT_DIR, "test_data", "test_results.db")
+        return DBManager(connstr=args., schema=args.db_pg_schema)
 
-                dbmanager = SQLiteDBManager(args.dbpath, args.db_init)
-
-            elif args.db == "postgres":
-                if not args.dbpath:
-                    args.dbpath = os.path.join(JSCERT_ROOT_DIR, ".pgconfig")
-                try:
-                    with open(args.dbpath, "r") as f:
-                        dbmanager = PostgresDBManager(
-                            f.readline(), args.db_pg_schema)
-                except IOError as e:
-                    raise Exception(
-                        "Could not open postgres configuration: %s" % e)
-
-            if args.db_init:
-                dbmanager.connect()
-                dbmanager.import_schema()
-                print("Database created successfully")
-                exit(0)
-
-            if args.executor is 'condor':
-                dbmanager.wait_for_batch = True
-            dbmanager.connect()
-
-        return dbmanager
 
 # SQLite update_ignore
 #        sql = ("INSERT OR IGNORE INTO %s (%s) VALUES (%s)" %

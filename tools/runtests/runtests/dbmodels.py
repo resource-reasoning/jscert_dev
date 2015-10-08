@@ -1,17 +1,19 @@
+from . import DB_SCHEMA
+
 try:
     from sqlalchemy import (Boolean, Column, Enum, DateTime, ForeignKey,
                             Integer, Interval, SmallInteger, String, Text)
     from sqlalchemy.schema import MetaData
-    from sqlalchemy.orm import backref, column_property, relationship
+    from sqlalchemy.orm import backref, hybrid_property, relationship
     from sqlalchemy.ext.declarative import declarative_base
 
-    Base = declarative_base(metadata=MetaData(schema='jscert'))
+    Base = declarative_base(metadata=MetaData(schema=DB_SCHEMA))
 
 except ImportError:
     from .sqlalchemystub import (Boolean, Integer, DateTime, Interval,
                                  SmallInteger, String, Text, Column, Enum,
                                  Base, backref, ForeignKey, column_property,
-                                 relationship)
+                                 hybrid_property, relationship)
 
 
 class Job(Base):
@@ -89,7 +91,9 @@ class TestCase(Base):
     negative = Column(Boolean)
 
     # Alias the id column to the filename field
-    filename = column_property(id)
+    @hybrid_property
+    def filename(self):
+        return self.id
 
 
 class FailGroup(Base):

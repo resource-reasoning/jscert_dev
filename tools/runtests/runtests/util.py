@@ -4,6 +4,7 @@ from datetime import datetime
 class Timer(object):
     def start_timer(self):
         self.start_time = datetime.now()
+        self.stop_time = None
 
     def stop_timer(self):
         if not self.start_time:

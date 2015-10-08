@@ -6,8 +6,12 @@ Will probably attempt to maintain table relationships in memory
 
 
 # Helpers
-def _empty_function(*args, **argvs):
+def _(*args, **argvs):
     return None
+
+
+def _id(x):
+    return x
 
 # Constants
 Boolean = None
@@ -21,18 +25,12 @@ Text = None
 Base = object
 
 # Constructors
-Column = _empty_function
-Enum = _empty_function
+backref = _
+Column = _
+column_property = _
+Enum = _
+ForeignKey = _
+relationship = _
 
-
-# Might want a real implementation for the rest?
-def backref(*args, **argvs):
-    return None
-
-
-def ForeignKey(*args, **argvs):
-    return None
-
-
-def relationship(*args, **argvs):
-    return None
+# Decorators
+hybrid_property = _id
