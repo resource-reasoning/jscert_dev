@@ -79,6 +79,8 @@ JS_SRC=\
         coq/JsInversionPrinciplesProg.v \
         coq/JsInversionTactics.v \
         coq/JsSublanguages.v \
+	coq/LibFsetExt.v \
+	coq/LibListExt.v \
 	coq/JsDefensiveJs.v
 #        coq/JsInversionPrinciplesExpr01.v \
         coq/JsInversionPrinciplesExpr02.v \

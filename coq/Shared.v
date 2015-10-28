@@ -3,6 +3,27 @@ Require Export LibTactics LibCore LibString LibFset LibSet.
 Generalizable Variables A B.
 Require Export LibProd LibListZ.
 
+(**************************************************************)
+(** ** Instances for finite sets *)
+
+Global Instance fset_empty_inst : forall A, BagEmpty (fset A).
+  constructor. apply (@FsetImpl.empty A). Defined.
+Global Instance single_inst : forall A, BagSingle A (fset A).
+  constructor. apply (@FsetImpl.singleton A). Defined.
+Global Instance union_inst : forall A, BagUnion (fset A).
+  constructor. apply (@FsetImpl.union A). Defined.
+Global Instance inter_inst : forall A, BagInter (fset A).
+  constructor. apply (@FsetImpl.inter A). Defined.
+Global Instance remove_inst : forall A, BagRemove (fset A) (fset A).
+  constructor. apply (@FsetImpl.remove A). Defined.
+(* Global Instance incl_inst : forall A, BagIncl (fset A).
+     constructor. apply (@FsetImpl.include A). Defined. *)
+Global Instance disjoint_inst : forall A, BagDisjoint (fset A).
+  constructor. exact (@FsetImpl.disjoint A). Defined.
+(* Global Instance fold_inst : forall A B, BagFold B (A->B) (set A).
+     constructor. apply (@FsetImpl.fold A). Defined.
+   Global Instance card_inst : forall A, BagCard (set A).
+     constructor. apply (@FsetImpl.union A). Defined. *)
 
 (**************************************************************)
 (** ** Notation to force "if" to be on booleans 
@@ -229,7 +250,7 @@ Proof. destruct h. eapply indom_equiv_binds. Qed.
 
 Lemma dom_empty :
   dom (@empty K V) = \{}.
-Proof. unfold empty. eapply dom_empty. Qed.
+Proof. unfold empty. eapply dom_empty. Qed. 
 
 Lemma binds_equiv_read : forall h k,
   indom h k -> (forall v, (binds h k v) = (read h k = v)).
