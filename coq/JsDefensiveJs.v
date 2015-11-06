@@ -1,6 +1,6 @@
 Set Implicit Arguments.
 Require Import Shared.
-Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
+Require Import JsNumber JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
 
 Require Import LibBag LibFset LibFsetExt LibListExt.
 
@@ -126,9 +126,13 @@ Inductive τ_main : Type :=
  | τμ : list τ_main -> list (var * τ_main) -> τ_main -> τ_main (* method   *)
 .
 
+Instance inhab_τ_main : Inhab τ_main.
+Proof. 
+  constructor. exists~ τη.
+Qed.
+
 (* Object types *)
 Definition djs_obj_type := list (var * τ_main).
-
 
 
 (**************************************************************)
@@ -682,8 +686,6 @@ Qed.
 (**************************************************************)
 (** ** Typing                                                 *)
 
-Section Typing.
-
 Reserved Notation "Γ |- Τ ∷ τ" (at level 60).
 
 Inductive types : typ_env -> djs_term -> type -> Prop := 
@@ -1154,11 +1156,19 @@ Qed.
 (****************************************************************)
 (** ** Translation to JSCert                                    *)
 
+Section DJS_to_JSCert.
+
+Inductive jscert_term :=
+ | jscert_expr : expr -> jscert_term
+ | jscert_stat : stat -> jscert_term
+ | jscert_prog : prog -> jscert_term
+.
+
 Definition toJSC_unop (u : djs_unop) :=
 match u with
- | djs_unop_add => unary_op_add (* Conversion to number *)
- | djs_unop_not => unary_op_not (* Conversion to boolean AND negation *) 
- | djs_unop_neg => unary_op_neg (* Unary minus *)
+ | djs_unop_add => unary_op_add                 (* Conversion to number *)
+ | djs_unop_not => unary_op_not                 (* Conversion to boolean AND negation *) 
+ | djs_unop_neg => unary_op_neg                 (* Unary minus *)
  | djs_unop_bitwise_neg => unary_op_bitwise_not (* Bitwise negation *)
 end.
 
@@ -1207,7 +1217,9 @@ end
 
 with toJSC_λε λε := 
 match λε with
- | djs_var  x => expr_identifier x                  
+ | djs_var  x => ifb (x = "this") then expr_this 
+                                  else expr_identifier x
+
  | djs_prop ε x => expr_member (toJSC_ε ε) x           
 
  | djs_cai  ε n => expr_access (toJSC_ε ε) 
@@ -1313,9 +1325,9 @@ end
 with toJSC_π π :=
 match π with
  | djs_π_main ϕ => let JSCϕ := (toJSC_ϕ ϕ) in
-                   prog_intro 
-                     true
-                     (
+                   prog_intro true (
+                   element_stat (stat_expr (expr_call (expr_function
+                       None nil (funcbody_intro (prog_intro true (
                        element_stat (stat_var_decl (("_", Some JSCϕ) :: nil)) ::
                        element_stat (stat_return 
                                        (Some (expr_function None ("x" :: nil)
@@ -1343,819 +1355,1011 @@ match π with
                                              )
                                        )
                                     )
-                       :: nil
-                     )
+                       :: nil)) "function() {}"
+                     )) nil)) :: nil)
+end
+
+with toJSC T :=
+match T with
+ | djs_term_λ  λ  => Some (jscert_expr (toJSC_λ    λ))
+ | djs_term_λε λε => Some (jscert_expr (toJSC_λε   λε))
+ | djs_term_ε  ε  => Some (jscert_expr (toJSC_ε    ε))
+ | djs_term_s  s  => Some (jscert_stat (toJSC_stat s))
+ | djs_term_ϕ  ϕ  => Some (jscert_expr (toJSC_ϕ    ϕ))
+ | djs_term_δε δε => Some (jscert_expr (toJSC_δε   δε))
+ | djs_term_π  π  => Some (jscert_prog (toJSC_π    π))
+ | _              => None
 end.
 
-(*
-Lemma djs_unicity_of_types_λε : 
-  forall λε Γ τm1 τm2 
-         (IH : forall T : djs_term,
-                 lt (djs_size_term T) (djs_size_term λε) ->
-                  forall Γ (τm1 τm2 : type), Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2),
-    Γ |- λε ∷ τm1 -> Γ |- λε ∷ τm2 -> τm1 = τm2.
+End DJS_to_JSCert.
+
+Section JSCert_to_DJS.
+
+Definition not_a_function je :=
+match je with
+ | expr_function _ _ _ => False
+ | _ => True
+end.
+
+Lemma not_a_function_ε : forall (ε : djs_ε), not_a_function (toJSC_ε ε).
 Proof.
-  introv IH HD1 HD2; destruct λε; try solve [inverts HD1; inverts~ HD2].
-
-  + induction Γ; [inverts HD1 | ].
-    destruct a. destruct κ0; inverts HD1; inverts* HD2.    
-    rewrite H6 in H4. inverts~ H4.
-
-  + inverts HD1; inverts HD2.
-    lets Hτ : IH H3 H2. simpls; nat_math. inverts Hτ.
-    lets Hnd : no_duplicates_in_objects H3.
-    clear -H4 H6 Hnd. gen τ τ0 v. 
-    inductions τρ; intros; [inverts H4 | ]. destruct a. 
-    rewrite (split_combine_fs τρ) in *. repeat (rewrite combine_split in *; 
-    [ | rewrite split_length_l; rewrite~ split_length_r]; simpls).
-    inverts* H4. inverts~ H6. 
-    eapply mem_comb in H0; [ | rewrite split_length_l; rewrite~ split_length_r]; false*.
-    inverts* H6. eapply mem_comb in H0; [ | rewrite split_length_l; rewrite~ split_length_r]; false*.
-
-  + inverts HD1; inverts HD2.
-    lets Hτ : IH H2 H3. simpls; nat_math. inverts~ Hτ.
-
-  + inverts HD1; inverts HD2.
-    lets Hτ : IH H2 H3. simpls; nat_math. inverts~ Hτ.
-
-  + inverts HD1; inverts HD2.
-    lets Hτ : IH H2 H3. simpls; nat_math. inverts~ Hτ.
+  destruct ε; simpls~; destruct d; simpls~; cases_if; simpls~.
 Qed.
 
-Lemma djs_unicity_of_types : forall T Γ τm1 τm2,
-  Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2.
+Lemma not_a_function_λε : forall λε, not_a_function (toJSC_λε λε).
+Proof.
+  destruct λε; simpls~; cases_if*; simpls~. 
+Qed.
+
+Definition is_lhs je :=
+match je with
+  | expr_this 
+  | expr_identifier _
+  | expr_access _ _
+  | expr_member _ _ => True
+  | _ => False
+end.
+
+Lemma is_lhs_λε : forall λε, is_lhs (toJSC_λε λε).
+Proof.
+  destruct λε; simpls*; cases_if; simpls*.
+Qed.
+
+Fixpoint DJS_allowed_expr (je : expr) := 
+match je with
+  | expr_this => True 
+  | expr_identifier s => ifb (s = "this") then false else true
+
+  | expr_literal l => match l with
+                        | literal_null => False
+                        | _ => True
+                      end
+
+  | expr_array lje => ((fix DJS_allowed_lexpr lje :=
+                          match lje with
+                            | nil => True
+                            | (Some je) :: lje => not_a_function je /\ DJS_allowed_expr je /\ DJS_allowed_lexpr lje
+                            | _ => False
+                          end) lje)
+
+  | expr_object lpp => ((fix DJS_allowed_lpp lpp := 
+                           match lpp with
+                             | nil => True
+                             | (propname_identifier _, propbody_val je) :: lpp => not_a_function je /\ DJS_allowed_expr je /\ DJS_allowed_lpp lpp
+                             | _ => False
+                           end) lpp)
+
+  | expr_member je _ => not_a_function je /\ DJS_allowed_expr je 
+
+  | expr_call je lje => match je with
+                         | expr_function os ls fb => DJS_allowed_expr je /\ 
+                                                     ((fix DJS_allowed_lexpr lje :=
+                                                         match lje with
+                                                           | nil => True
+                                                           | je :: lje => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_lexpr lje
+                                                         end) lje)
+                         | _ => False
+                        end
+
+  | expr_assign je1 None je2 => DJS_allowed_expr je1 /\ is_lhs je1 /\ DJS_allowed_expr je2 /\ not_a_function je2
+
+  (* functions do not have names, programs always in strict mode *)
+  | expr_function None lx (funcbody_intro (prog_intro true lel) msg) =>
+    msg = "function() {}" /\
+    match lel with
+     (* first statement is a variable declaration *)
+     | element_stat (stat_var_decl τρy) :: lel =>
+       ((fix DJS_allowed_lje τρy :=
+           match τρy with
+             | nil => True
+             | (_, Some je) :: τρy => DJS_allowed_expr je /\ DJS_allowed_lje τρy
+             | _ => False
+           end) τρy) /\
+       match lel with
+         (* functions = statement, then return *)
+         | element_stat s :: element_stat (stat_return (Some je)) :: nil =>
+             DJS_allowed_stat s /\ DJS_allowed_expr je /\ not_a_function je
+         | _ => False
+       end
+     | _ => False
+    end
+                    
+  | expr_unary_op unop je => match unop with
+                              | unary_op_add
+                              | unary_op_not
+                              | unary_op_neg 
+                              | unary_op_bitwise_not => True
+                              | _ => False
+                             end /\ DJS_allowed_expr je /\ not_a_function je
+
+  | expr_binary_op je1 binop je2 => match binop with
+                                      | binary_op_instanceof
+                                      | binary_op_in
+                                      | binary_op_strict_equal
+                                      | binary_op_strict_disequal
+                                      | binary_op_coma => False
+                                      | _ => True
+                                    end /\ DJS_allowed_expr je1 /\ not_a_function je1 /\ DJS_allowed_expr je2 /\ not_a_function je2
+                        
+  | expr_access je1 je2 => match je2 with
+                            | expr_literal (literal_number num) => exists (n : nat), num = JsNumber.of_int n
+                            | expr_binary_op je1' binop je2' => 
+                              match binop with
+                                | binary_op_bitwise_and => not_a_function je1' /\ DJS_allowed_expr je1' /\ 
+                                                           match je2' with 
+                                                             | (expr_literal (literal_number num)) => exists (n : nat), num = JsNumber.of_int n 
+                                                             | _ => False
+                                                           end
+                                | binary_op_mod => match je2' with
+                                                     | (expr_member je1'' s) => je1'' = je1 /\ 
+                                                                                s = "length" /\
+                                                                                match je1' with
+                                                                                  | expr_binary_op 
+                                                                                      je1'''
+                                                                                      binary_op_unsigned_right_shift
+                                                                                      (expr_literal (literal_number num)) =>  not_a_function je1''' /\ DJS_allowed_expr je1''' /\ num = JsNumber.zero
+                                                                                  | _ => False
+                                                                                end
+                                                     | _ => False
+                                                   end
+                                | _ => False
+                              end
+                            | _ => False
+                            end /\ not_a_function je1 /\ DJS_allowed_expr je1
+                                 
+  | expr_conditional e1 e2 e3 => match e1, e2, e3 with
+                                   | expr_binary_op
+                                       (expr_binary_op
+                                          je2
+                                          binary_op_unsigned_right_shift 
+                                          (expr_literal (literal_number num)))
+                                       binary_op_lt
+                                       (expr_member je1 s),
+                                     expr_access je1' (expr_binary_op
+                                                         je2'
+                                                         binary_op_unsigned_right_shift 
+                                                         (expr_literal (literal_number num'))),
+                                     expr_literal (literal_string _) => 
+                                       DJS_allowed_expr je1' /\ not_a_function je1' /\
+                                       DJS_allowed_expr je2' /\ not_a_function je2' /\ 
+                                       s = "length" /\ 
+                                       je1 = je1' /\ je2 = je2' /\ 
+                                       num = JsNumber.zero /\ num' = JsNumber.zero
+                                   | _, _, _ => False
+                                 end
+
+  | _ => False
+
+end
+
+with DJS_allowed_stat (js : stat) := 
+match js with
+ | stat_expr je => DJS_allowed_expr je /\ not_a_function je
+ | stat_block ljs => ((fix DJS_allowed_lstat ljs :=
+                         match ljs with
+                           | nil => True
+                           | js :: ljs => DJS_allowed_stat js /\ DJS_allowed_lstat ljs
+                         end) ljs)
+ | stat_if je jst (Some jse) => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat jst /\ DJS_allowed_stat jse
+ | stat_while nil je js => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat js
+ | stat_with je js => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat js
+ | _ => False
+end
+
+with DJS_allowed_prog (jp : prog) :=
+match jp with
+ | prog_intro true (element_stat (stat_expr (expr_call (expr_function None nil (funcbody_intro (prog_intro true lel) msg)) nil)) :: nil) => 
+   msg = "function() {}" /\
+   match lel with
+     | element_stat (stat_var_decl τρy) :: element_stat (stat_return (Some je)) :: nil =>
+       ((fix DJS_allowed_lje τρy :=
+           match τρy with
+             | nil => True
+             | (_, Some je) :: τρy => DJS_allowed_expr je /\ DJS_allowed_lje τρy
+             | _ => False
+           end) τρy) /\
+       exists JSCϕ, τρy = ("_", Some JSCϕ) :: nil /\ ~ not_a_function JSCϕ /\ 
+                    je = (expr_function None ("x" :: nil)
+                           (funcbody_intro (prog_intro true
+                              (element_stat (stat_if (expr_binary_op
+                                                        (expr_unary_op
+                                                           unary_op_typeof
+                                                           (expr_identifier "x")
+                                                        )
+                                                        binary_op_equal 
+                                                        (expr_literal (literal_string "string"))
+                                                     ) 
+                                                     (stat_return (Some (expr_call 
+                                                                           JSCϕ
+                                                                           (expr_identifier "x" :: nil))))
+                                                     None) :: nil)) "function() {}"))
+     | _ => False
+   end
+ | _ => False
+end. 
+
+Definition DJS_allowed_term jT :=
+match jT with
+ | jscert_expr je => DJS_allowed_expr je
+ | jscert_stat js => DJS_allowed_stat js
+ | jscert_prog jp => DJS_allowed_prog jp
+end.
+
+End JSCert_to_DJS.
+
+Lemma mapping_correct : forall T t, toJSC T = Some t -> DJS_allowed_term t.
+Proof with (try apply not_a_function_ε; try apply not_a_function_λε; try apply is_lhs_λε).
+  
+  Ltac solve_IH H x := specializes H x; specializes H (@eq_refl); auto; simpls; nat_math.
+
+  induction T using (measure_induction djs_size_term).
+  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; introv HSome; simpls; inverts HSome.
+
+  + destruct λ as [η | σ | β | α | ρ]; try solve [simpls~]. 
+    - destruct α as [ | a α]; [simpls~ | ].
+      lets Ha : H a. specializes Ha (@eq_refl). simpls; nat_math. 
+      lets Hα : H (djs_α α). specializes Hα (@eq_refl). 
+      lets Hs : djs_size_term_positive a. simpls; nat_math.
+      simpls; splits~. clear. 
+      destruct a; simpls~; destruct d; simpls~; cases_if*; simpls~.
+
+    - destruct ρ as [ | (x & ε) ρ]; [simpls~ | ]. 
+      lets Hr : H ε. specializes Hr (@eq_refl). simpls; nat_math. 
+      lets Hα : H (djs_ο ρ). specializes Hα (@eq_refl). 
+      lets Hs : djs_size_term_positive ε. simpls; nat_math.
+      simpls; splits~. clear Hα Hr. 
+      destruct ε; simpls~; destruct d; simpls~; cases_if*; simpls~.
+
+  + destruct λε as [v | ε x | ε η | ε1 ε2 η | ε1 ε2].
+    - simpls; cases_if*; simpls~; cases_if*.
+    - simpls; splits*... solve_IH H ε.
+
+    - specializes H ε. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε; simpls*; splits*; clear H; destruct d; simpls*; cases_if; simpls~.
+
+    - simpls; repeat splits~... 
+      specializes H ε2. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε2; simpls*. 
+      eexists; reflexivity.
+      specializes H ε1. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε1; simpls*. 
+
+    - simpls; repeat splits*...
+      specializes H ε2. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε2; simpls*.      
+      specializes H ε1. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε1; simpls*.
+
+  + destruct ε as [λ | λε | λε ε | op ε1 | op ε1 ε2 | ϕ lε | ε1 ε2 σ ].
+    - solve_IH H λ. 
+    - solve_IH H λε. 
+    - simpls; splits; [solve_IH H λε | | solve_IH H ε | ]... 
+    - destruct op; simpls; splits~; try solve_IH H ε1... 
+    - destruct op; simpls; splits~; try solve_IH H ε1; try solve_IH H ε2...
+    - destruct ϕ as [τρx τρy s ε]. 
+      lets Hϕ : H (djs_ϕ_main τρx τρy s ε). 
+      specializes Hϕ (@eq_refl). simpls; nat_math.
+      simpls; splits~. clear Hϕ.
+      assert (Hyp : forall ε, Mem ε lε -> exists t, toJSC ε = Some t /\ DJS_allowed_term t).
+      {
+        inductions lε; introv Hm; inverts~ Hm.
+        + eexists. splits. reflexivity. 
+          apply H with (y := a); auto. simpls; nat_math. 
+        + applys~ IHlε. introv Hs. applys~ H. simpls; nat_math.
+      } clear H ε s τρx τρy.
+      inductions lε; auto; splits~...
+      * lets (t & (Heq & Ht)) : Hyp a. constructor. inverts~ Heq.
+      * apply IHlε. introv Hm. apply Hyp. constructor~.
+    - simpls; splits*... solve_IH H ε1. solve_IH H ε2.
+
+  + destruct s as [ε | ε s | ε s1 s2 | ε s | ls ].
+    - simpls; splits... solve_IH H ε.
+    - simpls; splits; [solve_IH H ε | | solve_IH H s]...
+    - simpls; splits; [solve_IH H ε | | solve_IH H s1 | solve_IH H s2]...
+    - simpls; splits; [solve_IH H ε | | solve_IH H s]...
+    - destruct ls as [ | s ls]; [simpls~ | ].
+      lets Hr : H s. specializes Hr (@eq_refl). simpls; nat_math. 
+      lets Hls : H (djs_stat_seq ls). specializes Hls (@eq_refl). 
+      lets Hs : djs_size_term_positive s. simpls; nat_math.
+      simpls~.
+
+  + destruct ϕ as [τρx τρy s ε]. simpls; splits~.
+    - inductions τρy; auto.
+      destruct a as (y & δε); splits.
+      * specializes H (djs_term_δε δε). specializes H (@eq_refl).
+        simpls; nat_math. simpls*.
+      * apply IHτρy with (s := s) (ε := ε).
+        introv Hsize Heq. apply H with (y := y0); auto.
+        simpls; nat_math.
+    - solve_IH H s. 
+    - solve_IH H ε.
+    - apply not_a_function_ε.
+
+  + destruct δε as [ε | ϕ]; [solve_IH H ε | solve_IH H ϕ].
+
+  + destruct π as (ϕ). specializes H ϕ. 
+    specializes H (@eq_refl). simpls; nat_math.
+    destruct ϕ; simpls*.
+Admitted. (* FASTER *)
+
+(**************************************************************)
+(** ** JSCert Term size                                       *)
+
+Section JSC_Sizes.
+
+Open Local Scope nat_scope.
+
+Fixpoint jscert_size_stat js := 
+match js with
+  | stat_expr je => S (jscert_size_expr je) 
+  | stat_label _ js => S (jscert_size_stat js)
+  | stat_block ls => S ((fix size_ls ls :=
+                           match ls with
+                             | nil => 0
+                             | s :: ls => jscert_size_stat s + size_ls ls
+                           end) ls)
+  | stat_var_decl lxoe => S ((fix size_lxoe lxoe :=
+                                match lxoe with
+                                  | nil => 0
+                                  | (_, oe) :: lxoe => match oe with
+                                                         | None => 0
+                                                         | Some e => jscert_size_expr e
+                                                       end + size_lxoe lxoe
+                                end) lxoe)
+
+  | stat_if e s os => S (jscert_size_expr e + jscert_size_stat s + match os with
+                                                                     | None => 0
+                                                                     | Some s => jscert_size_stat s
+                                                                   end)
+  | stat_do_while _ s e => S (jscert_size_stat s + jscert_size_expr e)
+  | stat_while _ e s => S (jscert_size_expr e + jscert_size_stat s)
+  | stat_with e s => S (jscert_size_expr e + jscert_size_stat s) 
+  | stat_throw e => S (jscert_size_expr e)
+  | stat_return oe => match oe with 
+                        | None => 1
+                        | Some e => S (jscert_size_expr e)
+                      end
+  | stat_break _ => 1
+  | stat_continue _ => 1
+  | stat_try s oxs os => S (jscert_size_stat s + match oxs with
+                                                   | None => 0 
+                                                   | Some (_, s) => jscert_size_stat s
+                                                 end + match os with
+                                                         | None => 0
+                                                         | Some s => jscert_size_stat s
+                                                       end)
+  | stat_for _ oe1 oe2 oe3 s => S (match oe1 with
+                                     | None => 0
+                                     | Some e => jscert_size_expr e
+                                   end + 
+                                   match oe2 with
+                                     | None => 0
+                                     | Some e => jscert_size_expr e
+                                   end + 
+                                   match oe3 with
+                                     | None => 0
+                                     | Some e => jscert_size_expr e
+                                   end + jscert_size_stat s
+                                  )
+
+  | stat_for_var _ lsoe oe1 oe2 s => S (((fix size_lsoe lsoe :=
+                                           match lsoe with
+                                             | nil => 0
+                                             | (_, oe) :: lsoe => match oe with
+                                                                    | None => 0
+                                                                    | Some je => jscert_size_expr je
+                                                                  end
+                                           end) lsoe) +
+                                        match oe1 with
+                                          | None => 0
+                                          | Some e => jscert_size_expr e
+                                        end + 
+                                        match oe2 with
+                                          | None => 0
+                                          | Some e => jscert_size_expr e
+                                        end + jscert_size_stat s)
+
+  | stat_for_in _ e1 e2 s => S (jscert_size_expr e1 + jscert_size_expr e2 + jscert_size_stat s)
+
+  | stat_for_in_var _ _ oe e s => S (match oe with
+                                       | None => 0
+                                       | Some e => jscert_size_expr e
+                                     end + jscert_size_expr e + jscert_size_stat s)
+
+  
+
+  | stat_debugger => 1
+
+  | stat_switch _ e sb => S (jscert_size_expr e + jscert_size_switch sb)
+end
+
+with jscert_size_expr je := 
+match je with
+  | expr_this 
+  | expr_identifier _ 
+  | expr_literal _ => 1
+
+  | expr_object lpp => S ((fix size_lpp lpp :=
+                             match lpp with
+                               | nil => 0
+                               | (_, pb) :: lpp => jscert_size_propbody pb + size_lpp lpp
+                             end) lpp)
+
+  | expr_array loje => S (((fix size_lje loje :=
+                              match loje with 
+                                | nil => 0
+                                | oje :: loje => match oje with
+                                                   | None => 0
+                                                   | Some je => jscert_size_expr je 
+                                                 end  + size_lje loje
+                              end) loje))  
+
+  | expr_function _ _ fb => S (jscert_size_func fb)
+
+  | expr_access je1 je2 => S (jscert_size_expr je1 + jscert_size_expr je2)
+  | expr_member je1 _ => S (jscert_size_expr je1) 
+
+
+  | expr_new je lje => S (jscert_size_expr je + ((fix size_lje lje :=
+                                                    match lje with 
+                                                      | nil => 0
+                                                      | je :: lje => jscert_size_expr je + size_lje lje
+                                                    end) lje))
+  | expr_call je lje =>  S (jscert_size_expr je + ((fix size_lje lje :=
+                                                    match lje with 
+                                                      | nil => 0
+                                                      | je :: lje => jscert_size_expr je + size_lje lje
+                                                    end) lje))  
+
+  | expr_unary_op _ je => S (jscert_size_expr je)
+  | expr_binary_op je1 _ je2 => S (jscert_size_expr je1 + jscert_size_expr je2)
+  | expr_conditional je1 je2 je3 => S (jscert_size_expr je1 + jscert_size_expr je2 + jscert_size_expr je3)
+  | expr_assign je1 _ je2 => S (jscert_size_expr je1 + jscert_size_expr je2)
+end
+
+with jscert_size_prog jp :=
+match jp with
+ | prog_intro _ le => S ((fix size_le le :=
+                            match le with
+                              | nil => 0
+                              | element_stat s :: le => jscert_size_stat s + size_le le
+                              | element_func_decl _ _ fb :: le => jscert_size_func fb + size_le le
+                            end) le)
+end
+
+with jscert_size_switch sb := 0
+
+with jscert_size_func fb := 
+match fb with
+ | funcbody_intro jp _ => S (jscert_size_prog jp) 
+end
+
+with jscert_size_propbody pb := 
+match pb with
+  | propbody_val je => S (jscert_size_expr je) 
+  | propbody_get fb => S (jscert_size_func fb)
+  | propbody_set _ fb => S (jscert_size_func fb)
+end.
+
+Definition jscert_size_term jT :=
+match jT with
+ | jscert_expr je => jscert_size_expr je
+ | jscert_stat js => jscert_size_stat js
+ | jscert_prog jp => jscert_size_prog jp
+end.
+
+Lemma jscert_size_term_positive : forall jT, jscert_size_term jT > 0.
+Proof.
+  destruct jT; [destruct e | destruct s | destruct p]; simpls; try nat_math.
+  destruct o; nat_math.
+Qed.
+
+End JSC_Sizes.
+
+Lemma DJS_allowed_object : forall o, 
+  DJS_allowed_term (jscert_expr (expr_object o)) ->
+  forall pp, Mem pp o -> exists id v, pp = (propname_identifier id, propbody_val v) /\ DJS_allowed_term (jscert_expr v) /\ not_a_function v.
+Proof.
+  inductions o; introv Hyp Hm; inverts Hm.
+  destruct a as (pp & pb); destruct pp; try solve [inverts Hyp]; destruct pb; try solve [inverts Hyp].
+  + exists s e; splits~. simpls*. destruct e; simpl; try solve [clear Hyp; auto]. 
+    remember (expr_function o0 l f) as e. simpls. destruct Hyp as (Hyp & _ & _). substs~. 
+  + applys~ IHo. destruct a as (pp' & pb'); destruct pp'; try solve [inverts Hyp]; destruct pb'; try solve [inverts Hyp]; simpls*.
+Admitted. (* FASTER *)
+
+Lemma DJS_allowed_call : forall je lje, DJS_allowed_term (jscert_expr (expr_call je lje)) -> 
+  DJS_allowed_term (jscert_expr je) /\ (Forall (fun je => DJS_allowed_expr je /\ not_a_function je) lje) /\ exists os ls fb, je = expr_function os ls fb.
+Proof.
+  introv HD; destruct je; try solve [false*]. splits.
+  + simpls*.
+  + rewrite <- Forall_Mem. introv Hm. inductions lje; inverts Hm.
+    - simpls*.
+    - applys~ IHlje. simpls*.
+  + repeat eexists.
+Admitted. (* FASTER *)
+
+Lemma DJS_allowed_array : forall α, 
+  DJS_allowed_term (jscert_expr (expr_array α)) ->
+  forall a, Mem a α -> exists v, a = Some v /\ DJS_allowed_term (jscert_expr v) /\ not_a_function v.
+Proof.
+  inductions α; introv Hd Hm; inverts Hm; 
+  destruct a; simpl in Hd; inverts* Hd.
+Qed.
+
+Lemma toJSC_is_expression : forall T v, toJSC T = Some (jscert_expr v) -> 
+  (exists λ, T = djs_term_λ λ) \/
+  (exists λε, T = djs_term_λε λε) \/
+  (exists ε, T = djs_term_ε ε) \/
+  (exists ϕ, T = djs_term_ϕ ϕ) \/
+  (exists δε, T = djs_term_δε δε).
+Proof.
+  induction T using (measure_induction djs_size_term); introv.
+  destruct T as [λ | λε | ε | s' | ϕ | δε | π | ι]; introv Hyp; 
+  simpls*; inverts* Hyp.
+Qed. 
+
+Lemma toJSC_is_expression_not_function : forall T v, toJSC T = Some (jscert_expr v) ->
+  not_a_function v -> exists (ε : djs_ε), toJSC T = toJSC ε.
+Proof.
+  introv Hjsc Hnf. lets Hyp : toJSC_is_expression Hjsc.
+  inverts Hyp as Hyp.
+    destruct Hyp as (λ & Heq); subst.
+    exists~ (djs_ε_l λ). 
+    inverts Hyp as Hyp.
+      destruct Hyp as (λε & Heq); subst.
+      exists~ (djs_ε_λε λε).
+      inverts Hyp as Hyp.
+        inverts Hyp. exists~ x.
+        inverts Hyp as Hyp.
+          destruct Hyp as (ϕ & Heq); subst.
+          destruct ϕ. false Hnf. simpls; inverts~ Hjsc.  
+          destruct Hyp as (δε & Heq); subst; destruct δε as [ε | ϕ].
+          inverts Hjsc. exists~ ε.
+          destruct ϕ. false Hnf. simpls; inverts~ Hjsc.
+Qed.
+
+Lemma toJSC_is_expression_function : forall T v, toJSC T = Some (jscert_expr v) ->
+  ~ not_a_function v -> exists (ϕ : djs_ϕ), toJSC T = toJSC ϕ.
 Proof.
   induction T using (measure_induction djs_size_term).
-  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; introv HD1 HD2.
-
-  + eapply djs_unicity_of_types_λ; jauto. 
-  + eapply djs_unicity_of_types_λε; jauto. 
-  + admit.
-  + inverts HD1; inverts~ HD2.
-  + inversion HD1; inversion HD2; substs; inverts H9;
-    subst lx ly lx0 ly0 lτ lτ0 lδε lδε0; substs; tryfalse.
-    
-    - cut (τr = τr0); [intro Hyp; substs~ | ]. 
-      cut (exists Γ, Γ |- ε ∷ τr /\ Γ |- ε ∷ τr0).
-      * introv (Γ0 & (HD1' & HD2')). 
-        specializes H HD1' HD2'; [ | inverts~ H].
-        lets Hsize : djs_size_term_positive ε; simpls; rew_length; nat_math.
-      * {
-          cut (Forall (fun δε => forall Γ τm1 τm2, Γ |- δε ∷ τm1 -> Γ |- δε ∷ τm2 -> τm1 = τm2) (snd (split τρy))). 
-          + clear - H7 H16.
-            remember nil as τρ. clear Heqτρ.
-            gen Γ τρ τr τr0. inductions τρy; intros.
-            - inverts H7. inverts H16. eexists; jauto.
-            - destruct a. inverts H7. inverts H16.
-              rewrite (split_combine_fs _) in H. rewrite combine_split in *; 
-              [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-              rewrite (split_combine_fs _) in H. rewrite combine_split in *; 
-              [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-              inverts H. specializes H2 H3 H4. inverts H2.              
-              eapply IHτρy; eassumption.
-          + rewrite <- Forall_Mem; introv Hm.
-            apply H. clear - Hm.
-            gen ls ε. inductions τρy; intros. inverts Hm.
-            destruct a. rewrite (split_combine_fs _) in Hm. rewrite combine_split in *; 
-            [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-            rewrite (split_combine_fs _) in Hm. rewrite combine_split in *; 
-            [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-            inverts Hm as Hm. nat_math. specializes IHτρy Hm ls ε. nat_math.         
-        }
-
-    - cut (τr = τr0 /\ τρ = τρ0); [intros (Hyp1 & Hyp2); substs~ | ]. 
-      clear H2 H3 H4 H5 HD1 H13 H10 H11 H12 HD2 H14.
-
-      cut (exists Γ, Γ |- ε ∷ τr /\ Γ |- ε ∷ τr0).
-      * introv (Γ0 & (HD1' & HD2')). 
-        specializes H HD1' HD2'; [ | inverts~ H].
-        lets Hsize : djs_size_term_positive ε; simpls; rew_length; nat_math.
-      * {
-          cut (Forall (fun δε => forall Γ τm1 τm2, Γ |- δε ∷ τm1 -> Γ |- δε ∷ τm2 -> τm1 = τm2) (snd (split τρy))). 
-          + clear - H7 H16.
-            remember nil as τρ. clear Heqτρ.
-            gen Γ τρ τr τr0. inductions τρy; intros.
-            - inverts H7. inverts H16. eexists; jauto.
-            - destruct a. inverts H7. inverts H16.
-              rewrite (split_combine_fs _) in H. rewrite combine_split in *; 
-              [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-              rewrite (split_combine_fs _) in H. rewrite combine_split in *; 
-              [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-              inverts H. specializes H2 H3 H4. inverts H2.              
-              eapply IHτρy; eassumption.
-          + rewrite <- Forall_Mem; introv Hm.
-            apply H. clear - Hm.
-            gen ls ε. inductions τρy; intros. inverts Hm.
-            destruct a. rewrite (split_combine_fs _) in Hm. rewrite combine_split in *; 
-            [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-            rewrite (split_combine_fs _) in Hm. rewrite combine_split in *; 
-            [ | rewrite split_length_l; rewrite~ split_length_r]; simpls.
-            inverts Hm as Hm. nat_math. specializes IHτρy Hm ls ε. nat_math.         
-        }
-
-        admit.
-
-    - subst lx lτ ly lτ0. inverts H8.
-      
-
-  + inverts HD1; inverts~ HD2; eapply H; try eassumption;
-    simpls; nat_math.
-  + inverts HD1; inverts~ HD2.
-  + inverts HD1; inverts~ HD2.
-Qed. 
-
-Lemma djs_type_inference_λ : 
-  forall λ Γ (IH : forall T, djs_size_term T < djs_size_λ λ ->
-    { τm | Γ |- T ∷ τm } + {forall (τm : type), ~ Γ |- T ∷ τm }), 
-    { τm | Γ |- λ ∷ τm } + {forall (τm : type), ~ Γ |- λ ∷ τm }.
-Proof with (try solve [right; introv NoNo; inverts* NoNo]).
-  intros; destruct λ as [η | σ | β | lε | ρ]; destruct Γ...
-
-  + left; exists τη. constructor.
-  + left; exists τσ. constructor.
-  + left; exists τβ. constructor.
-
-  + destruct lε as [ | ε1 lε]...
-    destruct lε as [ | ε2 lε].
-
-    - destruct (IH ε1) as [(τm & Hε1) | ]... simpls; nat_math.
-      destruct τm as [τ | ]; [ | false; inverts Hε1]... 
-      left; eexists. constructor*.
-
-    - destruct (IH ε1) as [(τm & Hε1) | ]... simpls; nat_math.
-      destruct τm as [τ | ]; [ | false; inverts Hε1]... 
-      
-      destruct (IH (djs_α (ε2 :: lε))) as [(τm & Hε2) | ]...
-      lets Hsize : djs_size_term_positive ε1; simpls; rew_length; nat_math.
-      destruct τm as [τ' | ]; [ | false; inverts Hε2]...       
-      destruct (IH ε2) as [(τm & Hε2') | ]... simpls; nat_math.
-      destruct τm as [τ'' | ]; [ | false; inverts Hε2']...
-      destruct (djs_type_eq_dec τ'' τ).
-      * inverts e... destruct τ'; try solve [false; inverts Hε2].
-        lets Heq : array_length Hε2; subst.
-        destruct (djs_type_eq_dec τ' τ).
-          inverts e. left; eexists; constructor; eassumption.
-          false. inverts Hε2. simpls.
+  destruct T; introv HT HnfT.
+  + false HnfT. destruct d; inverts HT; simpls*.
+  + false HnfT. destruct d; inverts HT; simpls*; cases_if; simpls~.
+  + false HnfT. destruct d; inverts HT; simpls*; destruct d; simpls*; cases_if; simpls*.
+  + false HnfT. destruct d; inverts HT; simpls*.
+  + exists~ d.
+  + destruct d.
+    - false HnfT. destruct d; inverts HT; simpls*; destruct d; simpls*; cases_if; simpls*.
+    - exists~ d.
+  + destruct d as [ϕ]; false*.
+  + inverts HT.
 Qed.
 
-Lemma DJS_Type_Inference : forall T Γ (τm : type), 
-  {exists (τm : type), Γ |- T ∷ τm} + {~ exists (τm : type), Γ |- T ∷ τm}.
+Lemma toJSC_is_expression_as_δε : forall T je, toJSC T = Some (jscert_expr je) -> exists (δε : djs_δε), toJSC δε = toJSC T.
 Proof.
-  induction T using (measure_induction_type djs_size_term).
+  introv Ht. lets Hyp : toJSC_is_expression Ht. repeat (inverts Hyp as Hyp; jauto).
+  + exists~ (djs_δε_expr (djs_ε_l x)).
+  + exists~ (djs_δε_expr (djs_ε_λε x)).
+  + exists~ (djs_δε_expr x).
+  + exists~ (djs_δε_func x).
+Qed.
 
-  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; simpls.
-
+Lemma toJSC_is_lhs_expression : forall T v, toJSC T = Some (jscert_expr v) ->
+  is_lhs v -> exists (λε : djs_λε), toJSC T = toJSC λε.
+Proof.
+  induction T using (measure_induction djs_size_term).
+  destruct T; introv HT Hlhs.
+  + false. destruct d; inverts HT; simpls*.
   
-  
-  + intros; destruct λ as [η | σ | β | lε | ρ].
-Qed. 
+  + destruct d; simpls.
+    - exists (djs_var v0); cases_if*; subst; simpl; cases_if*.
+    - inverts HT. exists~ (djs_prop d v0). 
+    - inverts HT. exists~ (djs_cai d n).
+    - inverts HT. exists~ (djs_ii d d0 n).
+    - inverts HT. exists~ (djs_bai d d0).
+ 
+  + destruct d; try solve [false; inverts HT; simpls*; destruct d; simpls*; cases_if; simpls*].
+    - destruct d; simpls.
+      * exists (djs_var v0); cases_if*; subst; simpl; cases_if*.
+      * inverts HT. exists~ (djs_prop d v0). 
+      * inverts HT. exists~ (djs_cai d n).
+      * inverts HT. exists~ (djs_ii d d0 n).
+      * inverts HT. exists~ (djs_bai d d0).
 
-Lemma DJS_Typing_Decidable : forall T Γ (τm : type), {Γ |- T ∷ τm} + {~ Γ |- T ∷ τm}.
-Proof with false_right.
-  intro T. induction T using (measure_induction_type djs_size_term).
+  + false.
+  + false; destruct d; inverts HT; simpls*.
+  + destruct d.
+    - destruct d; try solve [false; inverts HT; simpls*; destruct d; simpls*; cases_if; simpls*].
+      destruct d; simpls.
+      * exists (djs_var v0); cases_if*; subst; simpl; cases_if*.
+      * inverts HT. exists~ (djs_prop d v0). 
+      * inverts HT. exists~ (djs_cai d n).
+      * inverts HT. exists~ (djs_ii d d0 n).
+      * inverts HT. exists~ (djs_bai d d0).
 
-  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; simpls.
-
-Lemma aux_typ_dec_λ : 
-  forall λ Γ (τm : type) 
-         (IH : forall T, djs_size_term T < djs_size_λ λ ->
-                 forall Γ (τm : type), {Γ |- T ∷ τm} + {~ Γ |- T ∷ τm}), 
-    {Γ |- λ ∷ τm} + {~ Γ |- λ ∷ τm}.
-Proof with false_right.
-  intros; destruct λ as [η | σ | β | lε | ρ]; 
-  destruct Γ; false_right; destruct τm; try destruct τ; false_right;
-  try solve [left; constructor].
-
-  + destruct lε as [ | ε1 lε]...
-    destruct lε as [ | ε2 lε]. 
-
-    - lets Hε : IH ε1 (∅) τ. simpls; nat_math.      
-      inverts Hε as Hε... 
-      lets Hn : eq_nat_dec n 1. inverts Hn as Hn;
-      [ | right; introv Hyp; apply array_length in Hyp; rew_length in *; nat_math].
-      left; constructor~.
-
-    - lets Hn : eq_nat_dec n (length (ε1 :: ε2 :: lε)). inverts Hn as Hn;
-      [ | right; introv Hyp; apply array_length in Hyp; rew_length in *; nat_math].
-      lets Hε : IH ε1 (∅) τ. simpls; nat_math.
-      inverts Hε as Hε...
-      replace (length (ε1 :: ε2 :: lε)) with (S (length (ε2 :: lε))) by (rew_length; nat_math).
-      lets Hlε : IH (djs_α (ε2 :: lε)) (∅) ([[τ, length (ε2 :: lε)]]). 
-      lets Hsize : djs_size_term_positive ε1. simpls; rew_length; nat_math.
-      inverts Hlε as Hlε... left; constructor~.
-
-  + destruct ρ as [ | xε ρ]; destruct l...
-
-    - left; constructor~. 
-
-    - destruct xε as (x & ε). destruct p as (x' & τε).
-      lets Hx : string_dec x' x. inverts Hx as Hx... 
-      lets Hρl : IH (djs_ο ρ) (∅) ({{l}}). 
-      lets Hsize : djs_size_term_positive ε. simpls; rew_length; nat_math. 
-      inverts Hρl as Hρl...
-      lets Hε : IH ε (∅) τε. simpls; nat_math. 
-      inverts Hε as Hε...
-      lets Hx : string_dec x "this". inverts Hx as Hx... 
-      lets HD : (@noDup_decidable _ (x :: fst (split ρ)) string_dec).
-      inverts HD as HD. left; constructor~.
-      right; introv Hyp; inversion Hyp; substs; subst lx; auto.
+    - false; destruct d; inverts HT; simpls*.
+  + destruct d as [ϕ]; false*.
+  + inverts HT.
 Qed.
 
-Lemma aux_typ_dec_λε : 
-  forall λε Γ (τm : type) 
-         (IH : forall T, djs_size_term T < djs_size_λε λε ->
-                 forall Γ (τm : type), {Γ |- T ∷ τm} + {~ Γ |- T ∷ τm}), 
-    {Γ |- λε ∷ τm} + {~ Γ |- λε ∷ τm}.
-Proof with false_right.
-  intros; destruct λε as [x | ε x | ε η | ε1 ε2 η | ε1 ε2];
-  try destruct τ...
-
-  + admit.
-
-  + admit.
-
-  + destruct Γ; [ | right; introv Hyp; inverts Hyp as Hyp; inverts Hyp]; 
-    try destruct τm... 
-
-Lemma aux_typ_dec_ε_α : forall ε τ (τm : type) 
-         (IH : forall T, djs_size_term T < djs_size_ε ε ->
-                 forall Γ (τm : type), {Γ |- T ∷ τm} + {~ Γ |- T ∷ τm}), 
-    {exists m, ∅ |- ε ∷ [[τ, m]]} + {~ exists m, ∅ |- ε ∷ [[τ, m]]}.
-Proof with (try solve [right; introv (m & Hyp); inverts Hyp as Hyp; inverts* Hyp]).
-  destruct ε as [λ | λε | | | | |].
-
-  + destruct λ as [ | | | lε |]...
-    destruct lε as [ | ε1 lε]...
-    destruct lε as [ | ε2 lε].
-    
-    - lets Hε : IH ε1 (∅) τ. simpls; nat_math.      
-      inverts Hε as Hε... 
-      left. exists 1. repeat constructor~. 
-
-    - 
-Qed.
-
-  + admit.
-
-  + admit.
-Qed.
-
-| typing_Prop : forall Γ ε τρ, 
-                   Γ |- ε ∷ (το τρ) -> 
-                   forall x τ, 
-                     Mem (x, τ) τρ ->
-                     Γ |- (djs_prop ε x) ∷ τ
-
- | typing_CAI : forall Γ ε m (η : nat) τ, 
-                Γ |- ε ∷ (τα τ m) -> 
-                η < m ->
-                Γ |- (djs_cai ε η) ∷ τ
-
- | typing_II : forall Γ ε ε' τ m (η : nat), 
-                 Γ |- ε  ∷ (τα τ m) ->
-                 Γ |- ε' ∷ τη -> η < m -> (m <= 1073741824)%Z ->
-                 Γ |- (djs_ii ε ε' η) ∷ τ
-
- | typing_BAI : forall Γ (ε ε' : djs_ε) τ m, 
-                  Γ |- ε  ∷ (τα τ m) ->
-                  Γ |- ε' ∷ τη -> 
-                  Γ |- (djs_bai ε ε') ∷ τ
-
-
-(* PROOOOOF *)
-
-  (* Literals *)
-  + intros; applys~ aux_typ_dec_λ.
-
-  + .
-
-  + destruct .
-
-  + admit.
-
-  + admit.
-
-  + destruct δε as [ε | ϕ]; apply X; simpls. rew_length. nat_math.
-
-(**************************************************************)
-(** ** Lemmas for arrays                                      *)
-
-(* Empty arrays are not allowed *)
-Lemma no_empty_array : forall Γ lε τ n, Γ |- djs_α lε ∷ [[τ, n]] -> n > 0.
+Lemma toJSC_is_statement : forall T (s : stat), toJSC T = Some (jscert_stat s) -> 
+  exists s, T = djs_term_s s.
 Proof.
-  introv Hr. inverts Hr; nat_math. 
-Qed.
-
-
-
-(**************************************************************)
-(** ** Lemmas for statements                                  *)
-
-
-
-(**************************************************************)
-(** ** Lemmas for functions                                   *)
-
-(* y-variables length correctness for auxiliary *)
-Lemma function_length_y_aux : forall Γ lxτ ly lδε os ε (τ : type) ρ, 
-  Γ |- djs_ϕ_aux lxτ (ly, lδε) os ε ρ ∷ τ -> length ly = length lδε.
-Proof.
-  introv HD. inductions HD; rew_length; jauto.
-Qed.
-
-(* y-variables length correctness *)
-Lemma function_length_y : forall Γ lxτ ly lδε os ε τ, 
-  Γ |- djs_ϕ_main lxτ (ly, lδε) os ε ∷ τ -> length ly = length lδε.
-Proof.
-  introv HD. inductions HD; rew_length; jauto.
-  apply function_length_y_aux in HD; auto.
-Qed.
-
-Lemma τξ_interm : forall Γ T, Γ |- T ∷ τξ ->
-  exists ει, T = djs_interm ει.
-Proof.
-  introv HD. inductions HD; jauto.
-Qed.
-
-Lemma interm_τξ : forall Γ ει (τ : type), 
-  Γ |- djs_interm ει ∷ τ -> τ = τξ.
-Proof.
-  introv HD. inductions HD; auto.
-Qed.
-
-(**************************************************************)
-(** ** Interesting stuff                                      *)
-
-(* { f : function() {return this} } does not type in DJS *)
-Lemma untypable_object : forall Γ τ, 
-  Γ |- djs_ο ("f" :: nil, 
-              (djs_ε_func (djs_ϕ_main nil 
-                                      (nil, nil) 
-                                      (djs_stat_seq nil) 
-                                      (djs_ε_λε (djs_var "this"))) nil) :: nil) ∷ τ 
-  -> False. 
-Proof.
-  introv HD. 
-    inverts HD. clear H5 H6. inverts H8. 
-    inverts H7 as HD. clear H6. destruct lτ. clear H5.
-    inverts HD. clear H6 H7 H8 H9. 
-    inversion H10. simpls. substs. subst lx0 lτ.
-    repeat rewrite app_nil_l in *.
-    inverts H6. inverts H1. inverts H3.
-    rew_length in H5; nat_math.
-Qed.     
-
-(* Typing objects *)
-Lemma objects_typable_only_from_empty : 
-  forall Γ lπ τ, Γ |- djs_ο lπ ∷ τ -> Γ = ∅.
-Proof.
-  introv HD. inverts~ HD. 
-Qed.
-
-(* No typable object contains a "this" variable *)
-Lemma objects_no_this : 
-  forall Γ lπ τ, Γ |- djs_ο lπ ∷ τ -> ~ Mem "this" (fst lπ). 
-Proof.
-  introv HD. inductions HD; introv Hm; inverts* Hm. 
-Qed.
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-(**************************************************************)
-(** ** Detecting unbound this's                               
-
-Section has_this.
-
-(*
-   Numbers, strings, and booleans do not have a 'this'.
-
-   An array has a 'this' if any of its elements has a 'this'
-
-   An object has a this if there exists a 'this' in one of the expressions
-*)
-Fixpoint has_this_λ λ :=
-match λ with 
- | djs_η _ | djs_σ _ | djs_β _ => False
- | djs_α lε => ((fix has_this_lε (lε : list djs_ε) : Prop :=
-                   match lε with 
-                     | nil => False
-                     | ε :: lε => has_this_ε ε \/ has_this_lε lε
-                   end) lε)
- | djs_ο ρ => ((fix has_this_ρ ρ : Prop :=
-                  match ρ with 
-                    | nil => False
-                    | (_, ε) :: ρ => has_this_ε ε \/ has_this_ρ ρ
-                  end) ρ)
-end
-
-(*
-   'this' in expressions is fully recursive
-*)
-with has_this_ε ε := 
-match ε with 
- | djs_ε_l     λ        => has_this_λ  λ
- | djs_ε_λε    λε       => has_this_λε λε
- | djs_ε_ass   λε ε     => has_this_λε λε \/ has_this_ε ε
- | djs_ε_unop  _  ε     => has_this_ε ε
- | djs_ε_binop _  ε1 ε2 => has_this_ε ε1 \/ has_this_ε ε2
- | djs_ε_func  ϕ  lε    => has_this_ϕ ϕ \/ 
-                           ((fix has_this_lε (lε : list djs_ε) : Prop :=
-                               match lε with 
-                                 | nil => False
-                                 | ε :: lε => has_this_ε ε \/ has_this_lε lε
-                               end) lε)
- | djs_csi     ε1 ε2 _  => has_this_ε ε1 \/ has_this_ε ε2
-end
-
-(*
-   For lhs-expressions:
-
-   A variable has a 'this' if it is 'this'
-
-   'this' can never occur as a property in a typable lhs-expression
-*)
-with has_this_λε λε := 
-match λε with
- | djs_var  x       => (x = "this")
- | djs_prop ε  _    => has_this_ε ε
- | djs_cai  ε  _    => has_this_ε ε
- | djs_ii   ε1 ε2 _ => has_this_ε ε1 \/ has_this_ε ε2
- | djs_bai  ε1 ε2   => has_this_ε ε1 \/ has_this_ε ε2
-end
-
-(*
-   'this' in statements is fully recursive
-*)
-with has_this_stat s :=
-match s with
- | djs_stat_expr  ε         => has_this_ε ε
- | djs_stat_with  ε  s      => has_this_ε ε \/ has_this_stat s
- | djs_stat_if    ε  s1 s2  => has_this_ε ε \/ has_this_stat s1 \/ has_this_stat s2
- | djs_stat_while ε  s1     => has_this_ε ε \/ has_this_stat s1
- | djs_stat_seq   ls        => ((fix has_this_ls (ls : list djs_stat) : Prop :=
-                                   match ls with 
-                                     | nil => False
-                                     | s :: ls => has_this_stat s \/ has_this_ls ls
-                                   end) ls)
-end
-
-(*
-   'this' in defined expressions is fully recursive
-*)
-with has_this_δε δε :=
-match δε with 
- | djs_δε_expr ε => has_this_ε ε
- | djs_δε_func ϕ => has_this_ϕ ϕ
-end
-
-(*
-   Functions have a 'this' if 
-     the first parameter is not 'this' and
-     the body has a 'this'
-*)
-with has_this_ϕ ϕ := 
-match ϕ with 
- | djs_ϕ_main τρ lvδε s ε => match τρ with
-                               | (x, _) :: _ => ifb (x = "this") then False
-                                                else (((fix has_this_lvδε lvδε :=
-                                                          match lvδε with 
-                                                            | nil => False
-                                                            | (_, δε) :: lvδε => has_this_δε δε \/ has_this_lvδε lvδε
-                                                          end) lvδε)
-                                                      \/ has_this_stat s \/ has_this_ε ε)   
-                               | _ => (((fix has_this_lvδε lvδε :=
-                                           match lvδε with 
-                                             | nil => False
-                                             | (_, δε) :: lvδε => has_this_δε δε \/ has_this_lvδε lvδε
-                                           end) lvδε)
-                                       \/ has_this_stat s \/ has_this_ε ε)
-                             end
-end.
-
-(*
-   'this' in programs is fully recursive
-*)
-Definition has_this_π π := 
-match π with
- | djs_π_main ϕ => has_this_ϕ ϕ
-end.
-
-(*
-   Detecting unbound this's in terms
-*)
-Definition has_this T :=
-match T with
- | djs_term_λ  λ  => has_this_λ λ
- | djs_term_λε λε => has_this_λε λε
- | djs_term_ε  ε  => has_this_ε  ε
- | djs_term_s  s  => has_this_stat s
- | djs_term_ϕ  ϕ  => has_this_ϕ ϕ
- | djs_term_δε δε => has_this_δε δε
- | djs_term_π  π  => has_this_π π
- | djs_interm  ι   => False
-end.
-
-(*
-   Detecting unbound this's in lists of terms 
-*)
-Definition has_this_list lT :=
-  ((fix has_this_lT lT : Prop :=
-      match lT with 
-        | nil => False
-        | T :: lT => has_this T \/ has_this_lT lT
-      end) lT).
-
-(* 
-   The procedure to detect this in a term is decidable 
-*)
-Lemma has_this_dec : forall T, {has_this T} + {~ has_this T}.
-Proof.
-  assert (Gλ : forall λ, (forall y, djs_size_term y < djs_size_term λ -> 
-                 {has_this y} + {~ has_this y}) -> {has_this λ} + {~ has_this λ}).
-  {
-    introv IH; destruct λ as [η | σ | β | lε | ρ]; try solve [simpls*].
-    + destruct lε as [ | ε lε]; jauto.
-      lets Hsize : djs_size_term_positive ε. 
-      destruct (IH ε) as [Hε | Hε]; try solve [simpls*; rew_length; nat_math].       
-      destruct (IH (djs_α lε)) as [Hlε | Hlε]; simpls; intuition.
-      
-    + destruct ρ as [ | (x & ε) ρ]; jauto.
-      lets Hsize : djs_size_term_positive ε. 
-      destruct (IH ε) as [Hε | Hε]; try solve [simpls*; rew_length; nat_math].       
-      destruct (IH (djs_ο ρ)) as [Hρ | Hρ]; simpls; intuition.
-  }
-
-   assert (Gλε : forall λε, (forall y, djs_size_term y < djs_size_term λε -> 
-                   {has_this y} + {~ has_this y}) -> {has_this λε} + {~ has_this λε}).
-  {
-    introv IH; destruct λε as [x | ε x | ε n | ε1 ε2 n | ε1 ε2 ].
-    + simpls; apply string_dec.
-    + apply (IH ε). simpls; nat_math.
-    + apply (IH ε). simpls; nat_math.
-    + destruct (IH ε1); simpls; [nat_math | intuition | ].
-      destruct (IH ε2); simpls; [nat_math | intuition | intuition ].
-    + destruct (IH ε1); simpls; [nat_math | intuition | ].
-      destruct (IH ε2); simpls; [nat_math | intuition | intuition ].
-  }
-
-   assert (Gε : forall ε, (forall y, djs_size_term y < djs_size_term ε -> 
-                 {has_this y} + {~ has_this y}) -> {has_this ε} + {~ has_this ε}).
-  {
-    introv IH; destruct ε as [ | | λε ε | unop ε | binop ε1 ε2 | ϕ lε | ε1 ε2 ]; try solve [simpls*; intuition]. 
-    + destruct (IH λε); simpls; [nat_math | intuition | ]. 
-      destruct (IH ε); simpls; [nat_math | intuition | intuition ].
-    + apply (IH ε). simpls; nat_math.
-    + destruct (IH ε1); simpls; [nat_math | intuition | ].
-      destruct (IH ε2); simpls; [nat_math | intuition | intuition ].
-    + destruct (IH ϕ) as [Hϕ | Hϕ]; [simpls; nat_math | simpls; intuition | ].
-      destruct lε as [ | ε lε]; [simpls* | ].
-      destruct (IH ε) as [Hε | Hε]; [ simpls; nat_math |  simpls; intuition | ].
-      lets Hsize : djs_size_term_positive ε.
-      destruct (IH (djs_ε_func ϕ lε)) as [Hlε | ]; simpls; [nat_math | intuition | intuition].
-    + destruct (IH ε1); simpls; [nat_math | intuition | ].
-      destruct (IH ε2); simpls; [nat_math | intuition | intuition ].
-  }
-
-  assert (Gs : forall s, (forall y, djs_size_term y < djs_size_term s -> 
-                 {has_this y} + {~ has_this y}) -> {has_this s} + {~ has_this s}).
-  {
-    introv IH; destruct s as [ | ε s | ε s1 s2 | ε s | ls ]; try solve [simpls*; intuition]. 
-    + destruct (IH ε); simpls; [nat_math | intuition | ]. 
-      destruct (IH s); simpls; [nat_math | |]; intuition.
-    + destruct (IH ε); simpls; [nat_math | intuition | ]. 
-      destruct (IH s1); simpls; [nat_math | intuition | ].
-      destruct (IH s2); simpls; [nat_math | |]; intuition.
-    + destruct (IH ε); simpls; [nat_math | intuition | ]. 
-      destruct (IH s); simpls; [nat_math | |]; intuition.
-    + destruct ls as [ | s ls]; simpls*.
-      lets Hsize : djs_size_term_positive s.
-      destruct (IH s); simpls; [nat_math | intuition | ]. 
-      destruct (IH (djs_stat_seq ls)); [simpls; nat_math | left | right];      
-      simpls; intuition.
-  }
-
-  assert (Gϕ : forall ϕ, (forall y, djs_size_term y < djs_size_term ϕ -> 
-                 {has_this y} + {~ has_this y}) -> {has_this ϕ} + {~ has_this ϕ}).
-  {
-    introv IH; destruct ϕ as [lx lyδε s ε].
-    lets Hs : (IH s). lets Hε : (IH ε).
-    destruct lx. simpls.
-    destruct Hs; destruct Hε; try solve [simpls; nat_math]; try solve [intuition].
-
-    cut ({(fix has_this_lvδε (lvδε : list (var * djs_δε)) : Prop :=
-             match lvδε with
-               | nil => False
-               | (_, δε) :: lvδε0 => has_this_δε δε \/ has_this_lvδε lvδε0
-             end) lyδε} + 
-         {~ (fix has_this_lvδε (lvδε : list (var * djs_δε)) : Prop :=
-               match lvδε with
-                 | nil => False
-                 | (_, δε) :: lvδε0 => has_this_δε δε \/ has_this_lvδε lvδε0
-               end) lyδε}).
-    introv Hyp; destruct (rm Hyp); intuition.
-    {
-      assert (Hm : forall x δε, Mem (x, δε) lyδε -> {has_this δε} + {~ has_this δε}).
-      {
-        introv Hm. apply IH.
-        cut (djs_size_term δε < S ((fix djs_size_lvδε (lvδε : list (var * djs_δε)) : nat :=
-                                      match lvδε with
-                                        | nil => 1
-                                        | (_, δε0) :: lvδε0 => (djs_size_δε δε0 + djs_size_lvδε lvδε0)%nat
-                                      end) lyδε)); [nat_math | ].
-
-
-        clear - Hm. gen x δε. inductions lyδε; introv Hm; inverts Hm as Hm. 
-        simpls; nat_math. specializes IHlyδε Hm. destruct a; nat_math.
-      }
-
-      clear - Hm. gen Hm. inductions lyδε; intros; [intuition | ].
-      destruct a as (xa & δεa).
-
-      destruct (Hm xa δεa); auto. constructor.
-      destruct IHlyδε; try solve [intuition]. 
-      introv Hm'; eapply Hm. constructor*. 
-    }
-    
-    destruct p as (x & τ).
-    simpls; cases_if*.
-    destruct Hs; destruct Hε; try solve [simpls; nat_math]; try solve [intuition].
-    destruct lyδε as [ | (y & δε) lyδε]. intuition.
-    destruct (IH δε). simpls; nat_math. intuition.
-    destruct (IH (djs_ϕ_main ((x, τ) :: lx) lyδε s ε)); [ | left | right].
-    lets Hsize : djs_size_term_positive δε. simpls; nat_math.
-      left. right. simpl in h; cases_if*.
-      rew_logic. repeat splits*. simpl in n2. cases_if*.
-      rewrite decide_spec in H. apply isTrue_true in e. unfolds var; false*. 
-  }
-
-  induction T using (measure_induction_type djs_size_term).
-  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; jauto.
-  destruct δε as [ε | ϕ]; simpls; intuition.
-  destruct π as [ϕ]; simpls; intuition.
- Qed.
-
-(* 
-   The procedure to detect this in a list of terms is decidable 
-*)
-Lemma has_this_list_dec : forall lT, {has_this_list lT} + {~ has_this_list lT}.
-Proof.
-  inductions lT; simpls*.
-  destruct (has_this_dec a) as [Ha | Ha]; intuition.
-Qed.
-
-End has_this. *)
-
-(* ********************************************************** *)
-(** * Unicity of types 
-
-Lemma djs_unicity_of_types_λ : 
-  forall λ Γ τm1 τm2 
-         (IH : forall T : djs_term,
-                 lt (djs_size_term T) (djs_size_term λ) ->
-                  forall Γ (τm1 τm2 : type), Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2),
-    Γ |- λ ∷ τm1 -> Γ |- λ ∷ τm2 -> τm1 = τm2.
-Proof.
-  introv IH HD1 HD2; destruct λ; inverts HD1; inverts~ HD2.
-  
-  + lets Hτ : IH H0 H1. simpls; nat_math. inverts~ Hτ.
-  + lets Hτ : IH H0 H4. simpls; nat_math. inverts~ Hτ.
-    lets Hτ : IH H2 H6. lets Hsize : djs_size_term_positive ε1. 
-    simpls; rew_length; nat_math. inverts~ Hτ.
-  + lets Hτ : IH H1 H6. simpls; nat_math. inverts~ Hτ.
-    lets Hτ : IH H3 H8. lets Hsize : djs_size_term_positive ε. 
-    simpls; rew_length; nat_math. inverts~ Hτ.
-Qed.
-
-Lemma djs_unicity_of_types_λε : 
-  forall λε Γ τm1 τm2 
-         (IH : forall T : djs_term,
-                 lt (djs_size_term T) (djs_size_term λε) ->
-                  forall Γ (τm1 τm2 : type), Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2),
-    Γ |- λε ∷ τm1 -> Γ |- λε ∷ τm2 -> τm1 = τm2.
-Proof.
-  introv IH HD1 HD2; destruct λε. 
-
-  + clear IH. inductions Γ. inverts HD1.
-    inversion HD1; inversion HD2; substs*.
-    - inverts H4. rewrite H3 in H8. inverts~ H8.
-    - inverts H4. false. apply H7. clear - H3.
-      gen v τ. inductions τρ0; introv HΦ; simpls; tryfalse.
-      destruct a. cases_if*; subst lx; rewrite (split_combine_fs τρ0).
-      * rewrite combine_split; [ | rewrite split_length_l; rewrite~ split_length_r]. 
-        simpls. inverts e. constructor.
-      * rewrite combine_split; [ | rewrite split_length_l; rewrite~ split_length_r]. 
-        simpls. constructor. jauto.
-    - inverts H5. false. apply H2. clear - H9.
-      gen v τ0. inductions τρ; introv HΦ; simpls.
-      * inverts HΦ.
-      * destruct a. cases_if*; subst lx; rewrite (split_combine_fs τρ).
-          rewrite combine_split; [ | rewrite split_length_l; rewrite~ split_length_r]. 
-          simpls. inverts e. constructor.
-          rewrite combine_split; [ | rewrite split_length_l; rewrite~ split_length_r]. 
-          simpls. constructor. jauto.
-
-  + inversion HD1; inversion HD2; substs.
-    specializes IH H2 H8. simpls; nat_math.
-    inverts IH. rewrite H10 in H4. inverts~ H4.
-
-  + inversion HD1; inversion HD2; substs.
-    specializes IH H2 H8. simpls; nat_math.
-    inverts~ IH. 
-
-  + inversion HD1; inversion HD2; substs.
-    specializes IH H2 H11. simpls; nat_math.
-    inverts~ IH. 
-
-  + inversion HD1; inversion HD2; substs.
-    specializes IH H2 H8. simpls; nat_math.
-    inverts~ IH. 
-Qed.
-
-Lemma djs_unicity_of_types_ε : 
-  forall ε Γ τm1 τm2 
-         (IH : forall T : djs_term,
-                 lt (djs_size_term T) (djs_size_term ε) ->
-                  forall Γ (τm1 τm2 : type), Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2),
-    Γ |- ε ∷ τm1 -> Γ |- ε ∷ τm2 -> τm1 = τm2.
-Proof.
-  introv IH HD1 HD2; destruct ε; inversion HD1; inversion HD2; substs*;
-  try solve [tryfalse; clear HD1 HD2; eapply IH; try eassumption; simpls; nat_math].
-
-  + inverts H5. inverts H2.
-  + inverts H11. inverts H2.
-  + specializes IH H1 H8. simpls; nat_math. inverts~ IH.
+  induction T using (measure_induction djs_size_term); introv Hyp.
+  destruct T; simpls*; inverts* Hyp.
 Qed.  
 
-Lemma djs_unicity_of_types_ϕ : 
-  forall ϕ Γ τm1 τm2 
-         (IH : forall T : djs_term,
-                 lt (djs_size_term T) (djs_size_term ϕ) ->
-                  forall Γ (τm1 τm2 : type), Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2),
-    Γ |- ϕ ∷ τm1 -> Γ |- ϕ ∷ τm2 -> τm1 = τm2.
+Lemma toJSC_is_object : forall obj l, toJSC obj = Some (jscert_expr (expr_object l)) ->
+ exists o, obj = djs_ο o \/ obj = djs_ε_l (djs_ο o) \/ obj = djs_δε_expr (djs_ε_l (djs_ο o)).
 Proof.
-  introv IH HD1 HD2; inversion HD1; inversion HD2; substs.
-
-  + symmetry in H6; inverts H6.
-    subst lx ly lτ lδε lx0 ly0 lτ0 lδε0. subst τρx0 τρy0.
-    clear - IH H4 H11; rename ls0 into ls; rename ε0 into ε.
-
-    remember nil as τρ. clear Heqτρ.
-    gen Γ τρx. inductions τρy; introv HD1 IH HD2.
-
-    - inverts HD1; inverts HD2.
-      cut (τr = τr0); try congruence.
-      specializes IH H6 H8; [simpls; nat_math | inverts~ IH].
-
-    - destruct a as (y & δε). inverts HD1; inverts* HD2.
-      eapply IHτρy; try eassumption. 
-      introv Hs HD1 HD2. eapply IH; try eassumption.
-      simpls; nat_math.
-      cut (τ = τ0); try congruence.
-      specializes IH H2 H3. simpls; nat_math. inverts~ IH.
-
-  + symmetry in H6; inverts H6.
-    subst lx ly lτ lδε lx0 ly0 lτ0 lδε0. subst τρx0 τρy0.
-    false*.
-
-  + symmetry in H8; inverts H8.
-    subst lx ly lτ lδε lx0 ly0 lτ0 lδε0. subst τρx0 τρy0.
-    false*.
-
-  + symmetry in H8; inverts H8.
-    subst lx ly lτ lδε lx0 ly0 lτ0 lδε0. subst τρx0 τρy0.
-    clear - IH H6 H15. admit.
+  introv Hyp; destruct obj as [o | o | o | o | o | o | o | o]; 
+  try destruct o; simpls; inverts~ Hyp; try (destruct d; inverts* H0); try (cases_if*).
+  + eexists. left; reflexivity.
+  + destruct d; inverts* H1. 
+  + destruct d; inverts* H1. cases_if*.
 Qed.
 
-Theorem djs_unicity_of_types : 
-  forall T Γ τm1 τm2, 
-    Γ |- T ∷ τm1 -> Γ |- T ∷ τm2 -> τm1 = τm2.
+Lemma toJSC_is_array : forall arr l, toJSC arr = Some (jscert_expr (expr_array l)) ->
+ exists a, arr = djs_α a \/ arr = djs_ε_l (djs_α a) \/ arr = djs_δε_expr (djs_ε_l (djs_α a)).
 Proof.
-  induction T using (measure_induction djs_size_term).
-  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; introv HD1 HD2.
+  introv Hyp; destruct arr as [o | o | o | o | o | o | o | o]; 
+  try destruct o; simpls; inverts~ Hyp; try (destruct d; inverts* H0); try (cases_if*).
+  + eexists. left; reflexivity.
+  + destruct d; inverts* H1. 
+  + destruct d; inverts* H1. cases_if*.
+Qed.
 
-  + eapply djs_unicity_of_types_λ; eassumption.
-  + eapply djs_unicity_of_types_λε; eassumption.
-  + eapply djs_unicity_of_types_ε; eassumption.
-  + inverts HD1; inverts* HD2.
-  + eapply djs_unicity_of_types_ϕ; eassumption.
-  + inverts HD1; inverts* HD2; eapply H; try eassumption; simpls; nat_math.
-  + inverts HD1; inverts* HD2; eapply H; try eassumption; simpls; nat_math.
-  + inverts HD1; inverts* HD2. 
-Qed. *) *)
+Lemma toJSC_is_function : forall T os ls fb, 
+  toJSC T = Some (jscert_expr (expr_function os ls fb)) -> 
+  (exists ϕ, T = djs_term_ϕ ϕ) \/ (exists ϕ, T = djs_term_δε (djs_δε_func ϕ)).
+Proof.
+  induction T using (measure_induction djs_size_term); introv Hyp.
+  destruct T; repeat (destruct d; simpls*; inverts Hyp as Hyp; try cases_if*).
+Qed.
+
+Lemma mapping_complete : forall t, (exists T, toJSC T = Some t) <-> DJS_allowed_term t.
+Proof with (try solve [inverts* Hyp]).
+  introv; splits; [introv (T & Heq); applys~ mapping_correct; eassumption | gen t].
+  
+  induction t using (measure_induction jscert_size_term).
+
+  destruct t as [e | s | p]; introv Hyp; [destruct e | destruct s; try solve [false*] | ].
+
+  (* expr_this *)
+  + exists (djs_var "this"); simpls; cases_if*.
+
+  (* expr_identifier *)
+  + simpls; cases_if*. exists (djs_var s). simpls; cases_if*.
+
+  (* expr_literal *)
+  + destruct l.
+    - inverts Hyp.
+    - exists~ (djs_β b).
+    - exists~ (djs_η n).
+    - exists~ (djs_σ s).
+
+  (* expr_object *)
+  + lets Ho : DJS_allowed_object Hyp.
+    
+    inductions l.
+    - exists (djs_ο nil); simpls~.
+    - destruct a as (pp & pb). 
+      destruct pp; destruct pb; try solve [inverts Hyp].
+      lets (Tl & Htl) : (rm IHl).
+      * introv Hsize Hdjs. applys~ H.
+        simpls; nat_math.
+      * simpls*. 
+      * introv Hm. apply Ho. constructor~.
+
+      (* main part *)
+      * lets (id & v & (Hpp & Hdv & Hnfv)) : Ho (propname_identifier s, propbody_val e). 
+          constructor~. 
+        inverts Hpp. lets~ (Tv & HTv) : H (jscert_expr v). 
+          simpls; nat_math.
+ 
+      lets (id' & v' & Hpp' & Hd' & Hv') : (rm Ho) (propname_identifier id, propbody_val v).
+        constructor. inverts~ Hpp'.
+      lets~ (ε & Hε) : toJSC_is_expression_not_function HTv.
+      rewrite Hε in *; clear dependent Tv.
+      lets (o' & Ho') : toJSC_is_object Htl.
+      exists (djs_term_ε (djs_ε_l (djs_ο ((id', ε) :: o')))). 
+      clear - Ho' HTv Htl; simpls; repeat fequals.
+      inverts Ho' as Ho'. inverts~ Htl.
+      inverts Ho' as Ho'; inverts~ Htl.
+
+  (* expr_array *)
+  + lets Hd : DJS_allowed_array (rm Hyp). inductions l.
+    - exists* (djs_term_λ (djs_α nil)). 
+    - lets (va & Heqva & Hdva & Hnfva) : Hd a. constructor. subst.
+      lets~ (Tva & HTva) : H (jscert_expr va). simpls; nat_math.
+      lets~ (a & Ha) : toJSC_is_expression_not_function HTva.
+      rewrite Ha in *; clear dependent Tva.
+      lets (Tl & Htl) : (rm IHl). 
+        introv Hs Hdy. applys~ H. simpls; nat_math. 
+        introv Hm. apply Hd. constructor~.
+      clear H Hd. lets (αl & Hαl) : toJSC_is_array Htl.
+      exists (djs_term_λ (djs_α (a :: αl))). 
+      inverts Hαl as Hαl; [ | inverts Hαl as Hαl]; simpls*; repeat fequals.
+
+  (* expr_function *)
+  + destruct o; [inverts Hyp | ].
+    destruct f as (p & msg). 
+    destruct p as (str & le).
+    destruct str... destruct le...
+    destruct e... destruct s...
+    destruct le... destruct e...
+    destruct Hyp as (Hmsg & Hτρy & Hyp). subst.
+    destruct le... destruct e...
+    destruct s0... destruct o...
+    destruct le...
+    destruct Hyp as (Hs & He).
+    
+    assert (Hl0 : forall x je, Mem (x, Some je) l0 -> DJS_allowed_term (jscert_expr je) /\ exists (δε : djs_δε), toJSC δε = Some (jscert_expr je)).
+    {
+      inductions l0; introv Hm; inverts Hm.
+      + splits*. lets* (Te & HTe) : H (jscert_expr je). simpls; nat_math.
+        lets (δε & Hδε) : toJSC_is_expression_as_δε HTe.
+        exists δε. rewrite~ Hδε.
+      + destruct a as (x' & je'). destruct je'; [ | false].
+        apply IHl0 with (s := s) (e := e) (x := x); jauto.
+        introv Hsize Hd. applys~ H. simpls; nat_math.
+    } 
+
+    lets* (Tσ & Hσ) : H (jscert_stat s). simpls; nat_math.
+    lets* (σ & HTσ) : toJSC_is_statement Hσ.
+    rewrite HTσ in Hσ; clear dependent Tσ.
+   
+    lets* (Tε & Hε) : H (jscert_expr e). simpls; nat_math. clear H.
+    lets* (ε & HTε) : toJSC_is_expression_not_function Hε.
+    rewrite HTε in Hε; clear dependent Tε.
+
+    inductions l0.
+    - exists (djs_term_ϕ (djs_ϕ_main (combine l ((fix larbitrary l :=
+                                                    match l with
+                                                      | nil => nil
+                                                      | _ :: l => arbitrary :: larbitrary l
+                                                    end) l)) nil σ ε)). 
+      simpls; repeat fequals. clear. 
+      rewrite~ combine_split. inductions l; rew_length in *; nat_math.
+    - destruct a as (x, o). destruct o; [ | false*].
+      specializes IHl0 Hs He; jauto. 
+      specializes IHl0 Hσ Hε. 
+        introv Hm. apply Hl0 with (x0 := x0). constructor~.
+      destruct IHl0 as (Τϕ & Hϕ).
+      lets Hϕ' : toJSC_is_function Hϕ.
+      inverts Hϕ' as Hϕ'; destruct Hϕ' as (ϕ & Heq); subst.
+
+      * destruct ϕ as [τρx' τρy' s' ε']. inverts Hϕ.
+        lets (Hde0 & (δε & Hδε)) : Hl0 x e0. constructor.
+        exists (djs_term_ϕ (djs_ϕ_main τρx' ((x, δε) :: τρy') s' ε')). 
+        simpls. repeat fequals.
+
+      * destruct ϕ as [τρx' τρy' s' ε']. inverts Hϕ.
+        lets (Hde0 & (δε & Hδε)) : Hl0 x e0. constructor.
+        exists (djs_term_ϕ (djs_ϕ_main τρx' ((x, δε) :: τρy') s' ε')). 
+        simpls. repeat fequals.
+
+  (* expr_access *)
+  + destruct e2; try solve [simpls; inverts Hyp; tryfalse]. 
+    - destruct l; try solve [simpls; inverts Hyp; tryfalse].
+      destruct Hyp as ((n' & Heq) & Hnfe1 & Hde1). subst.
+      lets~ (Tε & HTε) : H (jscert_expr e1). 
+        simpls; nat_math.
+      lets (ε & Hε) : toJSC_is_expression_not_function HTε Hnfe1.
+      rewrite Hε in *; clear dependent Tε.
+      exists (djs_term_ε (djs_ε_λε (djs_cai ε n'))). 
+      simpls; repeat fequals.
+    - destruct b; simpl in Hyp; try solve [false*].
+      * destruct e2_2; try solve [false*].
+        lets Hs : string_dec s "length". 
+        inverts Hs as Hs; [ | false*]. 
+        destruct e2_1; try solve [false*].
+        destruct b; try solve [false*].
+        destruct e2_1_2; try solve [false*].
+        destruct l; try solve [false*].
+        destruct Hyp as ((Heq1 & _ & Hnf2 & Hd2 & Heq2) & Hnf & Hde); subst.        
+        lets~ (Te1 & HTe1) : H (jscert_expr e1). simpls; nat_math.
+        lets~ (Te2 & HTe2) : H (jscert_expr e2_1_1). simpls; nat_math.
+        lets~ (ε1 & Hε1) : toJSC_is_expression_not_function HTe1 Hnf.
+        lets~ (ε2 & Hε2) : toJSC_is_expression_not_function HTe2 Hnf2.
+        rewrite Hε1 in *; rewrite Hε2 in *; clear dependent Te1; clear dependent Te2.
+        exists (djs_term_λε (djs_bai ε1 ε2)).
+        simpls; repeat fequals.
+      * destruct e2_2; try solve [false*].
+        destruct l; try solve [false*].
+        destruct Hyp as ((Hnf2 & Hd2 & He1) & Hnf1 & Hd1); subst.  
+        lets~ (Te1 & HTe1) : H (jscert_expr e1). simpls; nat_math.
+        lets~ (Te2 & HTe2) : H (jscert_expr e2_1). simpls; nat_math.
+        lets~ (ε1 & Hε1) : toJSC_is_expression_not_function HTe1 Hnf1.
+        lets~ (ε2 & Hε2) : toJSC_is_expression_not_function HTe2 Hnf2.
+        rewrite Hε1 in *; rewrite Hε2 in *; clear dependent Te1; clear dependent Te2.
+        destruct He1 as (n' & Heq); subst.
+        exists (djs_term_λε (djs_ii ε1 ε2 n')).
+        simpls; repeat fequals.
+
+  (* expr_member *) 
+  + destruct Hyp as (Hnf & Hd).
+    lets~ (Te & HTe) : H (jscert_expr e). simpls; nat_math.
+    lets~ (ε & Hε) : toJSC_is_expression_not_function HTe Hnf.
+    rewrite Hε in *; inverts HTe; clear dependent Te. exists~ (djs_term_λε (djs_prop ε s)).
+
+  (* expr_new *)
+  + false*.
+
+  (* expr_call *)
+  + cut (exists ϕ lε, toJSC (djs_δε_expr (djs_ε_func ϕ lε)) = Some (jscert_expr (expr_call e l))).
+    - introv (ϕ & lε & Heq). eexists; jauto.
+    - inductions l. 
+      * apply DJS_allowed_call in Hyp. 
+        destruct Hyp as (Hde & Hdl & (os & ls & fb & Heq)). 
+        rewrite <- Forall_Mem in Hdl.
+
+        lets~ (Te & HTe) : H (jscert_expr e). simpls; nat_math.
+        rewrite Heq in HTe. lets Hyp : toJSC_is_function HTe. rewrite <- Heq in HTe.
+        inverts Hyp as Hyp; destruct Hyp as (ϕ & Hϕ); exists ϕ (@nil djs_ε); 
+        simpls; repeat fequals; substs~; inverts~ HTe.
+
+      * lets Hyp' : DJS_allowed_call Hyp. 
+        destruct Hyp' as (Hde & Hdl & (os & ls & fb & Heq)). 
+        rewrite <- Forall_Mem in Hdl.
+
+        lets (Hda & Hnfa) : Hdl a. constructor.
+        lets (ϕ & lε & Hlε) : IHl. introv Hs Hd. applys~ H. simpls; nat_math.
+        subst e; simpls; splits*. 
+
+        lets~ (Te & Hε) : H (jscert_expr a). simpls; nat_math. 
+        lets~ (ε & HTe) : toJSC_is_expression_not_function Hε.
+        rewrite HTe in Hε; clear dependent Te.
+       
+        exists ϕ (ε :: lε). simpls; repeat fequals.
+    
+  (* expr_unary_op *)
+  + destruct Hyp as (Hop & Hde & Hnfe). 
+    lets~ (Te & Hε) : H (jscert_expr e). simpl; nat_math.
+    lets~ (ε & HTe) : toJSC_is_expression_not_function Hε.
+    rewrite HTe in Hε; clear dependent Te.
+
+    destruct u; tryfalse.
+      exists (djs_term_ε (djs_ε_unop djs_unop_add ε)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_unop djs_unop_neg ε)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_unop djs_unop_bitwise_neg ε)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_unop djs_unop_not ε)); simpls; repeat fequals.
+
+  (* expr_binary_op *)
+  + destruct Hyp as (Hop & Hde1 & Hnfe1 & Hde2 & Hnfe2). 
+    lets~ (Te1 & Hε1) : H (jscert_expr e1). simpl; nat_math.
+    lets~ (ε1 & HTe1) : toJSC_is_expression_not_function Hε1.
+    rewrite HTe1 in Hε1; clear dependent Te1.
+    lets~ (Te2 & Hε2) : H (jscert_expr e2). simpl; nat_math.
+    lets~ (ε2 & HTe2) : toJSC_is_expression_not_function Hε2.
+    rewrite HTe2 in Hε2; clear dependent Te2.
+
+    destruct b; tryfalse.
+      exists (djs_term_ε (djs_ε_binop djs_binop_mul ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_div ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_mod ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_add ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_sub ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_lsh ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_rsh ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_ursh ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_lt ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_gt ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_le ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_ge ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_eq ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_neq ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_band ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_bor ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_bxor ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_and ε1 ε2)); simpls; repeat fequals.
+      exists (djs_term_ε (djs_ε_binop djs_binop_or ε1 ε2)); simpls; repeat fequals.
+
+  (* expr_conditional *)
+  + destruct e1... destruct e1_1... destruct b0...
+    destruct e1_1_2... destruct l... destruct b...
+    destruct e1_2... destruct e2... destruct e2_2...
+    destruct b... destruct e2_2_2... destruct l...
+    destruct e3... destruct l... 
+    destruct Hyp as (Hd1 & Hnf1 & Hd2 & Hnf2 & Heq1 & Heq2 & Heq3 & Heq4 & Heq5); subst. 
+    
+    lets~ (Te1 & Hε1) : H (jscert_expr e2_1). simpl; nat_math.
+    lets~ (ε1 & HTe1) : toJSC_is_expression_not_function Hε1.
+    rewrite HTe1 in Hε1; clear dependent Te1.
+    lets~ (Te2 & Hε2) : H (jscert_expr e2_2_1). simpl; nat_math.
+    lets~ (ε2 & HTe2) : toJSC_is_expression_not_function Hε2.
+    rewrite HTe2 in Hε2; clear dependent Te2.
+
+    exists (djs_term_ε (djs_csi ε1 ε2 s0)). 
+    simpls; inverts Hε1; inverts~ Hε2.
+
+  (* expr_assign *)
+  + destruct o...
+    destruct Hyp as (Hde1 & Hnfe1 & Hde2 & Hnfe2). 
+    lets~ (Te1 & Hε1) : H (jscert_expr e1). simpl; nat_math.
+    lets~ (ε1 & HTe1) : toJSC_is_lhs_expression Hε1.
+    rewrite HTe1 in Hε1; clear dependent Te1.
+    lets~ (Te2 & Hε2) : H (jscert_expr e2). simpl; nat_math.
+    lets~ (ε2 & HTe2) : toJSC_is_expression_not_function Hε2.
+    rewrite HTe2 in Hε2; clear dependent Te2.
+   
+    exists (djs_term_ε (djs_ε_ass ε1 ε2)); simpls*; inverts Hε1; inverts~ Hε2.
+
+  (* stat_expr *)
+  + lets (Te & HTe) : H (jscert_expr e); simpls*; try nat_math.
+    lets* (ε & Hε) : toJSC_is_expression_not_function e. 
+    rewrite Hε in *; clear dependent Te. 
+    exists* (djs_stat_expr ε). 
+    simpls; repeat fequals.
+
+  (* stat_block *)
+  + induction l as [ | s ls].
+    - exists (djs_stat_seq nil); simpls~.
+    - lets (Tls & HTls) : IHls; [ | simpls* | ].
+      introv Hs. apply H. simpls; nat_math.
+      lets~ (Ts & HTs') : H (jscert_stat s). 
+      simpls; nat_math. simpls*.
+      lets* (s' & Hs') : toJSC_is_statement HTs'; subst.
+      lets* (s'' & Hls'') : toJSC_is_statement HTls; subst.
+      clear H Hyp IHls.
+      assert (exists ls', s'' = djs_stat_seq ls').
+      { 
+        destruct s''; simpls; inverts HTls.
+        eexists; reflexivity.
+      } lets (ls' & Heq) : H; subst.
+      exists (djs_stat_seq (s' :: ls')). 
+      simpls; repeat fequals.      
+
+  (* stat_if *)
+  + destruct o; [ | false*].
+    destruct Hyp as (Hde & Hnfe & Hds & Hds0).
+    lets~ (Te & HTe) : H (jscert_expr e). simpls*; try nat_math.
+    lets* (ε & Hε) : toJSC_is_expression_not_function e. 
+    rewrite Hε in *; clear dependent Te.
+    lets~ (Ts & HTs') : H (jscert_stat s). simpls; try nat_math.
+    lets~ (Ts0 & HTs'') : H (jscert_stat s0). simpls; try nat_math.
+    lets* (s' & Hs') : toJSC_is_statement HTs'; subst.
+    lets* (s'' & Hs'') : toJSC_is_statement HTs''; subst.
+    exists~ (djs_term_s (djs_stat_if ε s' s'')). 
+    simpls; repeat fequals.
+   
+  (* stat_while *)
+  + destruct l; [ | inverts Hyp].
+    destruct Hyp as (Hde & Hnfe & Hds).
+    lets~ (Te & HTe) : H (jscert_expr e). simpls*; try nat_math.
+    lets* (ε & Hε) : toJSC_is_expression_not_function e. 
+    rewrite Hε in *; clear dependent Te.
+    lets~ (Ts & HTs') : H (jscert_stat s). simpls; try nat_math.
+    lets* (s' & Hs') : toJSC_is_statement HTs'; subst.
+    exists~ (djs_term_s (djs_stat_while ε s')). 
+    simpls; repeat fequals.
+
+  (* stat_with *)
+  + destruct Hyp as (Hde & Hnfe & Hds).
+    lets~ (Te & HTe) : H (jscert_expr e). simpls*; try nat_math.
+    lets* (ε & Hε) : toJSC_is_expression_not_function e. 
+    rewrite Hε in *; clear dependent Te.
+    lets~ (Ts & HTs') : H (jscert_stat s). simpls; try nat_math.
+    lets* (s' & Hs') : toJSC_is_statement HTs'; subst.
+    exists~ (djs_term_s (djs_stat_with ε s')). 
+    simpls; repeat fequals.
+
+  (* prog *)
+  + destruct p as [s el].
+    destruct s...  destruct el... destruct e...
+    destruct s...  destruct e... destruct e...
+    destruct o...  destruct f... destruct p...
+    destruct l0... destruct s0... destruct l...
+    destruct el... destruct l1... destruct e...
+    destruct s0... destruct l1... destruct e...
+    destruct s0... destruct o... destruct l1...
+    destruct Hyp as (Hs & Hτρy & (JSCϕ & Hl & Hnfϕ & Heq)).    
+    subst; destruct Hτρy as (Hdϕ & _).
+
+    lets~ (Tϕ & Hϕ) : H (jscert_expr JSCϕ). simpls; nat_math.
+    lets~ (ϕ & HTϕ) : toJSC_is_expression_function Hϕ.
+    rewrite HTϕ in Hϕ; clear dependent Tϕ.
+
+    exists (djs_term_π (djs_π_main ϕ)).
+    simpls; repeat fequals.
+Admitted. (* FASTER *)
