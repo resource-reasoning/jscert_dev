@@ -37,28 +37,28 @@ Qed.
 (* *********************************************************************** *)
 (**  Retrieving information from an indexed list - last occurrence matters *)
 
-Section lookup.
+Section Φ.
 
 Context (T : Type).
 Context (T_dec : forall (t1 t2 : T), {t1 = t2} + {~ t1 = t2}).
 
-Fixpoint lookup {T : Type} (ρ : list (string * T)) (idx : string) : option T :=
+Fixpoint Φ {T : Type} (ρ : list (string * T)) (idx : string) : option T :=
 match ρ with
  | nil => None
- | (id, t) :: ρ => let Lρ := lookup ρ idx in
-                   ifb (id = idx) then match Lρ with 
+ | (id, t) :: ρ => let Φρ := Φ ρ idx in
+                   ifb (id = idx) then match Φρ with 
                                         | None => Some t
-                                        | _    => Lρ
+                                        | _    => Φρ
                                        end
-                                  else Lρ
+                                  else Φρ
 end.
 
-Lemma lookup_dec : forall (ρ : list (string * T)) idx oT, {lookup ρ idx = oT} + {~ lookup ρ idx = oT}.
+Lemma Φ_dec : forall (ρ : list (string * T)) idx oT, {Φ ρ idx = oT} + {~ Φ ρ idx = oT}.
 Proof.
   induction ρ as [ | (x & τ) ρ]; introv; simpls.
   + destruct oT; [right | left]; auto; try discriminate. 
   + destruct (string_dec x idx); cases_if*. 
-    - destruct (lookup ρ idx); jauto.
+    - destruct (Φ ρ idx); jauto.
       * destruct oT; [ | right; discriminate].
         destruct ((rm T_dec) t t0) as [Heq | Hneq]; subst; jauto.
         right; fequals. 
@@ -68,7 +68,7 @@ Proof.
     - rewrite decide_spec in H. apply isTrue_false in n. false*. 
 Qed.
 
-End lookup.
+End Φ.
 
 (* ******************************************** *)
 (**  Auxiliary decidability lemmas              *)
@@ -105,8 +105,8 @@ Qed.
 
 End aux_dec_lemmas. 
 
-(***********************)
-(** ** Variables       *)
+(*************************************************************)
+(** ** Variables and patched finite maps on variables        *)
 
 Definition var := string.
 
@@ -115,37 +115,48 @@ Definition var := string.
 (** ** Types and Environments for DefensiveJS                 *)
 
 (* Types *)
-Inductive type : Type :=
- | τη : type (* numbers   *)
- | τβ : type (* booleans  *)
- | τσ : type (* strings   *)
- | τυ : type (* undefined *)
- | το : list (var * type) -> type                      (* object   *)
- | τα : type -> nat -> type                            (* array    *)
- | τϕ : list type -> type -> type                      (* function *)
- | τμ : list type -> list (var * type) -> type -> type (* method   *)
+Inductive τ_main : Type :=
+ | τη : τ_main (* numbers   *)
+ | τβ : τ_main (* booleans  *)
+ | τσ : τ_main (* strings   *)
+ | τυ : τ_main (* undefined *)
+ | το : list (var * τ_main) -> τ_main                          (* object   *)
+ | τα : τ_main -> nat -> τ_main                                (* array    *)
+ | τϕ : list τ_main -> τ_main -> τ_main                        (* function *)
+ | τμ : list τ_main -> list (var * τ_main) -> τ_main -> τ_main (* method   *)
 .
 
-Instance inhab_type : Inhab type.
+Instance inhab_τ_main : Inhab τ_main.
 Proof. 
   constructor. exists~ τη.
 Qed.
 
 (* Object types *)
-Definition djs_obj_type := list (var * type).
+Definition djs_obj_type := list (var * τ_main).
+
+
+(**************************************************************)
+(** ** We have main and auxiliary types. Main types are
+       reserved for proper terms, whereas auxiliary types
+       are reserved for intermediate terms in pretty-big-step
+       style.                 
+ *) 
+Inductive type : Type :=
+ | type_main : τ_main -> type
+ | τξ        : type
+.
+
+Coercion type_main : τ_main >-> type.
 
 Notation "{{ ρ }}"         := (το ρ) (at level 59).
 Notation "[[ τ , n ]]"     := (τα τ n) (at level 59).
 Notation "〈 lτ → τ 〉"     := (τϕ lτ τ) (at level 59).
 Notation "《 lτ [ ρ ] → τ 》" := (τμ lτ ρ τ) (at level 59).
 
-(* Scope frame kinds *)
-Inductive κ := | κϕ : κ | κω : κ.
-
 (* Typing Environments *)
-Definition typ_env := list (djs_obj_type * κ).  
+Definition typ_env := list djs_obj_type.  
 
-Notation "∅" := (@nil (djs_obj_type * κ)) (at level 60).
+Notation "∅" := (@nil djs_obj_type) (at level 60).
 
 (**************************************************************)
 (** ** Syntactic categories                                   *)
@@ -209,14 +220,13 @@ with djs_ε :=
 (* Statements *)
 with djs_stat :=
  | djs_stat_expr  : djs_ε -> djs_stat                         (* Expressions *)
- | djs_stat_with  : djs_ε -> djs_stat -> djs_stat             (* With statement *)
  | djs_stat_if    : djs_ε -> djs_stat -> djs_stat -> djs_stat (* If statement *)
  | djs_stat_while : djs_ε -> djs_stat -> djs_stat             (* While statement *)
  | djs_stat_seq   : list djs_stat -> djs_stat                 (* A sequence of statements *)
 
 (* Functions *)
 with djs_ϕ := 
- | djs_ϕ_main : list var -> list (var * djs_δε) -> djs_stat -> djs_ε -> djs_ϕ
+ | djs_ϕ_main : djs_obj_type -> list (var * djs_δε) -> djs_stat -> djs_ε -> djs_ϕ
 
 (* Defined expressions *)
 with djs_δε :=
@@ -227,6 +237,11 @@ with djs_δε :=
 with djs_π :=
  | djs_π_main : djs_ϕ -> djs_π
 
+(* Intermediate terms *)
+with djs_iterm :=
+ | djs_εϕ_aux : list (djs_ε * τ_main) -> djs_iterm
+ | djs_ϕ_aux  : djs_obj_type -> list (var * djs_δε) -> djs_stat ->  djs_ε -> djs_obj_type -> τ_main -> djs_iterm
+
 (* Terms *)
 with djs_term :=
  | djs_term_λ  : djs_λ     -> djs_term
@@ -236,6 +251,7 @@ with djs_term :=
  | djs_term_ϕ  : djs_ϕ     -> djs_term
  | djs_term_δε : djs_δε    -> djs_term
  | djs_term_π  : djs_π     -> djs_term 
+ | djs_interm  : djs_iterm -> djs_term
 .
 
 Coercion djs_term_λ  : djs_λ     >-> djs_term.
@@ -245,10 +261,11 @@ Coercion djs_term_s  : djs_stat  >-> djs_term.
 Coercion djs_term_ϕ  : djs_ϕ     >-> djs_term.
 Coercion djs_term_δε : djs_δε    >-> djs_term.
 Coercion djs_term_π  : djs_π     >-> djs_term.
+Coercion djs_interm  : djs_iterm >-> djs_term.
 
 Definition djs_obj := list (var * djs_ε).
 
-Implicit Type τ  : type.
+Implicit Type τ  : τ_main.
 Implicit Type λ  : djs_λ.
 Implicit Type ε  : djs_ε.
 Implicit Type λε : djs_λε.
@@ -256,6 +273,7 @@ Implicit Type s  : djs_stat.
 Implicit Type ϕ  : djs_ϕ.
 Implicit Type δε : djs_δε.
 Implicit Type π  : djs_π.
+Implicit Type ι   : djs_iterm.
 Implicit Type T  : djs_term.
 Implicit Type τρ : djs_obj_type.
 Implicit Type ρ  : djs_obj.
@@ -274,42 +292,42 @@ Section Sizes.
 
 Open Local Scope nat_scope.
 
-(* Size of types *)
-Fixpoint djs_size_type τ :=
+(* Size of main types *)
+Fixpoint djs_size_τ τ :=
 match τ with
  | τη | τσ | τβ | τυ => 1
- | τα τ _ => S (djs_size_type τ) 
+ | τα τ _ => S (djs_size_τ τ) 
 
  | το τρ => S ((fix djs_size_τρ τρ : nat :=
               match τρ with 
                | nil => 1
-               | (_, τ) :: τρ => djs_size_type τ + djs_size_τρ τρ
+               | (_, τ) :: τρ => djs_size_τ τ + djs_size_τρ τρ
               end) τρ)
               
  | τϕ lτ τ => S (((fix djs_size_lτ lτ : nat :=
                    match lτ with 
                     | nil => 1
-                    | τ :: lτ => djs_size_type τ + djs_size_lτ lτ
-                   end) lτ) + djs_size_type τ)
+                    | τ :: lτ => djs_size_τ τ + djs_size_lτ lτ
+                   end) lτ) + djs_size_τ τ)
 
  | τμ lτ τρ τ => S (((fix djs_size_lτ lτ : nat :=
                       match lτ with 
                        | nil => 1
-                       | τ :: lτ => djs_size_type τ + djs_size_lτ lτ
+                       | τ :: lτ => djs_size_τ τ + djs_size_lτ lτ
                       end) lτ) +
                     ((fix djs_size_τρ τρ : nat :=
                       match τρ with 
                        | nil => 1
-                       | (_, τ) :: τρ => djs_size_type τ + djs_size_τρ τρ
-                      end) τρ) + djs_size_type τ)
+                       | (_, τ) :: τρ => djs_size_τ τ + djs_size_τρ τρ
+                      end) τρ) + djs_size_τ τ)
 end.
 
-(* Type size is always positive *)
-Lemma djs_size_type_positive : forall (τ : type), djs_size_type τ > 0.
-Proof.
-  induction τ using (measure_induction_type djs_size_type).
-  destruct τ; simpls; nat_math. 
-Qed.  
+(* Size of types *)
+Definition djs_size_type τm :=
+match τm with
+ | type_main τ => djs_size_τ τ
+ | τξ => 1
+end.
 
 (* Size of literals *)
 Fixpoint djs_size_λ λ : nat :=
@@ -360,7 +378,6 @@ end
 with djs_size_stat s :=
 match s with
  | djs_stat_expr  ε        => S (djs_size_ε ε)
- | djs_stat_with  ε  s     => S (djs_size_ε ε + djs_size_stat s) 
  | djs_stat_if    ε  s1 s2 => S (djs_size_ε ε + djs_size_stat s1 + djs_size_stat s2)
  | djs_stat_while ε  s     => S (djs_size_ε ε + djs_size_stat s) 
  | djs_stat_seq   ls       => S ((fix djs_size_ls (ls : list djs_stat) : nat :=
@@ -394,10 +411,10 @@ match π with
  | djs_π_main ϕ => S (djs_size_ϕ ϕ)
 end
 
-(* Size of intermediate terms 
+(* Size of intermediate terms *)
 with djs_size_ι ι :=
 match ι with
- | djs_εϕ_aux lετ => S ((fix djs_size_lετ (lετ : list (djs_ε * type)) : nat :=
+ | djs_εϕ_aux lετ => S ((fix djs_size_lετ (lετ : list (djs_ε * τ_main)) : nat :=
                                match lετ with 
                                 | nil => 1
                                 | (ε, _) :: lετ => djs_size_ε ε + djs_size_lετ lετ
@@ -409,7 +426,7 @@ match ι with
                                       | (_, δε) :: lvδε => djs_size_δε δε + djs_size_lvδε lvδε
                                             end) lvδε)
                                       + djs_size_stat s + djs_size_ε ε)
-end *)
+end
 
 with djs_size_term T :=
 match T with
@@ -420,6 +437,7 @@ match T with
  | djs_term_ϕ  ϕ  => djs_size_ϕ ϕ
  | djs_term_δε δε => djs_size_δε δε
  | djs_term_π  π  => djs_size_π π
+ | djs_interm  ι   => djs_size_ι ι
 end.
 
 (* Term size is always positive *)
@@ -432,7 +450,7 @@ Qed.
 End Sizes.
 
 (**************************************************************)
-(** ** Decidability of equality for types and terms           *)
+(** ** Decidability of equality for types and terms            *)
 
 (* Equality of types is decidable *)
 Lemma djs_type_eq_dec : forall (τ1 τ2 : type), {τ1 = τ2} + {τ1 <> τ2}.
@@ -440,43 +458,44 @@ Proof with (false_right; try solve [left; auto]).
   induction τ1 using (measure_induction_type djs_size_type). 
 
   destruct τ1; destruct τ2...
+  destruct τ; destruct τ0...
 
   gen l0; inductions l; destruct l0...
   destruct a; destruct p; destruct (string_dec v v0)...
-  subst. lets Hτ : X t t0. simpls; nat_math.
+  subst. lets Hτ : X τ τ0. simpls; nat_math.
   lets Hl : IHl l0. intros. apply X. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ; inverts Hl as Hl; try inverts Hl...
 
-  lets Hτ : X τ1 τ2. simpls; nat_math.
+  lets Hτ : X τ τ0. simpls; nat_math.
   lets Hn : eq_nat_dec n n0.
   inverts Hτ as Hτ; try inverts Hτ; inverts Hn...
 
-  lets Hτ : X τ1 τ2. simpls; nat_math.
+  lets Hτ : X τ τ0. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ...
   gen l0; inductions l; destruct l0...
-  lets Hτ : X a t. simpls; nat_math.
+  lets Hτ : X a τ. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ...
-  lets Hl : IHl t l0. intros. apply X. simpls; nat_math.
+  lets Hl : IHl τ0 l0. intros. apply X. simpls; nat_math.
   inverts Hl as Hl; try inverts Hl...
 
-  lets Hτ : X τ1 τ2. simpls; nat_math.
+  lets Hτ : X τ τ0. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ...
   gen l0 l1 l2; inductions l; intros; destruct l1...
   gen l2; inductions l0; intros; destruct l2...
   destruct a; destruct p; destruct (string_dec v v0)...
-  subst. lets Hτ : X t t0. simpls; nat_math.
+  subst. lets Hτ : X τ τ1. simpls; nat_math.
   lets Hl : IHl0 l2. intros. apply X. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ; inverts Hl as Hl; try inverts Hl...
-  lets Hτ : X a t. simpls; nat_math.
+  lets Hτ : X a τ. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ...
   clear IHl. gen l0 l1 l2; inductions l; intros; destruct l1...
   gen l2; inductions l0; intros; destruct l2...
   destruct a; destruct p; destruct (string_dec v v0)...
-  subst. lets Hτ : X t0 t1. simpls; nat_math.
+  subst. lets Hτ : X τ1 τ2. simpls; nat_math.
   lets Hl : IHl0 l2. intros. apply X. simpls; nat_math.
   inverts Hτ as Hτ; try inverts Hτ; inverts Hl as Hl; try inverts Hl...
-  lets Hτ : X a t0. simpls; nat_math. inverts Hτ as Hτ; try inverts Hτ...
-  lets Hl : IHl t t0 l0 l1 l2. intros. apply X. simpls; nat_math.
+  lets Hτ : X a τ1. simpls; nat_math. inverts Hτ as Hτ; try inverts Hτ...
+  lets Hl : IHl τ0 τ l0 l1 l2. intros. apply X. simpls; nat_math.
   inverts Hl as Hl; try inverts Hl...  
 Qed.
 
@@ -565,8 +584,6 @@ Proof with (false_right; try solve [left; auto]).
   
   + destruct d; destruct d0...
     - lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
-    - lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
-      lets H : X d1 d2; [simpls; nat_math | inverts H; try inverts H0]...
     - lets H : X d1 d; [simpls; nat_math | inverts H; try inverts H0]...
       lets H : X d2 d0_1; [simpls; nat_math | inverts H; try inverts H0]...
       lets H : X d3 d0_2; [simpls; nat_math | inverts H; try inverts H0]...
@@ -583,24 +600,30 @@ Proof with (false_right; try solve [left; auto]).
         destruct IHl; substs... 
 
   + destruct d; destruct d0.
-    lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
-    lets H : X d1 d2; [simpls; nat_math | inverts H; try inverts H0]...
-    cut ({l = l1} + {l <> l1}).
+    lets H : X d1 d3; [simpls; nat_math | inverts H; try inverts H0]...
+    lets H : X d2 d4; [simpls; nat_math | inverts H; try inverts H0]...
+    cut ({l = l0} + {l <> l0}). 
       * introv Hyp; destruct Hyp; [substs* | ]...
-        cut ({l0 = l2} + {l0 <> l2}). 
+        cut ({d = d0} + {d <> d0}). 
           introv Hyp; destruct Hyp; [substs* | ]...
-          inductions l0; destruct l2...
+          inductions d; destruct d0...
           destruct a; destruct p.
           destruct (string_dec v v0); substs...
-          lets H : X d d1; substs... simpls; nat_math.
-          inverts H; try inverts H0...
-          specializes IHl0 l2 d0 d2.
-          destruct IHl0; subst...
+          destruct (djs_type_eq_dec τ τ0); substs... 
+          inverts e. specializes IHd d0 l0 d3 d4.
+          destruct IHd; substs...
           introv Hs; introv. apply X. 
           simpls; nat_math.
-      * clear - l l1; inductions l; destruct* l1...
-        specializes IHl l1. lets Hav : string_dec a v.
-        inverts IHl; inverts Hav...
+      * clear d0. inductions l; destruct l0...
+        destruct a; destruct p.
+        destruct (string_dec v v0); substs...
+        lets H : X d0 d1; substs... 
+        simpls; nat_math.
+        inverts H; try inverts H0...
+        specializes IHl l0 d3 d4.
+        destruct IHl; substs...
+        introv Hs; introv. apply X. 
+        simpls; nat_math.
   + destruct d; destruct d0...
     - lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
     - lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
@@ -608,275 +631,284 @@ Proof with (false_right; try solve [left; auto]).
   + destruct d; destruct d0...
     lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
 
-Grab Existential Variables. auto.
+  + destruct d; destruct d0...
+    - cut ({l = l0} + {l <> l0}). 
+      * introv Hyp; destruct Hyp; [substs* | ]...
+      * inductions l; destruct l0...
+        destruct a; destruct p.
+        lets H : X d d0; [simpls; nat_math | inverts H; try inverts H0]...
+        destruct (djs_type_eq_dec τ τ0); substs... inverts e. 
+        specializes IHl l0.
+        introv Hs; introv. apply X. 
+        simpls; nat_math.
+        inverts IHl; substs...
+
+    - destruct (djs_type_eq_dec τ τ0); substs... inverts e. 
+      lets H : X d1 d4; [simpls; nat_math | inverts H; try inverts H0]...
+      lets H : X d2 d5; [simpls; nat_math | inverts H; try inverts H0]...
+      assert ({l = l0} + {l <> l0}).
+      {
+        clear - X. inductions l; destruct l0...
+        destruct a; destruct p.
+        destruct (string_dec v v0); substs...
+        lets H : X d0 d1; [simpls; nat_math | inverts H; try inverts H0]...
+        destruct (IHl d3 l0 d4 d5 τ0); substs...
+        introv Hs; apply X; simpls; nat_math.
+      }
+      assert ({d = d0} + {d <> d0}).
+      {
+        clear - X. inductions d; destruct d0...
+        destruct a; destruct p.
+        destruct (string_dec v v0); substs...
+        destruct (djs_type_eq_dec τ τ1); substs... inverts e.
+        destruct (IHd l d3 d0 d4 d5 τ0); substs...
+        introv Hs; apply X; simpls; nat_math.
+      }
+      assert ({d3 = d6} + {d3 <> d6}).
+      {
+        clear - X. inductions d3; destruct d6...
+        destruct a; destruct p.
+        destruct (string_dec v v0); substs...
+        destruct (djs_type_eq_dec τ τ1); substs... inverts e.
+        destruct (IHd3 d4 d5 d6 τ0); substs...
+        introv Hs; apply X; simpls; nat_math.
+      } intuition; subst...
 Qed.
 
-(**************************************************************)
-(** ** Full lookup                                            *)
-
-Fixpoint lookup_this (Γ : typ_env) : option type :=
-match Γ with
- | nil => None
- | (ρ, κ) :: Γ => match (lookup ρ "this") with
-                    | Some t => Some t
-                    | None => match κ with
-                                | κϕ => lookup_this Γ
-                                | κω => None
-                              end
-                  end
-end.
-
-Lemma κ_dec : forall (κ1 κ2 : κ), {κ1 = κ2} + {~ κ1 = κ2}.
-Proof.
-  destruct κ1; destruct κ2; auto; right; discriminate.
-Qed.
-
-Lemma lookup_this_dec : forall Γ oT, {lookup_this Γ = oT} + {~ lookup_this Γ = oT}.
-Proof.
-  inductions Γ; introv; simpls.
-  + destruct oT; [right | left]; congruence. 
-  + specializes IHΓ oT.
-    destruct a as (ρ & κ).
-    destruct (lookup ρ "this").
-    - destruct oT; [ | right; congruence].
-      destruct (djs_type_eq_dec t t0); [left | right]; congruence.
-    - destruct~ κ. destruct oT; [right | left]; congruence.    
-Qed.
 
 (**************************************************************)
 (** ** Typing                                                 *)
 
-Inductive djs_term_aux :=
- | djs_aux_func : djs_obj_type -> list (var * djs_δε) -> list djs_stat -> djs_ε -> djs_obj_type -> type -> djs_term_aux.
-
-Reserved Notation "Γ |-- Τ ∷ τ" (at level 60).
+Reserved Notation "Γ |- Τ ∷ τ" (at level 60).
 
 Inductive types : typ_env -> djs_term -> type -> Prop := 
 
  (* Literals *)
- | typing_Num    : forall Γ η, Γ |-- (djs_η η) ∷ τη 
- | typing_String : forall Γ σ, Γ |-- (djs_σ σ) ∷ τσ
- | typing_Bool   : forall Γ β, Γ |-- (djs_β β) ∷ τβ
+ | typing_Num    : forall Γ η, Γ |- (djs_η η) ∷ τη 
+ | typing_String : forall Γ σ, Γ |- (djs_σ σ) ∷ τσ
+ | typing_Bool   : forall Γ β, Γ |- (djs_β β) ∷ τβ
 
- (* Arrays *)
- | typing_Array : forall Γ τ lε, 
-                    length lε > 0 ->
-                    Forall (fun ε => Γ |-- ε ∷ τ) lε ->
-                    Γ |-- (djs_α lε) ∷ [[τ, length lε]]
+ | typing_Array_cn : forall ε τ Γ, 
+                       Γ |- ε ∷ τ -> 
+                       Γ |- (djs_α (ε :: nil)) ∷ [[τ, 1]]
 
- (* Objects *)
- | typing_Object : forall Γ ρ τρ,
-                     length ρ = length τρ ->
-                     let ρx := fst (split ρ) in
-                     let ρε := snd (split ρ) in
-                     let τρx := fst (split τρ) in
-                     let τρτ := snd (split τρ) in
-                     ρx = τρx ->  
-                     Forall (fun ετ => Γ |-- (djs_term_ε (fst (ετ))) ∷ snd (ετ)) (combine ρε τρτ) ->
-                     Γ |-- djs_ο ρ ∷ {{ τρ }}
+ | typing_Array_cc : forall ε1 τ Γ ε2 lε n,
+                       Γ |- ε1 ∷ τ -> 
+                       Γ |- djs_α (ε2 :: lε) ∷ [[τ, n]] -> 
+                       Γ |- (djs_α (ε1 :: ε2 :: lε)) ∷ [[τ, S n]]
+
+ | typing_Object_nil : forall Γ, Γ |- djs_ο nil ∷ {{ nil }}
+
+ (* 
+    Requirement : no variable can be equal to "this"
+    Choice      : variables cannot be duplicated
+ *)
+ | typing_Object_cons : forall x ε τ Γ τρ ρ, 
+                            x <> "this" ->
+                            Γ |- ε ∷ τ ->
+                            Γ |- (djs_ο ρ) ∷ {{ τρ }} ->
+                            Γ |- djs_ο ((x, ε) :: ρ) ∷ {{ (x, τ) :: τρ }}
 
  (* Left-hand-side expressions *)
- | typing_VarLoc : forall Γ τρ x τ κ, 
-                     x <> "this" ->
-                     lookup τρ x = Some τ ->
-                     ((τρ, κ) :: Γ) |-- (djs_var x) ∷ τ
+ | typing_VarLoc : forall Γ τρ x τ, 
+                     Φ τρ x = Some τ ->
+                     (τρ :: Γ) |- djs_term_λε (djs_var x) ∷ τ
 
  | typing_VarFS  : forall Γ τρ x τ,
-                     x <> "this" ->
                      let lx := fst (split τρ) in
-                     ~ Mem x lx -> Γ |-- (djs_var x) ∷ τ -> 
-                       ((τρ, κϕ) :: Γ) |-- (djs_var x) ∷ τ
+                     ~ Mem x lx -> Γ |- (djs_var x) ∷ τ -> 
+                       (τρ :: Γ) |- (djs_var x) ∷ τ
 
  | typing_Prop : forall Γ ε τρ, 
-                   Γ |-- ε ∷ (το τρ) -> 
+                   Γ |- ε ∷ (το τρ) -> 
                    forall x τ, 
-                     lookup τρ x = Some τ ->
-                     Γ |-- (djs_prop ε x) ∷ τ
-
- | typing_This : forall Γ τρ, 
-                   lookup_this Γ = Some (το τρ) ->
-                     forall x τ,
-                       x <> "this" ->
-                       lookup τρ x = Some τ ->
-                       Γ |-- (djs_prop (djs_ε_λε (djs_var "this")) x) ∷ τ
+                     Φ τρ x = Some τ ->
+                     Γ |- (djs_prop ε x) ∷ τ
 
  | typing_CAI : forall Γ ε m (η : nat) τ, 
-                Γ |-- ε ∷ (τα τ m) -> 
+                Γ |- ε ∷ (τα τ m) -> 
                 η < m ->
-                Γ |-- (djs_cai ε η) ∷ τ
+                Γ |- (djs_cai ε η) ∷ τ
 
  | typing_II : forall Γ ε ε' τ m (η : nat), 
-                 Γ |-- ε  ∷ (τα τ m) ->
-                 Γ |-- ε' ∷ τη -> η < m -> (m <= 1073741824)%Z ->
-                 Γ |-- (djs_ii ε ε' η) ∷ τ
+                 Γ |- ε  ∷ (τα τ m) ->
+                 Γ |- ε' ∷ τη -> η < m -> (m <= 1073741824)%Z ->
+                 Γ |- (djs_ii ε ε' η) ∷ τ
 
  | typing_BAI : forall Γ (ε ε' : djs_ε) τ m, 
-                  Γ |-- ε  ∷ (τα τ m) ->
-                  Γ |-- ε' ∷ τη -> 
-                  Γ |-- (djs_bai ε ε') ∷ τ
+                  Γ |- ε  ∷ (τα τ m) ->
+                  Γ |- ε' ∷ τη -> 
+                  Γ |- (djs_bai ε ε') ∷ τ
 
  (* Literals as expressions *)
  | typing_Literal : forall Γ (l : djs_λ) τ, 
-                      Γ |-- l ∷ τ -> 
-                      Γ |-- (djs_ε_l l) ∷ τ
+                      Γ |- l ∷ τ -> 
+                      Γ |- (djs_ε_l l) ∷ τ
 
  (* LHS-expressions as expressions *)
  | typing_LHS : forall Γ (λε : djs_λε) τ, 
-                  Γ |-- λε ∷ τ -> 
-                  Γ |-- (djs_ε_λε λε) ∷ τ
+                  Γ |- λε ∷ τ -> 
+                  Γ |- (djs_ε_λε λε) ∷ τ
 
  (* Casts to number from string, string from number, and anything to bool *)
- | typing_NumCast  : forall Γ ε  , Γ |-- ε ∷ τσ -> Γ |-- (djs_ε_unop djs_unop_add ε) ∷ τη
- | typing_BoolCast : forall Γ ε τ, Γ |-- ε ∷ τ  -> Γ |-- (djs_ε_unop djs_unop_not ε) ∷ τβ
+ | typing_NumCast  : forall Γ ε  , Γ |- ε ∷ τσ -> Γ |- (djs_ε_unop djs_unop_add ε) ∷ τη
+ | typing_BoolCast : forall Γ ε τ, Γ |- ε ∷ τ  -> Γ |- (djs_ε_unop djs_unop_not ε) ∷ τβ
 
  (* Concatenation of strings *)
  | typing_Concat : forall Γ ε1 ε2, 
-     Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ -> 
-     Γ |-- (djs_ε_binop djs_binop_add ε1 ε2) ∷ τσ
+     Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ -> 
+     Γ |- (djs_ε_binop djs_binop_add ε1 ε2) ∷ τσ
 
  (* Unary minus and bit-by-bit negation *)
- | typing_Unary_min :     forall Γ ε, Γ |-- ε ∷ τη -> Γ |-- (djs_ε_unop djs_unop_neg         ε) ∷ τη
- | typing_Unary_bin_neg : forall Γ ε, Γ |-- ε ∷ τη -> Γ |-- (djs_ε_unop djs_unop_bitwise_neg ε) ∷ τη
+ | typing_Unary_min :     forall Γ ε, Γ |- ε ∷ τη -> Γ |- (djs_ε_unop djs_unop_neg         ε) ∷ τη
+ | typing_Unary_bin_neg : forall Γ ε, Γ |- ε ∷ τη -> Γ |- (djs_ε_unop djs_unop_bitwise_neg ε) ∷ τη
 
  (* Arithmetic operators +, -, *, /, % *)
  | typing_Arith_add : forall Γ ε1 ε2, 
-                        Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_add ε1 ε2) ∷ τη
+                        Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_add ε1 ε2) ∷ τη
  | typing_Arith_sub : forall Γ ε1 ε2, 
-                        Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                        Γ |-- (djs_ε_binop djs_binop_sub ε1 ε2) ∷ τη
+                        Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                        Γ |- (djs_ε_binop djs_binop_sub ε1 ε2) ∷ τη
  | typing_Arith_mul : forall Γ ε1 ε2, 
-                        Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                        Γ |-- (djs_ε_binop djs_binop_mul ε1 ε2) ∷ τη
+                        Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                        Γ |- (djs_ε_binop djs_binop_mul ε1 ε2) ∷ τη
  | typing_Arith_div : forall Γ ε1 ε2, 
-                        Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                        Γ |-- (djs_ε_binop djs_binop_div ε1 ε2) ∷ τη
+                        Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                        Γ |- (djs_ε_binop djs_binop_div ε1 ε2) ∷ τη
  | typing_Arith_mod : forall Γ ε1 ε2, 
-                        Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                        Γ |-- (djs_ε_binop djs_binop_mod ε1 ε2) ∷ τη
+                        Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                        Γ |- (djs_ε_binop djs_binop_mod ε1 ε2) ∷ τη
  | typing_Arith_str : forall Γ ε1, 
-                        Γ |-- ε1 ∷ τη -> 
-                        Γ |-- (djs_ε_binop djs_binop_add ε1 (djs_ε_l (djs_σ ""))) ∷ τσ
+                        Γ |- ε1 ∷ τη -> 
+                        Γ |- (djs_ε_binop djs_binop_add ε1 (djs_ε_l (djs_σ ""))) ∷ τσ
 
  (* Arithmetic bit-operators |, &, ^ *)
  | typing_Arith_bit_or  : forall Γ ε1 ε2, 
-     Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-     Γ |-- (djs_ε_binop djs_binop_bor  ε1 ε2) ∷ τη
+     Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+     Γ |- (djs_ε_binop djs_binop_bor  ε1 ε2) ∷ τη
  | typing_Arith_bit_and : forall Γ ε1 ε2, 
-     Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-     Γ |-- (djs_ε_binop djs_binop_band ε1 ε2) ∷ τη
+     Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+     Γ |- (djs_ε_binop djs_binop_band ε1 ε2) ∷ τη
  | typing_Arith_bit_xor : forall Γ ε1 ε2, 
-     Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-     Γ |-- (djs_ε_binop djs_binop_bxor ε1 ε2) ∷ τη
+     Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+     Γ |- (djs_ε_binop djs_binop_bxor ε1 ε2) ∷ τη
 
  (* Arithmetic shift-operators <<, >>, >>> *)
  | typing_Arith_lsh  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_lsh ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_lsh ε1 ε2) ∷ τη
  | typing_Arith_rsh  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_rsh ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_rsh ε1 ε2) ∷ τη
  | typing_Arith_ursh : forall Γ ε1 ε2,
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_ursh ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_ursh ε1 ε2) ∷ τη
 
  (* Comparisons for numbers: >=, <=, >, <, ==, != *)
  | typing_Comp_ν_gt  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_gt ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_gt ε1 ε2) ∷ τη
  | typing_Comp_ν_lt  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_lt ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_lt ε1 ε2) ∷ τη
  | typing_Comp_ν_ge  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_ge ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_ge ε1 ε2) ∷ τη
  | typing_Comp_ν_le  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_le ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_le ε1 ε2) ∷ τη
  | typing_Comp_ν_eq  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τη
  | typing_Comp_ν_neq : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τη -> Γ |-- ε2 ∷ τη ->
-                         Γ |-- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τη
+                         Γ |- ε1 ∷ τη -> Γ |- ε2 ∷ τη ->
+                         Γ |- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τη
 
  (* Comparisons for strings: >=, <=, >, <, ==, != *)
  | typing_Comp_σ_gt  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_gt ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_gt ε1 ε2) ∷ τσ
  | typing_Comp_σ_lt  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_lt ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_lt ε1 ε2) ∷ τσ
  | typing_Comp_σ_ge  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_ge ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_ge ε1 ε2) ∷ τσ
  | typing_Comp_σ_le  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_le ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_le ε1 ε2) ∷ τσ
  | typing_Comp_σ_eq  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τσ
  | typing_Comp_σ_neq : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τσ -> Γ |-- ε2 ∷ τσ ->
-                         Γ |-- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τσ
+                         Γ |- ε1 ∷ τσ -> Γ |- ε2 ∷ τσ ->
+                         Γ |- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τσ
 
  (* Comparisons for booleans: ==, != *)
  | typing_Comp_β_eq  : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τβ -> Γ |-- ε2 ∷ τβ ->
-                         Γ |-- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τβ
+                         Γ |- ε1 ∷ τβ -> Γ |- ε2 ∷ τβ ->
+                         Γ |- (djs_ε_binop djs_binop_eq ε1 ε2) ∷ τβ
  | typing_Comp_β_neq : forall Γ ε1 ε2, 
-                         Γ |-- ε1 ∷ τβ -> Γ |-- ε2 ∷ τβ ->
-                         Γ |-- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τβ
+                         Γ |- ε1 ∷ τβ -> Γ |- ε2 ∷ τβ ->
+                         Γ |- (djs_ε_binop djs_binop_neq ε1 ε2) ∷ τβ
 
  (* Operators for booleans: ||, && *)
  | typing_Bool_or  : forall Γ ε1 ε2, 
-                       Γ |-- ε1 ∷ τβ -> Γ |-- ε2 ∷ τβ ->
-                       Γ |-- (djs_ε_binop djs_binop_or  ε1 ε2) ∷ τβ
+                       Γ |- ε1 ∷ τβ -> Γ |- ε2 ∷ τβ ->
+                       Γ |- (djs_ε_binop djs_binop_or  ε1 ε2) ∷ τβ
  | typing_Bool_and : forall Γ ε1 ε2, 
-                       Γ |-- ε1 ∷ τβ -> Γ |-- ε2 ∷ τβ ->
-                       Γ |-- (djs_ε_binop djs_binop_and ε1 ε2) ∷ τβ
+                       Γ |- ε1 ∷ τβ -> Γ |- ε2 ∷ τβ ->
+                       Γ |- (djs_ε_binop djs_binop_and ε1 ε2) ∷ τβ
 
  (* Assignment *)
  | typing_Assign : forall Γ λε ε τ, 
-                     Γ |-- λε ∷ τ -> Γ |-- ε ∷ τ ->
-                     Γ |-- (djs_ε_ass λε ε) ∷ τ
+                     Γ |- λε ∷ τ -> Γ |- ε ∷ τ ->
+                     Γ |- (djs_ε_ass λε ε) ∷ τ
 
- (* Delegating function expressions to intermediate *)
+ (* Function expressions *)
  | typing_FunctionCall : forall Γ ϕ lε lτ τ,
+                           Γ |- ϕ ∷ τϕ lτ τ ->
                            length lε = length lτ ->
-                           Γ |-- ϕ ∷ τϕ lτ τ ->
-                           Forall (fun ετ => Γ |-- djs_term_ε (fst ετ) ∷ snd (ετ)) (combine lε lτ) ->
-                           Γ |-- (djs_ε_func ϕ lε) ∷ τ
+                           Γ |- djs_εϕ_aux (combine lε lτ) ∷ τξ ->
+                           Γ |- (djs_ε_func ϕ lε) ∷ τ
+
+ 
+ | typing_FunctionCall_aux_nil : forall Γ, 
+                                   Γ |- djs_εϕ_aux nil ∷ τξ
+
+ | typing_FunctionCall_aux_cons : forall Γ ε τ lετ,
+                                    Γ |- ε ∷ τ ->
+                                    Γ |- djs_εϕ_aux lετ ∷ τξ ->
+                                    Γ |- djs_εϕ_aux ((ε, τ) :: lετ) ∷ τξ
 
  (* Conditional string index *)
  | typing_CSI : forall Γ (ε ε' : djs_ε) σ, 
-                  Γ |-- ε  ∷ τσ -> 
-                  Γ |-- ε' ∷ τη ->
-                  Γ |-- (djs_csi ε ε' σ) ∷ τσ
+                  Γ |- ε  ∷ τσ -> 
+                  Γ |- ε' ∷ τη ->
+                  Γ |- (djs_csi ε ε' σ) ∷ τσ
 
  (* Expressions are statements *)
  | typing_Expression : forall Γ ε τ, 
-                         Γ |-- ε ∷ τ -> Γ |-- (djs_stat_expr ε) ∷ τυ
-
- (* With statement *)
- | typing_With : forall Γ ε s τρ, 
-                   Γ |-- ε ∷ (το τρ) -> ((τρ, κω) :: Γ) |-- s ∷ τυ ->
-                   Γ |-- (djs_stat_with ε s) ∷ τυ
+                         Γ |- ε ∷ τ -> Γ |- (djs_stat_expr ε) ∷ τυ
 
  (* If-then-else statement *)
  | typing_If : forall Γ ε s1 s2, 
-                 Γ |-- ε ∷ τβ -> Γ |-- s1 ∷ τυ -> Γ |-- s2 ∷ τυ ->
-                 Γ |-- (djs_stat_if ε s1 s2) ∷ τυ
+                 Γ |- ε ∷ τβ -> Γ |- s1 ∷ τυ -> Γ |- s2 ∷ τυ ->
+                 Γ |- (djs_stat_if ε s1 s2) ∷ τυ
 
  (* While statement *)
  | typing_While : forall Γ ε s,
-                    Γ |-- ε ∷ τβ -> Γ |-- s ∷ τυ ->
-                    Γ |-- (djs_stat_while ε s) ∷ τυ
+                    Γ |- ε ∷ τβ -> Γ |- s ∷ τυ ->
+                    Γ |- (djs_stat_while ε s) ∷ τυ
 
- (* Delegating sequence of statements to intermediate *)
- | typing_Sequence : forall Γ ls, 
-                       Forall (fun s => Γ |-- s ∷ τυ) ls ->
-                       Γ |-- djs_stat_seq ls ∷ τυ
+ (* A sequence of statements *)
+ | typing_Sequence_nil : forall Γ, Γ |- djs_stat_seq nil ∷ τυ
+
+ | typing_Sequence_cons : forall Γ s ls, 
+                            Γ |- s ∷ τυ -> 
+                            Γ |- (djs_stat_seq ls) ∷ τυ -> 
+                            Γ |- (djs_stat_seq (s :: ls)) ∷ τυ
 
  (* 
     Function definition
@@ -890,405 +922,158 @@ Inductive types : typ_env -> djs_term -> type -> Prop :=
 
     Choice : y_i variables cannot contain duplicates
     Choice : x_i and y_i must be disjoint
+
+    There may be no free occurrences of 'this' in the body
  *)
- | typing_FunctionDef_main : forall Γ lx (τρy : list (var * djs_δε)) ls ε lτ τr,
-     length lx = length lτ -> 
+ | typing_FunctionDef_main : forall Γ τρx (τρy : list (var * djs_δε)) ls ε τr, 
+     let lx := fst (split τρx) in
+     let lτ := snd (split τρx) in
      let ly := fst (split τρy) in
      let lδε := snd (split τρy) in
-     let τρx := combine lx lτ in
-       noDup lx -> noDup ly ->
-       Forall (fun x => x <> "this") lx ->
-       Forall (fun y => y <> "this") ly ->
-       disjoint (from_list lx) (from_list ly) ->
-       types_aux Γ (djs_aux_func τρx τρy ls ε nil τr) ->
-       Γ |-- (djs_ϕ_main lx τρy (djs_stat_seq ls) ε) ∷ 〈 lτ → τr 〉
+     noDup lx -> noDup ly ->
+     Forall (fun x => x <> "this") lx ->
+     Forall (fun y => y <> "this") ly ->
+     disjoint (from_list lx) (from_list ly) ->
+     Γ |- (djs_ϕ_aux τρx τρy (djs_stat_seq ls) ε nil τr) ∷ τξ ->
+     Γ |- (djs_ϕ_main τρx τρy (djs_stat_seq ls) ε) ∷ 〈 lτ → τr 〉
 
-(* Method definition *)
- | typing_MethodDef : forall Γ lx τρy ls ε lτ τρ τr,
-   let τρx := combine ("this" :: lx) (το τρ :: lτ) in
-     types_aux Γ (djs_aux_func τρx τρy ls ε nil τr) ->
-     Γ |-- (djs_ϕ_main            lx  τρy (djs_stat_seq ls) ε) ∷ 《 lτ [τρ] → τr 》
-
- (* Defined expressions *)
- | typing_DefExprExpr : forall Γ ε τ, Γ |-- ε ∷ τ -> Γ |-- (djs_δε_expr ε) ∷ τ
- | typing_DefExprFunc : forall Γ ϕ τ, Γ |-- ϕ ∷ τ -> Γ |-- (djs_δε_func ϕ) ∷ τ
-
- (* Programs *)
- | typing_Prog : forall Γ ϕ, Γ |-- ϕ ∷ 〈 (τσ :: nil) → τσ 〉 ->
-                             Γ |-- (djs_π_main ϕ) ∷ 〈 (τσ :: nil) → τσ 〉
-
-with types_aux : typ_env -> djs_term_aux -> Prop :=
-
- (* Functions *)
- | types_aux_func_nil : forall Γ τρx ε ls τρ τ,
-     (((τρx ++ τρ)%list, κϕ) :: Γ) |-- (djs_stat_seq ls) ∷ τυ ->
-     (((τρx ++ τρ)%list, κϕ) :: Γ) |-- ε ∷ τ ->
-     types_aux Γ (djs_aux_func τρx nil ls ε τρ τ)
+ (* Base case *)
+ | typing_FunctionDef_nil : forall Γ τρx ε ls τρ τ,
+     ((τρx ++ τρ)%list :: Γ) |- (djs_stat_seq ls) ∷ τυ ->
+     ((τρx ++ τρ)%list :: Γ) |- ε ∷ τ ->
+     Γ  |- (djs_ϕ_aux τρx nil (djs_stat_seq ls) ε τρ τ) ∷ τξ
 
  (* Recursive call *)
  | typing_FunctionDef_cons : forall Γ τρx τρy ε τ y δε ls τρ τ',
-     (((τρx ++ τρ)%list, κϕ) :: Γ) |-- δε ∷ τ ->
-     types_aux Γ (djs_aux_func τρx             τρy  ls ε (τρ & (y, τ)) τ') ->
-     types_aux Γ (djs_aux_func τρx ((y, δε) :: τρy) ls ε  τρ           τ')
+     ((τρx ++ τρ)%list :: Γ) |- δε ∷ τ ->
+     Γ |- djs_ϕ_aux τρx τρy (djs_stat_seq ls) ε (τρ & (y, τ)) τ' ∷ τξ ->
+     Γ |- djs_ϕ_aux τρx ((y, δε) :: τρy) (djs_stat_seq ls) ε τρ τ' ∷ τξ
 
-where "Γ |-- T ∷ τ" := (types Γ T τ).
+(* 
+    Method definition
 
-(* ********************************** *)
-(** * Auxiliary inversion lemmas      *)
+    Strict mode requirement : x_i variables cannot contain duplicates
+    Requirement : no x_i except the first can be equal to "this"
 
-Lemma this_not_typable : forall Γ (τ : type), 
-  ~ Γ |-- (djs_var "this") ∷ τ /\
-  ~ Γ |-- (djs_ε_λε (djs_var "this")) ∷ τ /\
-  ~ Γ |-- (djs_δε_expr (djs_ε_λε (djs_var "this"))) ∷ τ.  
-Proof.
-  introv; splits; intro Hyp; repeat (inverts Hyp as Hyp; tryfalse).
-Qed.
+    Choice : y_i variables cannot contain duplicates
+    Choice : x_i and y_i must be disjoint
 
-(* Array typing *)
-Lemma array_size : forall lε ε,
-  Mem ε lε -> djs_size_term ε < djs_size_term (djs_α lε).
-Proof.
-  inductions lε; introv Hm; inverts Hm; [ | specializes IHlε H0]; simpls; nat_math.
-Qed.
+    There need to be free occurrences of 'this' in the body
+ *)
+ | typing_MethodDef : forall Γ τρx τρy ls ε τρ τr,
+     let lx  := fst (split τρx) in
+     let lτ  := snd (split τρx) in
+     let ly  := fst (split τρy) in
+     let lδε := snd (split τρy) in
+     noDup lx -> noDup ly ->
+     Forall (fun x => x <> "this") lx ->
+     Forall (fun y => y <> "this") ly ->
+     disjoint (from_list lx) (from_list ly) ->
+     Γ |- (djs_ϕ_aux (("this", {{ τρ }}) :: τρx) τρy (djs_stat_seq ls) ε nil τr) ∷ τξ ->
+     Γ |- (djs_ϕ_main τρx τρy (djs_stat_seq ls) ε) ∷ 《 lτ [τρ] → τr 》
 
-Lemma object_size : forall ρ ε,
-  Mem ε (snd (split ρ)) ->  djs_size_term ε < djs_size_term (djs_ο ρ).
-Proof.
-  inductions ρ; introv Hm; inverts Hm; 
-  destruct a as (xa & εa); destruct (split ρ) as (vρ & ερ).
-  + inverts H0; simpls; nat_math.
-  + inverts H. specializes IHρ H0. simpls; nat_math.
-Qed.
-  
-Lemma statement_size : forall ls s,
-  Mem s ls -> djs_size_term s < djs_size_term (djs_stat_seq ls).
-Proof.
- inductions ls; introv Hm; inverts Hm; [ | specializes IHls H0]; simpls; nat_math.
-Qed.  
+ (* Defined expressions *)
+ | typing_DefExprExpr : forall Γ ε τ, Γ |- ε ∷ τ -> Γ |- (djs_δε_expr ε) ∷ τ
+ | typing_DefExprFunc : forall Γ ϕ τ, Γ |- ϕ ∷ τ -> Γ |- (djs_δε_func ϕ) ∷ τ
 
-Lemma function_call_size : forall ϕ lε ε,
-  Mem ε lε -> djs_size_term ε < djs_size_term (djs_ε_func ϕ lε).
-Proof.  
-  inductions lε; introv Hm; inverts Hm; [ | specializes IHlε H0]; simpls; nat_math.
-Qed.
+ (* Programs *)
+ | typing_Prog : forall Γ ϕ, Γ |- ϕ ∷ 〈 (τσ :: nil) → τσ 〉 ->
+                             Γ |- (djs_π_main ϕ) ∷ 〈 (τσ :: nil) → τσ 〉
 
-(* ********************************** *)
-(** * Weakening and strengthening     *)
+where "Γ |- T ∷ τ" := (types Γ T τ).
 
-(* Strengthening *)
-Lemma strengthening : forall T (τ : type) Γ τρ Γ',
-  ((Γ & (τρ, κω)) ++ Γ')%list |-- T ∷ τ -> (Γ & (τρ, κω)) |-- T ∷ τ.
-Proof.
-  induction T using (measure_induction djs_size_term); introv HD;
-  destruct T as [λ | λε | ε | s | ϕ | δε | π ]; introv; inversion HD; substs*;
-  try solve [constructor; try applys* H; simpls; nat_math];
-  try solve [econstructor; try eassumption; try applys* H; simpls; nat_math].
-
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ array_size.
-    
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ object_size. destruct x as (ε & τ).
-    apply mem_comb in Hm; simpls*.
-    repeat rewrite~ split_length_r.
-    
-  + destruct Γ.
-    - rewrite app_last_sym in *. rewrite app_nil_l in *. 
-      inverts H0. applys~ typing_VarLoc.
-    - rewrite app_last_sym in *. rewrite app_cons in *.
-      inverts H0. applys~ typing_VarLoc.
-
-  + destruct Γ; rewrite app_last_sym in *. 
-    - rewrite app_nil_l in *. inverts H0. 
-    - rewrite app_cons in *. inverts H0. 
-      rewrite <- app_last_sym in H4. 
-      applys~ typing_VarFS.
-
-      clear - H4. gen τ; inductions Γ; introv Hyp; rewrite app_last_sym in *.
-      * rewrite app_nil_l in *. inverts Hyp. constructor~.
-      * destruct a as (τρa & κa). rewrite app_cons in *. inversion Hyp; substs.
-        constructor~. rewrite <- app_last_sym in H6. applys~ typing_VarFS. applys* IHΓ.
-
-  + eapply typing_This; try eassumption.
-    clear - H1. inductions Γ; auto.
-    specializes IHΓ τρ Γ' τρ0.
-    rewrite app_last_sym in *. rewrite app_cons in *.
-    destruct a as (ρ & κ). simpls.
-    destruct* (lookup ρ "this").
-    destruct* κ. 
-
-  + apply typing_Arith_str. applys* H.
-    simpls; nat_math.
-
-  + eapply typing_FunctionCall; try eassumption. 
-    applys* H. simpls; nat_math.
-    rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. destruct x as (ε' & τ').
-    apply function_call_size. apply mem_comb in Hm; jauto.  
-
-  + econstructor; try eassumption. applys* H. simpls; nat_math.
-    repeat rewrite <- app_cons in H3. 
-    specializes H H3. simpls; nat_math. eapply H.
-
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ statement_size.
-
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H8. constructor; rewrite <- app_cons; apply H with (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H8. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ' := Γ'); auto. simpls; nat_math.
-      simpls. destruct (split τρy) as (ly' & lδε'). 
-      apply IHτρy with (Γ' := Γ'); subst ly; simpls*; jauto.
-      * inverts~ H5.
-      * clear - H6; unfold disjoint in *.
-        apply fset_extens; introv Hyp; rewrite in_inter in *. 
-        assert (x \in (from_list lx \n from_list (y :: ly'))).
-        {
-          rewrite in_inter; splits; jauto. rewrite from_list_cons.
-          rewrite in_union; right*.
-        } rewrite <- H6; rewrite in_inter in *; jauto.
-        rewrite in_empty in Hyp; false*.
-      * introv Hyp; introv.
-        applys* H. simpls; nat_math.
-        
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H2. constructor; rewrite <- app_cons; apply H with (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H2. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ' := Γ'); auto. simpls; nat_math.
-      simpls. destruct (split τρy) as (ly' & lδε'). 
-      apply IHτρy with (Γ' := Γ'); simpls*; jauto.
-      * introv Hyp; introv.
-        applys* H. simpls; nat_math.
-Qed.
-
-(* Lookup weakening *)
-Lemma lookup_this_weakening_from_left : forall Γ τρ, 
-  lookup_this Γ = Some ({{τρ}}) ->
-  forall Γ', lookup_this (Γ ++ Γ')%list = Some ({{τρ}}).
-Proof.
-  inductions Γ; introv Hyp; introv.
-  + inverts Hyp.
-  + rewrite app_cons. 
-    destruct a as (ρa & κa); simpls.
-    destruct~ (lookup ρa "this").
-    destruct κa; simpls*.
-Qed.
+(* ********************************************************** *)
+(** * Auxiliary inversion lemmas *)
 
 (* Weakening only from the left *)
 Lemma weakening_from_left : forall T (τ : type) Γ, 
-  (Γ |-- T ∷ τ -> forall Γ', (Γ ++ Γ')%list |-- T ∷ τ).
+  (Γ |- T ∷ τ -> forall Γ', (Γ ++ Γ')%list |- T ∷ τ).
 Proof.
   induction T using (measure_induction djs_size_term); introv HD;
-  destruct T as [λ | λε | ε | s | ϕ | δε | π ]; introv; inversion HD; substs*;
+  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; destruct τ; introv; inversion HD; substs*;
+  try solve [constructor; try applys* H; simpls; nat_math];
   try solve [econstructor; try eassumption; try applys* H; simpls; nat_math].
 
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ array_size.
-    
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ object_size. destruct x as (ε & τ).
-    apply mem_comb in Hm; simpls*.
-    repeat rewrite~ split_length_r.  
+  + constructor~; applys* H;
+    lets Hsize : djs_size_term_positive ε1;
+    simpls; nat_math.
 
+  + constructor~; applys* H;
+    lets Hsize : djs_size_term_positive ε;
+    simpls; nat_math.
+  
   + rewrite app_cons. applys~ typing_VarFS.
     clear - H4. inductions Γ0. inverts H4.
-    destruct a. inversion H4; substs; rewrite app_cons.
+    inversion H4; substs; rewrite app_cons.
     constructor~. applys~ typing_VarFS.
-
-  + clear -H1 H2 H4. applys* typing_This. inductions Γ; [inverts H1 | ].
-      rewrite app_cons. destruct a as (ρ & κ).
-      simpls. destruct (lookup ρ "this"); auto.
-      destruct κ; [jauto | tryfalse].
 
   + apply typing_Arith_str. applys* H.
     simpls; nat_math.
 
-  + eapply typing_FunctionCall; try eassumption. 
-    applys* H. simpls; nat_math.
-    rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. destruct x as (ε' & τ').
-    apply function_call_size. apply mem_comb in Hm; jauto.  
+  + econstructor; try eassumption; applys* H; [simpls; nat_math | ].
+    clear - H4. inductions lε; lets Hsize : djs_size_term_positive ϕ.
+    - simpls; nat_math.
+    - simpls. destruct lτ; [false* | ].
+      assert (length lε = length lτ) by (rew_length in *; nat_math).
+      specializes IHlε H; nat_math.
 
-  + econstructor; try eassumption. applys* H. simpls; nat_math.
-    repeat rewrite <- app_cons in H3. 
-    specializes H H3. simpls; nat_math. eapply H.
+  + econstructor; try eassumption; applys* H; [simpls; nat_math | ].
+    lets Hsize : djs_size_term_positive s0. 
+    simpls; nat_math.
 
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ statement_size.
+  + econstructor; applys* H; [simpls; nat_math | ].
+    lets Hsize : djs_size_term_positive ε. 
+    simpls; nat_math.
 
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H8. constructor; rewrite <- app_cons; apply H with (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H8. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ' := Γ'); auto. simpls; nat_math.
-      simpls. destruct (split τρy) as (ly' & lδε'). 
-      apply IHτρy with (Γ' := Γ'); subst ly; simpls*; jauto.
-      * inverts~ H5.
-      * clear - H6; unfold disjoint in *.
-        apply fset_extens; introv Hyp; rewrite in_inter in *. 
-        assert (x \in (from_list lx \n from_list (y :: ly'))).
-        {
-          rewrite in_inter; splits; jauto. rewrite from_list_cons.
-          rewrite in_union; right*.
-        } rewrite <- H6; rewrite in_inter in *; jauto.
-        rewrite in_empty in Hyp; false*.
-      * introv Hyp; introv.
-        applys* H. simpls; nat_math.
-        
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H2. constructor; rewrite <- app_cons; apply H with (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H2. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ' := Γ'); auto. simpls; nat_math.
-      simpls. destruct (split τρy) as (ly' & lδε'). 
-      apply IHτρy with (Γ' := Γ'); simpls*; jauto.
-      * introv Hyp; introv.
-        applys* H. simpls; nat_math.
+  + constructor; rewrite <- app_cons; applys* H; simpls; nat_math.
+
+  + econstructor; [ | applys* H]. 
+    - rewrite <- app_cons; applys* H. simpls; nat_math.
+    - lets Hsize : djs_size_term_positive δε. 
+      simpls; nat_math.
 Qed.
 
 (* Weakening from empty context *)
 Lemma weakening_empty : forall T (τ : type), 
-  ∅ |-- T ∷ τ -> forall Γ, Γ |-- T ∷ τ.
+  ∅ |- T ∷ τ -> forall Γ, Γ |- T ∷ τ.
 Proof.
   introv HD; introv.
   apply weakening_from_left with (Γ' := Γ) in HD; auto.
 Qed.
 
-(* Strengthening *)
-Lemma weakening_nil : forall T (τ : type) Γ Γ',
-  (Γ ++ Γ')%list |-- T ∷ τ -> (Γ & (nil, κϕ) ++ Γ')%list |-- T ∷ τ.
+(* Array length correctness *)
+Lemma array_length : forall Γ lε τ n, Γ |- djs_α lε ∷ [[τ, n]] -> n = length lε.
 Proof.
-  induction T using (measure_induction djs_size_term); introv HD;
-  destruct T as [λ | λε | ε | s | ϕ | δε | π ]; introv; inversion HD; substs*;
-  try solve [econstructor; try eassumption; try applys* H; simpls; nat_math].
+  introv Hr. inductions Hr; 
+  [ | specializes IHHr2 (ε2 :: lε0) τ n0 (@eq_refl djs_term) (@eq_refl type)];
+  rew_length in *; nat_math.
+Qed.
 
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ array_size.
+(* All elements of an array are of the same type *)
+Lemma array_same_type : forall Γ lε τ n, Γ |- djs_α lε ∷ [[τ, n]] -> Forall (fun ε => Γ |- ε ∷ τ) lε.
+Proof with (repeat constructor*).
+  inductions lε; introv HD; inverts HD; repeat constructor*.
+Qed.
+
+(* All statements are of type 'undefined' *)
+Lemma statement_undefined : forall Γ s τ, Γ |- s ∷ τ -> τ = τυ.
+Proof.
+  introv HD; inverts~ HD.
+Qed.
+
+Lemma same_variables_in_objects : forall ρ τρ Γ,
+  Γ |- djs_ο ρ ∷ {{τρ}} -> fst (split ρ) = fst (split τρ).
+Proof.
+  inductions ρ; introv HD; simpls; [inverts~ HD | ].
+  destruct τρ; [inverts~ HD | ].
+  inverts HD. specializes IHρ H6.
+  rewrite (split_combine_fs ρ). rewrite combine_split; 
+  [ | rewrite split_length_l; rewrite~ split_length_r].
+  rewrite (split_combine_fs τρ); simpls; rewrite combine_split;
+  [ | rewrite split_length_l; rewrite~ split_length_r]; simpls*.
+  rewrite~ IHρ.
+Qed.
     
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ object_size. destruct x as (ε & τ).
-    apply mem_comb in Hm; simpls*.
-    repeat rewrite~ split_length_r.  
-
-  + destruct Γ. 
-    - rewrite app_nil_l in *. rewrite app_cons. rewrite app_nil_l. 
-      applys~ typing_VarFS. introv Hm; inverts Hm.
-    - rewrite app_cons in *. inverts H0.
-      applys~ typing_VarLoc.
-
-  + destruct Γ.
-    - rewrite app_nil_l in *. rewrite app_cons. rewrite app_nil_l. 
-      applys~ typing_VarFS. introv Hm; inverts Hm.
-    - rewrite app_cons in *. inverts H0.
-      rewrite <- app_cons in *. remember ((τρ, κϕ) :: Γ) as Γ''. clear - HD H2. 
-      gen Γ'. inductions Γ''; intros.
-      * rewrite app_nil_l in *. rewrite app_cons. rewrite app_nil_l. 
-        applys~ typing_VarFS. introv Hm; inverts Hm.
-      * rewrite app_cons in *. inversion HD; substs.
-          applys~ typing_VarLoc.
-          rewrite app_cons. applys~ typing_VarFS.
-      
-  + eapply typing_This; try eassumption. 
-    clear - H1; inductions Γ; jauto.
-    rewrite app_cons in *. destruct a as (ρ & κ).
-      simpls. destruct (lookup ρ "this"); auto.
-      destruct κ; [jauto | tryfalse].
-
-  + apply typing_Arith_str. applys* H.
-    simpls; nat_math.
-
-  + eapply typing_FunctionCall; try eassumption. 
-    applys* H. simpls; nat_math.
-    rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. destruct x as (ε' & τ').
-    apply function_call_size. apply mem_comb in Hm; jauto.  
-
-  + econstructor; try eassumption. applys* H. simpls; nat_math.
-    repeat rewrite <- app_cons in H3. 
-    specializes H H3. simpls; nat_math. eapply H.
-
-  + constructor~. rewrite <- Forall_Mem in *; introv Hm.
-    applys* H. applys~ statement_size.
-
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    rewrite Heqτρ' at 1; rewrite Heqτρ' in H.  
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H8. constructor; rewrite <- app_cons;
-      apply H with (Γ := ((τρx ++ τρ')%list, κϕ) :: Γ) (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H8. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ := ((τρx ++ τρ')%list, κϕ) :: Γ) (Γ' := Γ'); auto. simpls; nat_math.
-      simpls. destruct (split τρy) as (ly' & lδε'). 
-      applys* IHτρy; subst ly; simpls*; jauto.
-      * inverts~ H5.
-      * clear - H6; unfold disjoint in *.
-        apply fset_extens; introv Hyp; rewrite in_inter in *. 
-        assert (x \in (from_list lx \n from_list (y :: ly'))).
-        {
-          rewrite in_inter; splits; jauto. rewrite from_list_cons.
-          rewrite in_union; right*.
-        } rewrite <- H6; rewrite in_inter in *; jauto.
-        rewrite in_empty in Hyp; false*.
-      * introv Hyp; introv.
-        applys* H. simpls; nat_math.
-        
-  + constructor~. clear HD. 
-    remember (@nil (var * type)) as τρ'. 
-    rewrite Heqτρ' at 1; rewrite Heqτρ' in H.  
-    clear Heqτρ'; gen Γ Γ'. inductions τρy; intros.
-    - inverts H2. constructor; rewrite <- app_cons; 
-      apply H with (Γ := ((τρx ++ τρ')%list, κϕ) :: Γ) (Γ' := Γ'); auto; simpls; nat_math.
-    - destruct a as (y & δε). inverts H2. apply typing_FunctionDef_cons with (τ := τ).
-      rewrite <- app_cons. apply H with (Γ := ((τρx ++ τρ')%list, κϕ) :: Γ) (Γ' := Γ'); auto. simpls; nat_math.
-      applys* IHτρy. introv Hyp; introv.
-      applys* H. simpls; nat_math.
-Qed.
- 
-(* Types that functions take are either function types or method types *)
-Lemma function_types : forall Γ ϕ τ, Γ |-- ϕ ∷ τ ->
- (exists lτ τ', τ = 〈 lτ → τ' 〉) \/ (exists lτ τρ τ', τ = 《lτ [τρ] → τ' 》).
-Proof.
-  introv Hd; inverts Hd; [left | right]; repeat eexists; reflexivity.  
-Qed.
-
-(* Expressions can take any function or method type *)
-Lemma function_types_for_expressions : 
-  forall Γ ϕ τ, Γ |-- ϕ ∷ τ -> exists ε, Γ |-- ε ∷ τ.
-Proof.
-  introv Hϕ.
-
-  set (ϕ' := djs_ϕ_main 
-               nil
-               (("y", djs_δε_func ϕ) :: nil)
-               (djs_stat_seq nil) 
-               (djs_ε_λε (djs_var "y"))).
-
-  exists (djs_ε_func ϕ' nil). subst ϕ'.
-  
-  apply typing_FunctionCall with (lτ := nil); [ | auto | constructor~].
-
-  constructor; simpls*. repeat constructor; simpls*.
-  + introv Hm; inverts Hm.
-  + introv Heq; inverts Heq.
-  + rewrite from_list_cons; repeat rewrite from_list_nil.
-    rewrite union_empty_r. apply fset_extens; introv Hyp.
-    rewrite in_inter in Hyp; jauto.
-    rewrite in_empty in Hyp; false. 
-
-  + apply typing_FunctionDef_cons with (τ := τ).
-    - rewrite app_nil_l. constructor. 
-      lets* Hyp : weakening_nil ϕ τ (∅) Γ. 
-      
-    - repeat constructor. introv Hm; inverts Hm. 
-      simpls. cases_if*. 
-Qed.
-
 (****************************************************************)
 (** ** Translation to JSCert                                    *)
 
@@ -1413,7 +1198,6 @@ end
 with toJSC_stat s := 
 match s with
  | djs_stat_expr  ε        => stat_expr (toJSC_ε ε)
- | djs_stat_with  ε  s     => stat_with (toJSC_ε ε) (toJSC_stat s)
  | djs_stat_if    ε  s1 s2 => stat_if (toJSC_ε ε) (toJSC_stat s1) (Some (toJSC_stat s2))
  | djs_stat_while ε  s     => stat_while nil (toJSC_ε ε) (toJSC_stat s)
  | djs_stat_seq   ls       => stat_block ((fix toJSC_lstat ls := 
@@ -1426,7 +1210,8 @@ end
 (* Functions *)
 with toJSC_ϕ ϕ := 
 match ϕ with
- | djs_ϕ_main lx τρy s ε => 
+ | djs_ϕ_main τρx τρy s ε => 
+     let lx := fst (split τρx) in
        expr_function 
          None (* Functions have no names *)
          lx   (* List of variables       *)
@@ -1496,13 +1281,14 @@ end
 
 with toJSC T :=
 match T with
- | djs_term_λ  λ  => jscert_expr (toJSC_λ    λ)
- | djs_term_λε λε => jscert_expr (toJSC_λε   λε)
- | djs_term_ε  ε  => jscert_expr (toJSC_ε    ε)
- | djs_term_s  s  => jscert_stat (toJSC_stat s)
- | djs_term_ϕ  ϕ  => jscert_expr (toJSC_ϕ    ϕ)
- | djs_term_δε δε => jscert_expr (toJSC_δε   δε)
- | djs_term_π  π  => jscert_prog (toJSC_π    π)
+ | djs_term_λ  λ  => Some (jscert_expr (toJSC_λ    λ))
+ | djs_term_λε λε => Some (jscert_expr (toJSC_λε   λε))
+ | djs_term_ε  ε  => Some (jscert_expr (toJSC_ε    ε))
+ | djs_term_s  s  => Some (jscert_stat (toJSC_stat s))
+ | djs_term_ϕ  ϕ  => Some (jscert_expr (toJSC_ϕ    ϕ))
+ | djs_term_δε δε => Some (jscert_expr (toJSC_δε   δε))
+ | djs_term_π  π  => Some (jscert_prog (toJSC_π    π))
+ | _              => None
 end.
 
 End DJS_to_JSCert.
@@ -1676,7 +1462,6 @@ match js with
                          end) ljs)
  | stat_if je jst (Some jse) => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat jst /\ DJS_allowed_stat jse
  | stat_while nil je js => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat js
- | stat_with je js => DJS_allowed_expr je /\ not_a_function je /\ DJS_allowed_stat js
  | _ => False
 end
 
@@ -1721,34 +1506,48 @@ end.
 
 End JSCert_to_DJS.
 
-Lemma mapping_correct : forall T, DJS_allowed_term (toJSC T).
+Lemma mapping_correct : forall T t, toJSC T = Some t -> DJS_allowed_term t.
 Proof with (try apply not_a_function_ε; try apply not_a_function_λε; try apply is_lhs_λε).
   
-  Ltac solve_IH H x := applys* (H x); simpls; nat_math.
+  Ltac solve_IH H x := specializes H x; specializes H (@eq_refl); auto; simpls; nat_math.
 
   induction T using (measure_induction djs_size_term).
-  destruct T as [λ | λε | ε | s | ϕ | δε | π ].
+  destruct T as [λ | λε | ε | s | ϕ | δε | π | ι]; introv HSome; simpls; inverts HSome.
 
   + destruct λ as [η | σ | β | α | ρ]; try solve [simpls~]. 
-    - destruct α as [ | a α]; [simpls~ | ]. 
-      simpls; splits... solve_IH H a. 
-      lets Hs : djs_size_term_positive a. solve_IH H (djs_α α).
+    - destruct α as [ | a α]; [simpls~ | ].
+      lets Ha : H a. specializes Ha (@eq_refl). simpls; nat_math. 
+      lets Hα : H (djs_α α). specializes Hα (@eq_refl). 
+      lets Hs : djs_size_term_positive a. simpls; nat_math.
+      simpls; splits~. clear. 
+      destruct a; simpls~; destruct d; simpls~; cases_if*; simpls~.
 
     - destruct ρ as [ | (x & ε) ρ]; [simpls~ | ]. 
-      simpls; splits... solve_IH H ε.
-      lets Hs : djs_size_term_positive ε. solve_IH H (djs_ο ρ). 
+      lets Hr : H ε. specializes Hr (@eq_refl). simpls; nat_math. 
+      lets Hα : H (djs_ο ρ). specializes Hα (@eq_refl). 
+      lets Hs : djs_size_term_positive ε. simpls; nat_math.
+      simpls; splits~. clear Hα Hr. 
+      destruct ε; simpls~; destruct d; simpls~; cases_if*; simpls~.
 
   + destruct λε as [v | ε x | ε η | ε1 ε2 η | ε1 ε2].
     - simpls; cases_if*; simpls~; cases_if*.
     - simpls; splits*... solve_IH H ε.
 
-    - simpls; splits*... solve_IH H ε.
+    - specializes H ε. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε; simpls*; splits*; clear H; destruct d; simpls*; cases_if; simpls~.
 
-    - simpls; repeat splits*...  
-      solve_IH H ε2. solve_IH H ε1.
+    - simpls; repeat splits~... 
+      specializes H ε2. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε2; simpls*. 
+      eexists; reflexivity.
+      specializes H ε1. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε1; simpls*. 
 
     - simpls; repeat splits*...
-      solve_IH H ε2. solve_IH H ε1.
+      specializes H ε2. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε2; simpls*.      
+      specializes H ε1. specializes H (@eq_refl). simpls; nat_math. 
+      destruct ε1; simpls*.
 
   + destruct ε as [λ | λε | λε ε | op ε1 | op ε1 ε2 | ϕ lε | ε1 ε2 σ ].
     - solve_IH H λ. 
@@ -1756,45 +1555,50 @@ Proof with (try apply not_a_function_ε; try apply not_a_function_λε; try appl
     - simpls; splits; [solve_IH H λε | | solve_IH H ε | ]... 
     - destruct op; simpls; splits~; try solve_IH H ε1... 
     - destruct op; simpls; splits~; try solve_IH H ε1; try solve_IH H ε2...
-    - destruct ϕ as [lx τρy s ε]. 
-      simpls; repeat splits*... solve_IH H (djs_ϕ_main lx τρy s ε).
-      solve_IH H s. solve_IH H ε.
-      assert (Hyp : forall ε, Mem ε lε -> DJS_allowed_term (toJSC ε)).
+    - destruct ϕ as [τρx τρy s ε]. 
+      lets Hϕ : H (djs_ϕ_main τρx τρy s ε). 
+      specializes Hϕ (@eq_refl). simpls; nat_math.
+      simpls; splits~. clear Hϕ.
+      assert (Hyp : forall ε, Mem ε lε -> exists t, toJSC ε = Some t /\ DJS_allowed_term t).
       {
         inductions lε; introv Hm; inverts~ Hm.
-        + solve_IH H a. 
-        + applys~ IHlε. introv Hm. solve_IH H y.
-      } clear H ε s lx τρy.
+        + eexists. splits. reflexivity. 
+          apply H with (y := a); auto. simpls; nat_math. 
+        + applys~ IHlε. introv Hs. applys~ H. simpls; nat_math.
+      } clear H ε s τρx τρy.
       inductions lε; auto; splits~...
-      * applys (Hyp a); constructor. 
+      * lets (t & (Heq & Ht)) : Hyp a. constructor. inverts~ Heq.
       * apply IHlε. introv Hm. apply Hyp. constructor~.
     - simpls; splits*... solve_IH H ε1. solve_IH H ε2.
 
-  + destruct s as [ε | ε s | ε s1 s2 | ε s | ls ].
+  + destruct s as [ε | ε s1 s2 | ε s | ls ].
     - simpls; splits... solve_IH H ε.
-    - simpls; splits; [solve_IH H ε | | solve_IH H s]...
     - simpls; splits; [solve_IH H ε | | solve_IH H s1 | solve_IH H s2]...
     - simpls; splits; [solve_IH H ε | | solve_IH H s]...
     - destruct ls as [ | s ls]; [simpls~ | ].
-      simpls; splits. solve_IH H s.
-      lets Hs : djs_size_term_positive s. solve_IH H (djs_stat_seq ls). 
+      lets Hr : H s. specializes Hr (@eq_refl). simpls; nat_math. 
+      lets Hls : H (djs_stat_seq ls). specializes Hls (@eq_refl). 
+      lets Hs : djs_size_term_positive s. simpls; nat_math.
+      simpls~.
 
-  + destruct ϕ as [lx τρy s ε]. simpls; splits~...
+  + destruct ϕ as [τρx τρy s ε]. simpls; splits~.
     - inductions τρy; auto.
       destruct a as (y & δε); splits.
-      * solve_IH H δε. 
+      * specializes H (djs_term_δε δε). specializes H (@eq_refl).
+        simpls; nat_math. simpls*.
       * apply IHτρy with (s := s) (ε := ε).
-        introv Hsize. apply H with (y := y0); auto.
+        introv Hsize Heq. apply H with (y := y0); auto.
         simpls; nat_math.
     - solve_IH H s. 
     - solve_IH H ε.
+    - apply not_a_function_ε.
 
   + destruct δε as [ε | ϕ]; [solve_IH H ε | solve_IH H ϕ].
 
-  + destruct π as (ϕ). 
-    assert (DJS_allowed_term (toJSC ϕ)) by (solve_IH H ϕ).
+  + destruct π as (ϕ). specializes H ϕ. 
+    specializes H (@eq_refl). simpls; nat_math.
     destruct ϕ; simpls*.
-Qed. 
+Admitted. (* FASTER *)
 
 (**************************************************************)
 (** ** JSCert Term size                                       *)
@@ -2000,7 +1804,7 @@ Proof.
   destruct a; simpl in Hd; inverts* Hd.
 Qed.
 
-Lemma toJSC_is_expression : forall T v, toJSC T = jscert_expr v -> 
+Lemma toJSC_is_expression : forall T v, toJSC T = Some (jscert_expr v) -> 
   (exists λ, T = djs_term_λ λ) \/
   (exists λε, T = djs_term_λε λε) \/
   (exists ε, T = djs_term_ε ε) \/
@@ -2008,11 +1812,11 @@ Lemma toJSC_is_expression : forall T v, toJSC T = jscert_expr v ->
   (exists δε, T = djs_term_δε δε).
 Proof.
   induction T using (measure_induction djs_size_term); introv.
-  destruct T as [λ | λε | ε | s' | ϕ | δε | π]; introv Hyp; 
+  destruct T as [λ | λε | ε | s' | ϕ | δε | π | ι]; introv Hyp; 
   simpls*; inverts* Hyp.
 Qed. 
 
-Lemma toJSC_is_expression_not_function : forall T v, toJSC T = jscert_expr v ->
+Lemma toJSC_is_expression_not_function : forall T v, toJSC T = Some (jscert_expr v) ->
   not_a_function v -> exists (ε : djs_ε), toJSC T = toJSC ε.
 Proof.
   introv Hjsc Hnf. lets Hyp : toJSC_is_expression Hjsc.
@@ -2032,7 +1836,7 @@ Proof.
           destruct ϕ. false Hnf. simpls; inverts~ Hjsc.
 Qed.
 
-Lemma toJSC_is_expression_function : forall T v, toJSC T = jscert_expr v ->
+Lemma toJSC_is_expression_function : forall T v, toJSC T = Some (jscert_expr v) ->
   ~ not_a_function v -> exists (ϕ : djs_ϕ), toJSC T = toJSC ϕ.
 Proof.
   induction T using (measure_induction djs_size_term).
@@ -2046,9 +1850,10 @@ Proof.
     - false HnfT. destruct d; inverts HT; simpls*; destruct d; simpls*; cases_if; simpls*.
     - exists~ d.
   + destruct d as [ϕ]; false*.
+  + inverts HT.
 Qed.
 
-Lemma toJSC_is_expression_as_δε : forall T je, toJSC T = jscert_expr je -> exists (δε : djs_δε), toJSC δε = toJSC T.
+Lemma toJSC_is_expression_as_δε : forall T je, toJSC T = Some (jscert_expr je) -> exists (δε : djs_δε), toJSC δε = toJSC T.
 Proof.
   introv Ht. lets Hyp : toJSC_is_expression Ht. repeat (inverts Hyp as Hyp; jauto).
   + exists~ (djs_δε_expr (djs_ε_l x)).
@@ -2057,7 +1862,7 @@ Proof.
   + exists~ (djs_δε_func x).
 Qed.
 
-Lemma toJSC_is_lhs_expression : forall T v, toJSC T = jscert_expr v ->
+Lemma toJSC_is_lhs_expression : forall T v, toJSC T = Some (jscert_expr v) ->
   is_lhs v -> exists (λε : djs_λε), toJSC T = toJSC λε.
 Proof.
   induction T using (measure_induction djs_size_term).
@@ -2092,29 +1897,30 @@ Proof.
 
     - false; destruct d; inverts HT; simpls*.
   + destruct d as [ϕ]; false*.
+  + inverts HT.
 Qed.
 
-Lemma toJSC_is_statement : forall T (s : stat), toJSC T = jscert_stat s -> 
+Lemma toJSC_is_statement : forall T (s : stat), toJSC T = Some (jscert_stat s) -> 
   exists s, T = djs_term_s s.
 Proof.
   induction T using (measure_induction djs_size_term); introv Hyp.
   destruct T; simpls*; inverts* Hyp.
 Qed.  
 
-Lemma toJSC_is_object : forall obj l, toJSC obj = jscert_expr (expr_object l) ->
+Lemma toJSC_is_object : forall obj l, toJSC obj = Some (jscert_expr (expr_object l)) ->
  exists o, obj = djs_ο o \/ obj = djs_ε_l (djs_ο o) \/ obj = djs_δε_expr (djs_ε_l (djs_ο o)).
 Proof.
-  introv Hyp; destruct obj as [o | o | o | o | o | o | o ]; 
+  introv Hyp; destruct obj as [o | o | o | o | o | o | o | o]; 
   try destruct o; simpls; inverts~ Hyp; try (destruct d; inverts* H0); try (cases_if*).
   + eexists. left; reflexivity.
   + destruct d; inverts* H1. 
   + destruct d; inverts* H1. cases_if*.
 Qed.
 
-Lemma toJSC_is_array : forall arr l, toJSC arr = jscert_expr (expr_array l) ->
+Lemma toJSC_is_array : forall arr l, toJSC arr = Some (jscert_expr (expr_array l)) ->
  exists a, arr = djs_α a \/ arr = djs_ε_l (djs_α a) \/ arr = djs_δε_expr (djs_ε_l (djs_α a)).
 Proof.
-  introv Hyp; destruct arr as [o | o | o | o | o | o | o ]; 
+  introv Hyp; destruct arr as [o | o | o | o | o | o | o | o]; 
   try destruct o; simpls; inverts~ Hyp; try (destruct d; inverts* H0); try (cases_if*).
   + eexists. left; reflexivity.
   + destruct d; inverts* H1. 
@@ -2122,16 +1928,16 @@ Proof.
 Qed.
 
 Lemma toJSC_is_function : forall T os ls fb, 
-  toJSC T = jscert_expr (expr_function os ls fb) -> 
+  toJSC T = Some (jscert_expr (expr_function os ls fb)) -> 
   (exists ϕ, T = djs_term_ϕ ϕ) \/ (exists ϕ, T = djs_term_δε (djs_δε_func ϕ)).
 Proof.
   induction T using (measure_induction djs_size_term); introv Hyp.
   destruct T; repeat (destruct d; simpls*; inverts Hyp as Hyp; try cases_if*).
 Qed.
 
-Lemma mapping_complete : forall t, (exists T, toJSC T = t) <-> DJS_allowed_term t.
+Lemma mapping_complete : forall t, (exists T, toJSC T = Some t) <-> DJS_allowed_term t.
 Proof with (try solve [inverts* Hyp]).
-  introv; splits; [introv (T & Heq); subst; applys~ mapping_correct | gen t].
+  introv; splits; [introv (T & Heq); applys~ mapping_correct; eassumption | gen t].
   
   induction t using (measure_induction jscert_size_term).
 
@@ -2206,7 +2012,7 @@ Proof with (try solve [inverts* Hyp]).
     destruct le...
     destruct Hyp as (Hs & He).
     
-    assert (Hl0 : forall x je, Mem (x, Some je) l0 -> DJS_allowed_term (jscert_expr je) /\ exists (δε : djs_δε), toJSC δε = jscert_expr je).
+    assert (Hl0 : forall x je, Mem (x, Some je) l0 -> DJS_allowed_term (jscert_expr je) /\ exists (δε : djs_δε), toJSC δε = Some (jscert_expr je)).
     {
       inductions l0; introv Hm; inverts Hm.
       + splits*. lets* (Te & HTe) : H (jscert_expr je). simpls; nat_math.
@@ -2226,8 +2032,13 @@ Proof with (try solve [inverts* Hyp]).
     rewrite HTε in Hε; clear dependent Tε.
 
     inductions l0.
-    - exists (djs_term_ϕ (djs_ϕ_main l nil σ ε)). 
-      simpls; repeat fequals. 
+    - exists (djs_term_ϕ (djs_ϕ_main (combine l ((fix larbitrary l :=
+                                                    match l with
+                                                      | nil => nil
+                                                      | _ :: l => arbitrary :: larbitrary l
+                                                    end) l)) nil σ ε)). 
+      simpls; repeat fequals. clear. 
+      rewrite~ combine_split. inductions l; rew_length in *; nat_math.
     - destruct a as (x, o). destruct o; [ | false*].
       specializes IHl0 Hs He; jauto. 
       specializes IHl0 Hσ Hε. 
@@ -2238,12 +2049,12 @@ Proof with (try solve [inverts* Hyp]).
 
       * destruct ϕ as [τρx' τρy' s' ε']. inverts Hϕ.
         lets (Hde0 & (δε & Hδε)) : Hl0 x e0. constructor.
-        exists (djs_term_ϕ (djs_ϕ_main l ((x, δε) :: τρy') s' ε')). 
+        exists (djs_term_ϕ (djs_ϕ_main τρx' ((x, δε) :: τρy') s' ε')). 
         simpls. repeat fequals.
 
       * destruct ϕ as [τρx' τρy' s' ε']. inverts Hϕ.
         lets (Hde0 & (δε & Hδε)) : Hl0 x e0. constructor.
-        exists (djs_term_ϕ (djs_ϕ_main l ((x, δε) :: τρy') s' ε')). 
+        exists (djs_term_ϕ (djs_ϕ_main τρx' ((x, δε) :: τρy') s' ε')). 
         simpls. repeat fequals.
 
   (* expr_access *)
@@ -2294,7 +2105,7 @@ Proof with (try solve [inverts* Hyp]).
   + false*.
 
   (* expr_call *)
-  + cut (exists ϕ lε, toJSC (djs_δε_expr (djs_ε_func ϕ lε)) = jscert_expr (expr_call e l)).
+  + cut (exists ϕ lε, toJSC (djs_δε_expr (djs_ε_func ϕ lε)) = Some (jscert_expr (expr_call e l))).
     - introv (ϕ & lε & Heq). eexists; jauto.
     - inductions l. 
       * apply DJS_allowed_call in Hyp. 
@@ -2441,16 +2252,6 @@ Proof with (try solve [inverts* Hyp]).
     exists~ (djs_term_s (djs_stat_while ε s')). 
     simpls; repeat fequals.
 
-  (* stat_with *)
-  + destruct Hyp as (Hde & Hnfe & Hds).
-    lets~ (Te & HTe) : H (jscert_expr e). simpls*; try nat_math.
-    lets* (ε & Hε) : toJSC_is_expression_not_function e. 
-    rewrite Hε in *; clear dependent Te.
-    lets~ (Ts & HTs') : H (jscert_stat s). simpls; try nat_math.
-    lets* (s' & Hs') : toJSC_is_statement HTs'; subst.
-    exists~ (djs_term_s (djs_stat_with ε s')). 
-    simpls; repeat fequals.
-
   (* prog *)
   + destruct p as [s el].
     destruct s...  destruct el... destruct e...
@@ -2469,13 +2270,4 @@ Proof with (try solve [inverts* Hyp]).
 
     exists (djs_term_π (djs_π_main ϕ)).
     simpls; repeat fequals.
-Qed. 
-
-Require Import JsInterpreterMonads.
-Require Import JsPrettyInterm.
-Require Import JsPrettyRules.
-Require Import JsInversionTactics.
-
-Module DJSReasoning (InvExpr : InvExpr) (InvTact : InversionTactics InvExpr).
-
-End DJSReasoning.
+Admitted. (* FASTER *)

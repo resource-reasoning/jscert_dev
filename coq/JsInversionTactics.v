@@ -2,7 +2,7 @@ Set Implicit Arguments.
 Require Import Shared.
 Require Import JsSyntax JsSyntaxAux JsCommon JsCommonAux JsPreliminary.
 Require Import JsPrettyInterm JsPrettyRules.
-Require Import JsInversionPrinciplesSpec JsInversionPrinciplesStat JsInversionPrinciplesProg.
+Require Export JsInversionPrinciplesSpec JsInversionPrinciplesStat JsInversionPrinciplesProg.
 Require Export JsInversionPrinciplesExpr. 
 
 Module Type InversionTactics (InvExpr : InvExpr).
