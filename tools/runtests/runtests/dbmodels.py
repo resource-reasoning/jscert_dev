@@ -1,16 +1,10 @@
 from . import DB_SCHEMA
 
-try:
-    from sqlalchemy import (Boolean, Column, Enum, DateTime, ForeignKey,
-                            Integer, Interval, SmallInteger, String, Text)
-    from sqlalchemy.schema import MetaData
-    from sqlalchemy.orm import backref, hybrid_property, relationship
-    from sqlalchemy.ext.declarative import declarative_base
-except ImportError:
-    from .sqlalchemystub import (Boolean, Integer, DateTime, Interval,
-                                 SmallInteger, String, Text, Column, Enum,
-                                 backref, ForeignKey, column_property, MetaData,
-                                 declarative_base, hybrid_property, relationship)
+from sqlalchemy import (Boolean, Column, Enum, DateTime, ForeignKey,
+                        Integer, Interval, SmallInteger, String, Text)
+from sqlalchemy.schema import MetaData
+from sqlalchemy.orm import backref, hybrid_property, relationship
+from sqlalchemy.ext.declarative import declarative_base
 
 Base = declarative_base(metadata=MetaData(schema=DB_SCHEMA))
 
