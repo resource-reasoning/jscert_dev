@@ -25,7 +25,8 @@ class DBManager(TestResultHandler):
         self.disconnect()
 
     def connect(self):
-        self.session = self.sessionmaker(bind=self.engine)
+        self.session = self.sessionmaker(bind=self.engine,
+                                         expire_on_commit=False)
 
     def commit(self):
         self.session.commit()

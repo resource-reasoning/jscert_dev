@@ -6,14 +6,13 @@ try:
     from sqlalchemy.schema import MetaData
     from sqlalchemy.orm import backref, hybrid_property, relationship
     from sqlalchemy.ext.declarative import declarative_base
-
-    Base = declarative_base(metadata=MetaData(schema=DB_SCHEMA))
-
 except ImportError:
     from .sqlalchemystub import (Boolean, Integer, DateTime, Interval,
                                  SmallInteger, String, Text, Column, Enum,
-                                 Base, backref, ForeignKey, column_property,
-                                 hybrid_property, relationship)
+                                 backref, ForeignKey, column_property, MetaData,
+                                 declarative_base, hybrid_property, relationship)
+
+Base = declarative_base(metadata=MetaData(schema=DB_SCHEMA))
 
 
 class Job(Base):
@@ -65,7 +64,16 @@ class Run(Base):
     test_id = Column(
         String,
         ForeignKey('test_cases.id', name='test_runs_test_id_fkey'))
-    testcase = relationship('TestCase')
+
+    _testcase = None
+
+    def testcase(self):
+        return self._testcase
+
+    @testcase.setter
+    def testcase(self, testcase):
+        self._testcase = testcase
+        self.test_id = testcase.filename
 
     batch_id = Column(
         Integer,
@@ -84,17 +92,17 @@ class Run(Base):
     duration = Column(Interval)
 
 
-class TestCase(Base):
-    __tablename__ = 'test_cases'
-
-    id = Column(String, primary_key=True)
-    negative = Column(Boolean)
-
-    # Alias the id column to the filename field
-    @hybrid_property
-    def filename(self):
-        return self.id
-
+#class TestCase(Base):
+#    __tablename__ = 'test_cases'
+#
+#    id = Column(String, primary_key=True)
+#    negative = Column(Boolean)
+#
+#    # Alias the id column to the filename field
+#    @hybrid_property
+#    def filename(self):
+#        return self.id
+#
 
 class FailGroup(Base):
     __tablename__ = 'fail_groups'

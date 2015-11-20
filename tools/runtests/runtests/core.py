@@ -203,7 +203,7 @@ class TestBatch(dbmodels.Batch, Timer):
                 "passes": map(lambda x: x.report_dict(), self.passed_tests)}
 
 
-class Job(Timer, DBObject):
+class Job(dbmodels.Job, Timer):
 
     """Information about a particular test job, a collection of TestBatches"""
 

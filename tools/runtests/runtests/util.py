@@ -27,16 +27,16 @@ class SubclassSelectorMixin(object):
     __generic_name__ = None
 
     def __init__(self, **nargs):
-        raise NotImplemented
+        raise NotImplementedError()
 
     @classmethod
-    def Construct(cls, name, args):
+    def Construct(cls, name, args={}):
         """Construct the appropriate subclass instance of name, using the
         an arguments object"""
         # pylint: disable=no-member
         name = name.lower()
 
-        if cls.__generic_name__ and name == cls.__generic_name__:
+        if cls.__generic_name__ and name == cls.__generic_name__.lower():
             return cls(**vars(args))
 
         for subcls in cls.__subclasses__():
