@@ -64,7 +64,7 @@ DISPLAYED_FILES := \
 
 DISPLAYED := $(addprefix tests/jsref/,$(DISPLAYED_FILES))
 
-ALL_DISPLAYED := $(DISPLAYED:.ml=.unlog.js) $(DISPLAYED:.ml=.pseudo.js) $(DISPLAYED)
+ALL_DISPLAYED := $(DISPLAYED:.ml=.unlog.js) $(DISPLAYED) $(DISPLAYED:.ml=.pseudo.js) 
 
 ALL_LINEOF := $(DISPLAYED:.ml=.token.js) $(DISPLAYED:.ml=.mlloc.js) $(DISPLAYED:.ml=.ptoken.js)
 
