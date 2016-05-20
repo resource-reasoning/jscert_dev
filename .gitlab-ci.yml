@@ -1,4 +1,12 @@
----
+test-jsjsref:
+  stage: test
+  before_script:
+  - cd jsjsref && make test_init
+  script:
+  - cd jsjsref && make test
+  except:
+  - triggers
+
 git-sync:
   script:
   - eval `ssh-agent`
