@@ -1,9 +1,10 @@
 test-jsjsref:
   stage: test
   before_script:
-  - cd jsjsref && make test_init
+  - cd jsjsref
+  - make test_init
   script:
-  - cd jsjsref && make test
+  - make test
   except:
   - triggers
 
