@@ -1,6 +1,7 @@
 test-jsjsref:
   stage: test
   before_script:
+  - git submodule update --init lib/test262
   - opam switch 4.02.1
   - eval `opam config env`
   - cd jsjsref
