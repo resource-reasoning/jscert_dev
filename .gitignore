@@ -22,9 +22,13 @@ report
 /test_reports/*
 
 *~
+*#
 
 trace.log
 /coq/#JsPrettyRules.v#
 
 .tern-port
 /jsjsref/miniml/generator/tests/jsref/lineof.js
+
+proof.patched
+
